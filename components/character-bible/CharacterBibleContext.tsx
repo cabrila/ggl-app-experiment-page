@@ -19,17 +19,18 @@ interface CharacterBibleContextType {
 
 const CharacterBibleContext = createContext<CharacterBibleContextType | undefined>(undefined)
 
+// Demo data
 const demoBibles: CharacterBible[] = [
   {
     id: "1",
     name: "Bluff Final",
-    characters: Array.from({ length: 8 }, (_, i) => ({
+    characters: Array.from({ length: 21 }, (_, i) => ({
       id: `char-${i + 1}`,
-      name: i === 0 ? "Dr. Alan Grant" : i === 1 ? "Dr. Ellie Sattler" : i === 2 ? "Ian Malcolm" : i === 3 ? "John Hammond" : i === 4 ? "Tim Murphy" : i === 5 ? "Lex Murphy" : i === 6 ? "Dennis Nedry" : "Robert Muldoon",
-      age: i < 4 ? "40s" : i < 6 ? "10s" : "30s",
-      gender: i === 1 || i === 5 ? "Female" : "Male",
+      name: `Character ${i + 1}`,
+      age: "30s",
+      gender: i % 2 === 0 ? "Male" : "Female",
       ethnicity: "Not specified",
-      scenes: Math.floor(Math.random() * 20) + 5,
+      scenes: Math.floor(Math.random() * 20) + 1,
       castingNotes: "A complex character with depth and nuance.",
     })),
     createdAt: new Date("2026-04-28"),

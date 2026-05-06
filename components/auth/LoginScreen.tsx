@@ -1,7 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Mail, Loader2, CheckCircle, Phone, ArrowLeft } from "lucide-react"
+import {
+  sendMagicLink,
+  initRecaptchaVerifier,
+  sendPhoneVerificationCode,
+  verifyPhoneCode,
+  clearPhoneAuthState,
+} from "@/lib/auth"
 
 type AuthMethod = "email" | "phone"
 type LoginState = "idle" | "loading" | "success" | "error" | "verify-code"
@@ -17,18 +24,45 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
   const [verificationCode, setVerificationCode] = useState("")
   const [loginState, setLoginState] = useState<LoginState>("idle")
   const [errorMessage, setErrorMessage] = useState("")
+  const recaptchaInitialized = useRef(false)
 
   const isValidEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
   }
 
   const isValidPhoneNumber = (phone: string) => {
+    // Basic validation: starts with + and has at least 10 digits
     return /^\+[1-9]\d{9,14}$/.test(phone.replace(/\s/g, ""))
   }
 
   const formatPhoneNumber = (value: string) => {
+    // Allow only + and digits
     return value.replace(/[^\d+]/g, "")
   }
+
+  // Initialize reCAPTCHA when switching to phone auth
+  useEffect(() => {
+    if (authMethod === "phone" && !recaptchaInitialized.current && typeof window !== "undefined") {
+      // Small delay to ensure DOM is ready
+      const timer = setTimeout(() => {
+        const verifier = initRecaptchaVerifier("phone-sign-in-button")
+        if (verifier) {
+          recaptchaInitialized.current = true
+        }
+      }, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [authMethod])
+
+  // Clean up on unmount or method change
+  useEffect(() => {
+    return () => {
+      if (authMethod === "phone") {
+        clearPhoneAuthState()
+        recaptchaInitialized.current = false
+      }
+    }
+  }, [authMethod])
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -48,9 +82,25 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
     setLoginState("loading")
     setErrorMessage("")
 
-    // Simulate sending magic link
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    setLoginState("success")
+    try {
+      await sendMagicLink(email)
+      setLoginState("success")
+    } catch (error: unknown) {
+      let errorMsg = "Failed to send magic link. Please try again."
+      if (error && typeof error === "object" && "code" in error) {
+        const code = (error as { code: string }).code
+        if (code === "auth/invalid-email") {
+          errorMsg = "Invalid email address."
+        } else if (code === "auth/missing-continue-uri") {
+          errorMsg = "Configuration error. Please contact support."
+        } else if (code === "auth/unauthorized-continue-uri") {
+          errorMsg = "Domain not authorized. Please contact support."
+        }
+      }
+      
+      setErrorMessage(errorMsg)
+      setLoginState("error")
+    }
   }
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
@@ -67,9 +117,16 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
     setLoginState("loading")
     setErrorMessage("")
 
-    // Simulate sending verification code
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    setLoginState("verify-code")
+    try {
+      await sendPhoneVerificationCode(cleanedPhone)
+      setLoginState("verify-code")
+    } catch (error) {
+      const errorMsg =
+        error instanceof Error ? error.message : "Failed to send verification code. Please try again."
+      setErrorMessage(errorMsg)
+      setLoginState("error")
+      recaptchaInitialized.current = false
+    }
   }
 
   const handleVerifyCode = async (e: React.FormEvent) => {
@@ -84,9 +141,15 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
     setLoginState("loading")
     setErrorMessage("")
 
-    // Simulate verification - in demo mode, just redirect
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    onDemoAccess?.()
+    try {
+      await verifyPhoneCode(verificationCode)
+      // Auth state change will be handled by the parent component
+    } catch (error) {
+      const errorMsg =
+        error instanceof Error ? error.message : "Invalid verification code. Please try again."
+      setErrorMessage(errorMsg)
+      setLoginState("error")
+    }
   }
 
   const handleSwitchMethod = (method: AuthMethod) => {
@@ -96,12 +159,16 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
     setEmail("")
     setPhoneNumber("")
     setVerificationCode("")
+    clearPhoneAuthState()
+    recaptchaInitialized.current = false
   }
 
   const handleBack = () => {
     setLoginState("idle")
     setErrorMessage("")
     setVerificationCode("")
+    clearPhoneAuthState()
+    recaptchaInitialized.current = false
   }
 
   return (
@@ -125,7 +192,11 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
 
       {/* Logo */}
       <div className="mb-12">
-        <h1 className="text-3xl font-bold text-white">GoGreenlight</h1>
+        <img
+          src="/gogreenlight-logo.png"
+          alt="GoGreenlight"
+          className="h-16 w-auto"
+        />
       </div>
 
       {/* Welcome Text */}
@@ -150,8 +221,7 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
               Check your email
             </h2>
             <p className="text-white/70 text-sm leading-relaxed font-sans">
-              {"We've sent a magic link to"}
-              <br />
+              We&apos;ve sent a magic link to<br />
               <span className="text-white font-medium">{email}</span>
             </p>
             <button
@@ -179,8 +249,7 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
             <form onSubmit={handleVerifyCode} className="space-y-5">
               <div className="text-center mb-4">
                 <p className="text-white/70 text-sm font-sans">
-                  Enter the 6-digit code sent to
-                  <br />
+                  Enter the 6-digit code sent to<br />
                   <span className="text-white font-medium">{phoneNumber}</span>
                 </p>
               </div>
@@ -355,7 +424,7 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
 
       {/* Footer */}
       <p className="mt-12 text-[11px] text-white/30 text-center font-sans">
-        2026 GoGreenlight. All rights reserved.
+        © 2026 GoGreenlight. All rights reserved.
       </p>
     </div>
   )

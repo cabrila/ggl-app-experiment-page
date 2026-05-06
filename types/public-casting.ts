@@ -4,7 +4,7 @@ export interface CastingCallField {
   type: "text" | "email" | "phone" | "textarea" | "select" | "file" | "url" | "number" | "image"
   required: boolean
   placeholder?: string
-  options?: string[]
+  options?: string[] // For select fields
 }
 
 export interface CastingCall {
@@ -25,6 +25,7 @@ export interface CastingSubmission {
   data: Record<string, string>
   submittedAt: Date
   isNew: boolean
+  // Standard actor fields extracted from data
   name: string
   email: string
   phone?: string
@@ -32,6 +33,7 @@ export interface CastingSubmission {
   playingAge?: string
   headshot?: string
   notes?: string
+  // Grading (1-10 scale)
   grade?: number
 }
 

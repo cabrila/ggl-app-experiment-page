@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import url('https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 
 @custom-variant dark (&:is(.dark *));
 
@@ -129,6 +130,76 @@
   --chart-3: hsl(30 80% 55%);
   --chart-4: hsl(280 65% 60%);
   --chart-5: hsl(340 75% 55%);
+
+  /* Dark mode color adjustments */
+  --green-brand-100: hsl(152 60% 25%);
+  --green-brand-200: hsl(152 62% 30%);
+  --green-brand-300: hsl(152 64% 38%);
+  --green-brand-400: hsl(152 60% 45%);
+  --green-brand-500: hsl(152 58% 52%);
+  --green-brand-600: hsl(152 65% 58%);
+  --green-brand-700: hsl(152 70% 65%);
+  --green-brand-800: hsl(152 72% 72%);
+  --green-brand-900: hsl(152 75% 80%);
+
+  --blue-100: hsl(214 80% 25%);
+  --blue-200: hsl(213 82% 32%);
+  --blue-300: hsl(212 84% 40%);
+  --blue-400: hsl(211 86% 48%);
+  --blue-500: hsl(211 88% 55%);
+  --blue-600: hsl(211 90% 62%);
+  --blue-700: hsl(211 92% 70%);
+  --blue-800: hsl(211 94% 78%);
+  --blue-900: hsl(211 96% 85%);
+
+  --red-100: hsl(0 75% 25%);
+  --red-200: hsl(0 78% 32%);
+  --red-300: hsl(0 82% 40%);
+  --red-400: hsl(0 84% 48%);
+  --red-500: hsl(0 86% 55%);
+  --red-600: hsl(0 88% 62%);
+  --red-700: hsl(0 90% 70%);
+
+  --notification-badge: hsl(0 84% 60%);
+  
+  /* Dark mode warning colors */
+  --warning-100: hsl(45 75% 25%);
+  --warning-200: hsl(45 78% 32%);
+  --warning-300: hsl(45 82% 40%);
+  --warning-400: hsl(45 85% 48%);
+  --warning-500: hsl(45 88% 55%);
+  --warning-600: hsl(45 90% 62%);
+  --warning-700: hsl(45 92% 70%);
+  
+  /* Dark mode cyan colors */
+  --cyan-100: hsl(186 75% 25%);
+  --cyan-200: hsl(186 78% 32%);
+  --cyan-300: hsl(186 82% 40%);
+  --cyan-400: hsl(186 85% 48%);
+  --cyan-500: hsl(186 88% 55%);
+  --cyan-600: hsl(186 90% 62%);
+  --cyan-700: hsl(186 92% 70%);
+  
+  /* Dark mode teal colors */
+  --teal-100: hsl(168 60% 25%);
+  --teal-200: hsl(168 65% 32%);
+  --teal-300: hsl(168 70% 40%);
+  --teal-400: hsl(168 72% 48%);
+  --teal-500: hsl(168 75% 55%);
+  --teal-600: hsl(168 78% 62%);
+  --teal-700: hsl(168 80% 70%);
+  
+  /* Dark mode neutral colors */
+  --neutral-50: hsl(0 0% 12%);
+  --neutral-100: hsl(0 0% 15%);
+  --neutral-200: hsl(0 0% 20%);
+  --neutral-300: hsl(0 0% 28%);
+  --neutral-400: hsl(0 0% 45%);
+  --neutral-500: hsl(0 0% 55%);
+  --neutral-600: hsl(0 0% 70%);
+  --neutral-700: hsl(0 0% 80%);
+  --neutral-800: hsl(0 0% 90%);
+  --neutral-900: hsl(0 0% 96%);
 }
 
 @theme inline {
@@ -286,6 +357,31 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  .dark {
+    scrollbar-color: var(--muted) var(--background);
+  }
+
+  .dark .scrollbar-hide::-webkit-scrollbar-track {
+    background: var(--background);
+  }
+
+  .dark .scrollbar-hide::-webkit-scrollbar-thumb {
+    background: var(--muted);
+    border-radius: 6px;
+  }
+
+  .dark .scrollbar-hide::-webkit-scrollbar-thumb:hover {
+    background: var(--muted-foreground);
+  }
+}
+
+/* Script editor contenteditable placeholder */
+[contenteditable]:empty::before {
+  content: attr(data-placeholder);
+  color: #c4b5a4;
+  pointer-events: none;
+  font-style: italic;
 }
 
 /* Custom scrollbar styles */
@@ -308,14 +404,152 @@
   @apply ring-2 ring-ring ring-offset-2;
 }
 
-/* Notification badge pulse animation */
+/* Drag and drop visual feedback */
+.drag-preview {
+  transform: rotate(5deg);
+  opacity: 0.8;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.drop-zone-active {
+  background: linear-gradient(45deg, var(--info-100), var(--info-200));
+  border: 2px dashed var(--info-500);
+}
+
+/* Keyboard navigation indicators */
+.keyboard-selected {
+  outline: 2px solid var(--green-brand-500);
+  outline-offset: 2px;
+  background-color: var(--green-brand-100);
+}
+
+/* Animation for tab reordering */
+.tab-reorder-animation {
+  transition: transform 0.2s ease-in-out;
+}
+
+/* Added notification badge pulse animation */
 .notification-badge-pulse {
   animation: badge-pulse 2s ease-in-out infinite;
 }
 
+/* Button hover state animations */
+@keyframes button-scale {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(0.98);
+  }
+}
+
+.button-active-scale {
+  animation: button-scale 0.15s ease-out;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .tab-button {
+    border: 2px solid currentColor;
+  }
+
+  .drag-indicator {
+    background-color: currentColor;
+  }
+}
+
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
-  .notification-badge-pulse {
+  .tab-reorder-animation,
+  .drag-preview,
+  .notification-badge-pulse,
+  .button-active-scale {
+    transition: none;
+    transform: none;
     animation: none;
+  }
+}
+
+/* Dark mode drag and drop styles */
+.dark .drop-zone-active {
+  background: linear-gradient(45deg, var(--info-100), var(--info-200));
+  border: 2px dashed var(--info-500);
+}
+
+/* Dark mode keyboard navigation */
+.dark .keyboard-selected {
+  outline: 2px solid var(--green-brand-500);
+  outline-offset: 2px;
+  background-color: var(--green-brand-200);
+}
+
+/* Dark mode focus styles */
+.dark .focus-visible {
+  @apply ring-2 ring-ring ring-offset-2 ring-offset-background;
+}
+
+/* Ensure proper contrast for interactive elements */
+.dark button:hover {
+  background-color: var(--accent);
+}
+
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+/* Dark mode modal backdrop */
+.dark .modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+/* Dark mode card shadows */
+.dark .shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(255, 255, 255, 0.05);
+}
+
+.dark .shadow {
+  box-shadow: 0 1px 3px 0 rgba(255, 255, 255, 0.1), 0 1px 2px 0 rgba(255, 255, 255, 0.06);
+}
+
+.dark .shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(255, 255, 255, 0.1), 0 4px 6px -2px rgba(255, 255, 255, 0.05);
+}
+
+/* Leaflet popup styles */
+.leaflet-loc-popup .leaflet-popup-content-wrapper {
+  padding: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.leaflet-loc-popup .leaflet-popup-content {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.leaflet-loc-popup .leaflet-popup-tip {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.leaflet-loc-marker {
+  background: none !important;
+  border: none !important;
+}
+
+.leaflet-tmp-marker {
+  background: none !important;
+  border: none !important;
+}
+
+@keyframes leaflet-pulse {
+  0% {
+    box-shadow: 0 0 0 0 var(--teal-400);
+  }
+  100% {
+    box-shadow: 0 0 0 12px transparent;
   }
 }

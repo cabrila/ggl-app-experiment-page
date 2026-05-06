@@ -20,7 +20,6 @@ interface ActorListContextType {
 
 const ActorListContext = createContext<ActorListContextType | null>(null)
 
-// Demo data
 const demoActors: Actor[] = [
   {
     id: "1",
@@ -29,8 +28,8 @@ const demoActors: Actor[] = [
     playingAge: "30-50",
     phone: "+1-555-0123",
     email: "jason.tyrone@email.com",
-    headshotUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-    notes: "Shoe size: 43, Nakedness preference: None, Red flags: I have never heard anything positive",
+    headshotUrl: "",
+    notes: "Experienced stage actor, comfortable with physical roles",
   },
   {
     id: "2",
@@ -39,8 +38,8 @@ const demoActors: Actor[] = [
     playingAge: "30-45",
     phone: "+1-555-0124",
     email: "eliot.prime@email.com",
-    headshotUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face",
-    notes: "Shoe size: 41, Nakedness preference: Partial, Red flags: Hates Noah Twinly",
+    headshotUrl: "",
+    notes: "Strong dramatic presence, method actor",
   },
   {
     id: "3",
@@ -49,8 +48,8 @@ const demoActors: Actor[] = [
     playingAge: "40-60",
     phone: "+1-555-0125",
     email: "jens.huego@email.com",
-    headshotUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
-    notes: "Shoe size: 45, Nakedness preference: Full, Red flags: None",
+    headshotUrl: "",
+    notes: "Distinguished look, perfect for authority figures",
   },
   {
     id: "4",
@@ -59,28 +58,28 @@ const demoActors: Actor[] = [
     playingAge: "35-55",
     phone: "+1-555-0126",
     email: "max.mellion@email.com",
-    headshotUrl: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop&crop=face",
-    notes: "Experienced stage actor, comfortable with physical roles",
-  },
-  {
-    id: "5",
-    name: "John Hubert Adam",
-    age: 33,
-    playingAge: "30-45",
-    phone: "+1-555-0127",
-    email: "john.adam@email.com",
-    headshotUrl: "https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=150&h=150&fit=crop&crop=face",
+    headshotUrl: "",
     notes: "Great with comedic timing, available for travel",
   },
   {
+    id: "5",
+    name: "Sarah Chen",
+    age: 32,
+    playingAge: "25-35",
+    phone: "+1-555-0127",
+    email: "sarah.chen@email.com",
+    headshotUrl: "",
+    notes: "Action background, trained in martial arts",
+  },
+  {
     id: "6",
-    name: "Mikkel Johnson",
-    age: 58,
-    playingAge: "45-60",
+    name: "Michael Ross",
+    age: 45,
+    playingAge: "40-55",
     phone: "+1-555-0128",
-    email: "mikkel.j@email.com",
-    headshotUrl: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&h=150&fit=crop&crop=face",
-    notes: "Distinguished look, perfect for authority figures",
+    email: "michael.ross@email.com",
+    headshotUrl: "",
+    notes: "Versatile character actor",
   },
 ]
 

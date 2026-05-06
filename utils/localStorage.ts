@@ -1,37 +1,22 @@
 const STORAGE_KEY = "gogreenlight-casting-state"
 
-// Debounce timer for saving to localStorage
 let saveTimeout: ReturnType<typeof setTimeout> | null = null
-const DEBOUNCE_DELAY = 500 // milliseconds
+const DEBOUNCE_DELAY = 500
 
-export function saveToLocalStorage(state: any): void {
+export function saveToLocalStorage(state: unknown): void {
   try {
-    // Only save if we're in the browser
     if (typeof window === "undefined") return
 
-    // Clear any pending save
     if (saveTimeout) {
       clearTimeout(saveTimeout)
     }
 
-    // Debounce the save operation to prevent excessive writes
     saveTimeout = setTimeout(() => {
       try {
-        // Create a clean copy of the state for storage
         const stateToSave = {
-          ...state,
-          // Don't save temporary UI state
-          currentFocus: {
-            ...state.currentFocus,
-            playerView: {
-              ...state.currentFocus.playerView,
-              isOpen: false, // Don't persist open player view
-            },
-          },
-          // Don't save modal states
+          ...(state as Record<string, unknown>),
           modals: {},
         }
-
         const serializedState = JSON.stringify(stateToSave)
         localStorage.setItem(STORAGE_KEY, serializedState)
       } catch (error) {
@@ -43,29 +28,19 @@ export function saveToLocalStorage(state: any): void {
   }
 }
 
-// Immediate save for critical operations (like before page unload)
-export function saveToLocalStorageImmediate(state: any): void {
+export function saveToLocalStorageImmediate(state: unknown): void {
   try {
     if (typeof window === "undefined") return
 
-    // Clear any pending debounced save
     if (saveTimeout) {
       clearTimeout(saveTimeout)
       saveTimeout = null
     }
 
     const stateToSave = {
-      ...state,
-      currentFocus: {
-        ...state.currentFocus,
-        playerView: {
-          ...state.currentFocus.playerView,
-          isOpen: false,
-        },
-      },
+      ...(state as Record<string, unknown>),
       modals: {},
     }
-
     const serializedState = JSON.stringify(stateToSave)
     localStorage.setItem(STORAGE_KEY, serializedState)
   } catch (error) {
@@ -73,9 +48,8 @@ export function saveToLocalStorageImmediate(state: any): void {
   }
 }
 
-export function loadFromLocalStorage(): any | null {
+export function loadFromLocalStorage(): unknown | null {
   try {
-    // Only load if we're in the browser
     if (typeof window === "undefined") return null
 
     const serializedState = localStorage.getItem(STORAGE_KEY)
@@ -83,15 +57,8 @@ export function loadFromLocalStorage(): any | null {
 
     const parsedState = JSON.parse(serializedState)
 
-    // Validate that the loaded state has the expected structure
     if (!parsedState || typeof parsedState !== "object") {
       console.warn("Invalid state structure in localStorage")
-      return null
-    }
-
-    // Ensure required properties exist
-    if (!parsedState.projects || !Array.isArray(parsedState.projects)) {
-      console.warn("Invalid projects data in localStorage")
       return null
     }
 
@@ -131,18 +98,5 @@ export function getStorageSize(): string {
   } catch (error) {
     console.warn("Failed to calculate storage size:", error)
     return "Unknown"
-  }
-}
-
-export function isLocalStorageAvailable(): boolean {
-  try {
-    if (typeof window === "undefined") return false
-
-    const testKey = "__localStorage_test__"
-    localStorage.setItem(testKey, "test")
-    localStorage.removeItem(testKey)
-    return true
-  } catch (error) {
-    return false
   }
 }

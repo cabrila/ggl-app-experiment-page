@@ -1,15 +1,15 @@
 export interface ScheduleEntry {
   id: string
   title: string
-  date: string // ISO date string
-  phaseId?: string // ID of the production phase this shoot day belongs to
+  date: string
+  phaseId?: string
   startTime?: string
   endTime?: string
   location?: string
-  sceneType?: "INT" | "EXT" | "INT/EXT" // Added scene type field
-  sceneNotes?: string // Added scene notes field
-  props?: string[] // Added props array
-  actorIds: string[] // IDs of actors assigned to this schedule
+  sceneType?: "INT" | "EXT" | "INT/EXT"
+  sceneNotes?: string
+  props?: string[]
+  actorIds: string[]
   crewMembers: string[]
   redFlags: RedFlag[]
   notes?: string
@@ -22,11 +22,11 @@ export interface RedFlag {
   type: "conflict" | "warning" | "important" | "custom"
   message: string
   color: string
-  actorId?: string // Added actorId to associate red flags with specific actors
+  actorId?: string
 }
 
 export interface AvailabilityDate {
-  date: string // ISO date string (YYYY-MM-DD)
+  date: string
   status: "available" | "unavailable"
 }
 
@@ -34,22 +34,22 @@ export interface ProductionPhase {
   id: string
   name: string
   startDate: string
-  color: string // text color class (e.g., "text-blue-700")
-  bgColor: string // background color class (e.g., "bg-blue-500")
+  color: string
+  bgColor: string
 }
 
 export interface Scene {
   id: string
-  sceneNumber: string // e.g., "1", "2A", "15"
-  pages: string // e.g., "2/8", "1 4/8", "3"
+  sceneNumber: string
+  pages: string
   intExt: "INT" | "EXT" | "INT/EXT"
-  location: string // e.g., "kitchen", "beverly hills, ca"
+  location: string
   dayNight: "Day" | "Night"
-  cast: string[] // Actor IDs or character names
+  cast: string[]
   description?: string
-  shootDayId: string // ID of the ScheduleEntry this scene belongs to
-  order: number // Order within the shoot day
-  customColor?: string // Optional custom color (hex or Tailwind class)
+  shootDayId: string
+  order: number
+  customColor?: string
   createdAt: number
   updatedAt: number
 }

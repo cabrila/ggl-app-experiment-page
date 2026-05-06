@@ -1,168 +1,130 @@
 "use client"
 
-import { useState } from "react"
-import { MapPin, Calendar, Plus, Pencil, Trash2 } from "lucide-react"
+import { Plus, MapPin, Trash2, MoreHorizontal } from "lucide-react"
 import { useLocationScouting } from "./LocationScoutingContext"
-import { LocationProject } from "@/types/location-scouting"
-import DeleteConfirmationModal from "@/components/ui/DeleteConfirmationModal"
-import EditProjectWithThumbnailModal from "@/components/ui/EditProjectWithThumbnailModal"
+import { useState } from "react"
 
 export default function LocationProjectsList() {
-  const { projects, setView, setCurrentProject, deleteProject, updateProject } = useLocationScouting()
-  const [hoveredId, setHoveredId] = useState<string | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<LocationProject | null>(null)
-  const [editTarget, setEditTarget] = useState<LocationProject | null>(null)
+  const { projects, setCurrentProject, setView, deleteProject } = useLocationScouting()
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
 
-  const handleProjectClick = (projectId: string) => {
-    const project = projects.find((p) => p.id === projectId)
-    if (project) {
-      setCurrentProject(project)
-      setView("results")
-    }
+  const handleProjectClick = (project: typeof projects[0]) => {
+    setCurrentProject(project)
+    setView("results")
   }
 
-  const handleDeleteProject = (e: React.MouseEvent, project: LocationProject) => {
+  const handleNewProject = () => {
+    setView("upload")
+  }
+
+  const handleDelete = (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    setDeleteTarget(project)
-  }
-
-  const handleEditProject = (e: React.MouseEvent, project: LocationProject) => {
-    e.stopPropagation()
-    setEditTarget(project)
-  }
-
-  const handleConfirmDelete = () => {
-    if (deleteTarget) {
-      deleteProject(deleteTarget.id)
+    if (confirm("Are you sure you want to delete this project?")) {
+      deleteProject(id)
     }
+    setOpenMenuId(null)
   }
 
-  const handleSaveEdit = (newName: string, thumbnailUrl?: string) => {
-    if (editTarget) {
-      updateProject({ ...editTarget, name: newName, thumbnailUrl, updatedAt: new Date() })
-    }
+  const formatDate = (date: Date) => {
+    return new Date(date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })
   }
 
   return (
-    <div className="h-full overflow-y-auto p-6 md:p-10">
-      <div className="max-w-6xl mx-auto">
+    <div className="h-full flex flex-col p-6">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold text-white font-sans mb-2">My Locations</h1>
-        <p className="text-white/60 text-base font-sans">
-          Scout and manage location lists generated from your scripts.
-        </p>
-      </div>
-
-      {/* Projects Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* Existing Projects */}
-        {projects.map((project) => (
-          <div
-            key={project.id}
-            onMouseEnter={() => setHoveredId(project.id)}
-            onMouseLeave={() => setHoveredId(null)}
-            className="group relative flex rounded-xl border border-white/10 bg-[#1a2e23] hover:border-amber-500/50 transition-all overflow-hidden"
-          >
-            {/* Thumbnail Section - 1/3 width */}
-            <div className="w-1/3 min-h-[140px] bg-[#0f1f17] border-r border-white/10 flex-shrink-0">
-              {project.thumbnailUrl ? (
-                <img
-                  src={project.thumbnailUrl}
-                  alt={project.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <div className="w-16 h-16 rounded-xl bg-amber-500/20 flex items-center justify-center">
-                    <MapPin className="w-8 h-8 text-amber-400" />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Content Section - 2/3 width */}
-            <button
-              onClick={() => handleProjectClick(project.id)}
-              className="flex-1 flex flex-col justify-center p-5 text-left"
-            >
-              {/* Hover Actions */}
-              {hoveredId === project.id && (
-                <div className="absolute top-3 right-3 flex items-center gap-1">
-                  <button
-                    onClick={(e) => handleEditProject(e, project)}
-                    className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
-                    title="Rename"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={(e) => handleDeleteProject(e, project)}
-                    className="p-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-red-400 hover:text-red-300 transition-colors"
-                    title="Delete"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-
-              {/* Project Name */}
-              <h3 className="text-base font-bold text-white font-sans mb-2 pr-16 line-clamp-1">
-                {project.name}
-              </h3>
-
-              {/* Meta Info */}
-              <div className="flex flex-wrap items-center gap-3 text-xs text-white/50">
-                <div className="flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5" />
-                  <span>{project.locations.length} locations</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span>
-                    {project.createdAt.toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </span>
-                </div>
-              </div>
-            </button>
-          </div>
-        ))}
-
-        {/* New Location List Card */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-white mb-1">Location Scouting</h1>
+          <p className="text-white/50 text-sm">
+            Generate and manage location descriptions from your scripts
+          </p>
+        </div>
         <button
-          onClick={() => setView("upload")}
-          className="flex flex-col items-center justify-center p-8 rounded-xl border-2 border-dashed border-white/20 hover:border-white/40 bg-transparent hover:bg-white/[0.02] transition-all min-h-[200px]"
+          onClick={handleNewProject}
+          className="flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 rounded-xl text-white font-medium text-sm transition-colors"
         >
-          <Plus className="w-8 h-8 text-white/40 mb-3" />
-          <span className="text-white/50 font-sans font-medium">New Location List</span>
+          <Plus className="w-4 h-4" />
+          New Project
         </button>
       </div>
 
-      {/* Delete Confirmation Modal */}
-      <DeleteConfirmationModal
-        isOpen={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={handleConfirmDelete}
-        title="Delete Location List"
-        itemName={deleteTarget?.name || ""}
-        description="This will permanently delete this location list and all its locations. This action cannot be undone."
-      />
+      {/* Projects Grid */}
+      <div className="flex-1 overflow-y-auto">
+        {projects.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-64 text-center">
+            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
+              <MapPin className="w-8 h-8 text-white/30" />
+            </div>
+            <h3 className="text-lg font-medium text-white/70 mb-2">No projects yet</h3>
+            <p className="text-white/40 text-sm mb-4">
+              Upload a script to generate location descriptions
+            </p>
+            <button
+              onClick={handleNewProject}
+              className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 rounded-lg text-white font-medium text-sm transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Create your first project
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {projects.map((project) => (
+              <div
+                key={project.id}
+                onClick={() => handleProjectClick(project)}
+                className="relative group bg-white/[0.03] hover:bg-white/[0.06] border border-white/10 hover:border-white/20 rounded-xl p-5 cursor-pointer transition-all"
+              >
+                {/* Menu Button */}
+                <div className="absolute top-3 right-3">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setOpenMenuId(openMenuId === project.id ? null : project.id)
+                    }}
+                    className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors opacity-0 group-hover:opacity-100"
+                  >
+                    <MoreHorizontal className="w-4 h-4" />
+                  </button>
 
-      {/* Edit Project Modal */}
-      <EditProjectWithThumbnailModal
-        isOpen={!!editTarget}
-        onClose={() => setEditTarget(null)}
-        onSave={handleSaveEdit}
-        currentName={editTarget?.name || ""}
-        currentThumbnail={editTarget?.thumbnailUrl}
-        title="Edit Location List"
-        label="Location List Name"
-        accentColor="amber"
-      />
+                  {openMenuId === project.id && (
+                    <div className="absolute right-0 top-full mt-1 w-32 bg-[#1a3a25] border border-white/15 rounded-lg shadow-xl overflow-hidden z-10">
+                      <button
+                        onClick={(e) => handleDelete(project.id, e)}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-white/5 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Icon */}
+                <div className="w-12 h-12 rounded-lg bg-amber-500/20 flex items-center justify-center mb-4">
+                  <MapPin className="w-6 h-6 text-amber-400" />
+                </div>
+
+                {/* Content */}
+                <h3 className="text-base font-semibold text-white mb-1 truncate pr-8">
+                  {project.name}
+                </h3>
+                <p className="text-sm text-white/50 mb-3">
+                  {project.locations.length} location{project.locations.length !== 1 ? "s" : ""}
+                </p>
+
+                {/* Date */}
+                <p className="text-xs text-white/30">
+                  Updated {formatDate(project.updatedAt)}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

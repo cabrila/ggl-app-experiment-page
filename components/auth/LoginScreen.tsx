@@ -117,6 +117,18 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
     setLoginState("loading")
     setErrorMessage("")
 
+    // Ensure reCAPTCHA is initialized before attempting to send code
+    if (!recaptchaInitialized.current) {
+      const verifier = initRecaptchaVerifier("phone-sign-in-button")
+      if (verifier) {
+        recaptchaInitialized.current = true
+      } else {
+        setErrorMessage("Failed to initialize verification. Please refresh and try again.")
+        setLoginState("error")
+        return
+      }
+    }
+
     try {
       await sendPhoneVerificationCode(cleanedPhone)
       setLoginState("verify-code")

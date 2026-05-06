@@ -18,6 +18,7 @@ export default function FeedbackModal({ onClose }: FeedbackModalProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
 
+  // Close on Escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose()
@@ -26,6 +27,7 @@ export default function FeedbackModal({ onClose }: FeedbackModalProps) {
     return () => document.removeEventListener("keydown", handleEscape)
   }, [onClose])
 
+  // Handle file selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file && file.type.startsWith("image/")) {
@@ -54,18 +56,46 @@ export default function FeedbackModal({ onClose }: FeedbackModalProps) {
     setError(null)
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      const formData = new FormData()
+      formData.append("heading", heading)
+      formData.append("message", message)
       
+      if (screenshot) {
+        formData.append("screenshot", screenshot)
+      }
+      if (screenshotPreview) {
+        formData.append("screenshotUrl", screenshotPreview)
+      }
+
+      const response = await fetch("/api/feedback", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          heading,
+          message,
+          screenshotUrl: screenshotPreview,
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Failed to submit feedback")
+      }
+
       setIsSubmitting(false)
       setIsSuccess(true)
 
+      // Close modal after showing success
       setTimeout(() => {
         onClose()
       }, 2000)
     } catch (err) {
       console.error("[v0] Feedback submission error:", err)
-      setError("Failed to submit feedback. Please try again.")
+      setError(
+        err instanceof Error ? err.message : "Failed to submit feedback. Please try again."
+      )
       setIsSubmitting(false)
     }
   }
@@ -115,12 +145,14 @@ export default function FeedbackModal({ onClose }: FeedbackModalProps) {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="p-5 space-y-4">
+            {/* Error Message */}
             {error && (
               <div className="px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-lg">
                 <p className="text-sm text-red-300 font-sans">{error}</p>
               </div>
             )}
 
+            {/* Heading (Optional) */}
             <div>
               <label
                 htmlFor="feedback-heading"
@@ -138,6 +170,7 @@ export default function FeedbackModal({ onClose }: FeedbackModalProps) {
               />
             </div>
 
+            {/* Message */}
             <div>
               <label
                 htmlFor="feedback-message"
@@ -156,6 +189,7 @@ export default function FeedbackModal({ onClose }: FeedbackModalProps) {
               />
             </div>
 
+            {/* Screenshot (Optional) */}
             <div>
               <label className="block text-sm font-medium text-white/70 mb-1.5 font-sans">
                 Screenshot <span className="text-white/40">(optional)</span>
@@ -197,6 +231,7 @@ export default function FeedbackModal({ onClose }: FeedbackModalProps) {
               />
             </div>
 
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={!message.trim() || isSubmitting}

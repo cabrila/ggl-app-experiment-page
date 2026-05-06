@@ -59,6 +59,7 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
     onSignOut?.()
   }
 
+  // Close menu when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -85,13 +86,17 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
           "linear-gradient(180deg, #2d6b3f 0%, #1a4a2a 30%, #0f3520 55%, #0a2618 80%, #061a10 100%)",
       }}
     >
-      {/* Top Navigation Bar */}
+      {/* Top Navigation Bar - Only Logo and User Avatar */}
       <header className="relative flex justify-between items-center px-6 py-3 border-b border-white/10 shrink-0 z-20">
         <div className="flex items-center">
-          <h1 className="text-xl font-bold text-white">GoGreenlight</h1>
+          <img
+            src="/images/gogreenlight-logo.png"
+            alt="GoGreenlight"
+            className="h-9 w-auto"
+          />
         </div>
         <div className="flex items-center gap-2">
-          {/* Feedback Button */}
+          {/* Feedback & Requests Button */}
           <button
             onClick={() => setIsFeedbackModalOpen(true)}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all duration-200"
@@ -129,6 +134,7 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
                 ref={menuRef}
                 className="absolute right-0 top-full mt-2 w-48 bg-[#1a3a25] border border-white/15 rounded-lg shadow-xl overflow-hidden z-50"
               >
+                {/* User Info */}
                 <div className="px-4 py-3 border-b border-white/10">
                   <p className="text-sm font-medium text-white truncate">
                     {state.currentUser?.name || "User"}
@@ -138,6 +144,7 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
                   </p>
                 </div>
 
+                {/* Sign Out Button */}
                 <button
                   onClick={handleSignOut}
                   className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-white/5 transition-colors"
@@ -151,7 +158,7 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* Main Content - Hero and Feature Buttons */}
       <main className="flex-1 flex flex-col items-center justify-center relative z-10 overflow-y-auto py-8">
         <div className="text-center px-6 max-w-2xl mb-10">
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 text-balance leading-tight">
@@ -170,13 +177,17 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
             return (
               <button
                 key={feature.id}
-                onClick={() => onNavigate?.(feature.id)}
+                onClick={() => {
+                  onNavigate?.(feature.id)
+                }}
                 className="group flex items-start gap-4 p-5 bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 hover:border-white/20 rounded-xl text-left transition-all duration-200"
               >
+                {/* Icon */}
                 <div className={`shrink-0 w-12 h-12 rounded-lg ${feature.iconBg} flex items-center justify-center`}>
                   <IconComponent className={`w-6 h-6 ${feature.iconColor}`} />
                 </div>
 
+                {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="text-base font-semibold text-white font-sans">
@@ -194,10 +205,10 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
         </div>
       </main>
 
-      {/* Footer */}
+      {/* Bottom tagline */}
       <footer className="text-center py-6 shrink-0">
         <p className="text-[11px] text-white/20 tracking-wide">
-          2026 GoGreenlight. All rights reserved.
+          © 2026 GoGreenlight. All rights reserved.
         </p>
       </footer>
 

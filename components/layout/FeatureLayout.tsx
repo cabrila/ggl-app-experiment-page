@@ -68,6 +68,7 @@ export default function FeatureLayout({ children, onBack, onSignOut, activeView,
     onSignOut?.()
   }
 
+  // Close menu when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -94,10 +95,15 @@ export default function FeatureLayout({ children, onBack, onSignOut, activeView,
           "linear-gradient(180deg, #2d6b3f 0%, #1a4a2a 30%, #0f3520 55%, #0a2618 80%, #061a10 100%)",
       }}
     >
-      {/* Top Navigation Bar */}
+      {/* Top Navigation Bar - Logo, Back Button, Feedback, and User Avatar */}
       <header className="relative flex justify-between items-center px-6 py-3 border-b border-white/10 shrink-0 z-20">
+        {/* Left side - Logo and Home Button */}
         <div className="flex items-center gap-3">
-          <h1 className="text-xl font-bold text-white">GoGreenlight</h1>
+          <img
+            src="/images/gogreenlight-logo.png"
+            alt="GoGreenlight"
+            className="h-9 w-auto"
+          />
           <div className="h-6 w-px bg-white/20" />
           <button
             onClick={onBack}
@@ -109,8 +115,9 @@ export default function FeatureLayout({ children, onBack, onSignOut, activeView,
           </button>
         </div>
 
+        {/* Right side - Feedback and User Avatar */}
         <div className="flex items-center gap-2">
-          {/* Feedback Button */}
+          {/* Feedback & Requests Button */}
           <button
             onClick={() => setIsFeedbackModalOpen(true)}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all duration-200"
@@ -142,11 +149,13 @@ export default function FeatureLayout({ children, onBack, onSignOut, activeView,
               </div>
             </button>
 
+            {/* User Dropdown Menu */}
             {isUserMenuOpen && (
               <div
                 ref={menuRef}
                 className="absolute right-0 top-full mt-2 w-48 bg-[#1a3a25] border border-white/15 rounded-lg shadow-xl overflow-hidden z-50"
               >
+                {/* User Info */}
                 <div className="px-4 py-3 border-b border-white/10">
                   <p className="text-sm font-medium text-white truncate">
                     {state.currentUser?.name || "User"}
@@ -156,6 +165,7 @@ export default function FeatureLayout({ children, onBack, onSignOut, activeView,
                   </p>
                 </div>
 
+                {/* Sign Out Button */}
                 <button
                   onClick={handleSignOut}
                   className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-white/5 transition-colors"
@@ -171,7 +181,7 @@ export default function FeatureLayout({ children, onBack, onSignOut, activeView,
 
       {/* Main Content Area with Sidebar */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Sidebar */}
+        {/* Left Sidebar - Hidden on mobile */}
         <aside className="hidden md:flex flex-col w-16 border-r border-white/10 py-4 shrink-0">
           <nav className="flex flex-col items-center gap-2">
             {sidebarItems.map((item) => {
@@ -195,15 +205,7 @@ export default function FeatureLayout({ children, onBack, onSignOut, activeView,
                 >
                   <IconComponent className={`w-5 h-5 ${item.iconColor}`} />
                   {isActive && (
-                    <span 
-                      className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-[1px] w-1 h-6 rounded-r-full"
-                      style={{ 
-                        backgroundColor: item.iconColor.includes('emerald') ? '#34d399' 
-                          : item.iconColor.includes('amber') ? '#fbbf24' 
-                          : item.iconColor.includes('sky') ? '#38bdf8' 
-                          : '#a78bfa' 
-                      }} 
-                    />
+                    <span className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-[1px] w-1 h-6 bg-current rounded-r-full" style={{ color: item.iconColor.includes('emerald') ? '#34d399' : item.iconColor.includes('amber') ? '#fbbf24' : item.iconColor.includes('sky') ? '#38bdf8' : '#a78bfa' }} />
                   )}
                 </button>
               )

@@ -1,193 +1,207 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { ArrowLeft, Upload, FileText, Loader2, Sparkles } from "lucide-react"
+import { Upload, ArrowLeft, FileText, Loader2, X } from "lucide-react"
 import { useLocationScouting } from "./LocationScoutingContext"
-import { LocationProject, Location } from "@/types/location-scouting"
+import { LocationProject } from "@/types/location-scouting"
 
 export default function LocationUploadView() {
   const { setView, addProject, setCurrentProject } = useLocationScouting()
+  const [isDragging, setIsDragging] = useState(false)
   const [file, setFile] = useState<File | null>(null)
-  const [projectName, setProjectName] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
-  const [dragActive, setDragActive] = useState(false)
+  const [progress, setProgress] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleDrag = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
-    e.stopPropagation()
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true)
-    } else if (e.type === "dragleave") {
-      setDragActive(false)
-    }
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
   }
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
-    e.stopPropagation()
-    setDragActive(false)
-
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const droppedFile = e.dataTransfer.files[0]
+    setIsDragging(false)
+    const droppedFile = e.dataTransfer.files[0]
+    if (droppedFile?.type === "application/pdf") {
       setFile(droppedFile)
-      if (!projectName) {
-        setProjectName(droppedFile.name.replace(/\.[^/.]+$/, ""))
-      }
     }
   }
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const selectedFile = e.target.files[0]
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0]
+    if (selectedFile?.type === "application/pdf") {
       setFile(selectedFile)
-      if (!projectName) {
-        setProjectName(selectedFile.name.replace(/\.[^/.]+$/, ""))
-      }
     }
   }
 
-  const handleAnalyze = async () => {
-    if (!file || !projectName.trim()) return
+  const handleUpload = async () => {
+    if (!file) return
 
     setIsProcessing(true)
+    setProgress(0)
 
-    // Simulate AI analysis
-    await new Promise((resolve) => setTimeout(resolve, 2500))
+    // Simulate progress while API processes
+    const progressInterval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 85) {
+          clearInterval(progressInterval)
+          return 85
+        }
+        return prev + Math.random() * 10
+      })
+    }, 800)
 
-    // Generate mock locations
-    const mockLocations: Location[] = [
-      { id: "1", name: "JUNGLE - HOLDING PEN", type: "EXT", timeOfDay: "NIGHT", description: "A dense, dark jungle clearing with a massive holding pen.", scoutingNotes: "Requires large clearing for heavy machinery." },
-      { id: "2", name: "VISITOR CENTER - MAIN HALL", type: "INT", timeOfDay: "DAY", description: "A grand atrium with dinosaur skeletons and interactive exhibits.", scoutingNotes: "Museum or convention center with high ceilings." },
-      { id: "3", name: "CONTROL ROOM", type: "INT", timeOfDay: "NIGHT", description: "A high-tech control room with multiple monitors and workstations.", scoutingNotes: "Modern office or data center set." },
-      { id: "4", name: "T-REX PADDOCK", type: "EXT", timeOfDay: "NIGHT", description: "A massive fenced enclosure with electrified fences.", scoutingNotes: "Open field with ability to build fence structures." },
-      { id: "5", name: "KITCHEN - INDUSTRIAL", type: "INT", timeOfDay: "DAY", description: "A commercial kitchen with stainless steel surfaces.", scoutingNotes: "Restaurant or hotel kitchen." },
-    ]
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
 
-    const newProject: LocationProject = {
-      id: Date.now().toString(),
-      name: projectName,
-      locations: mockLocations,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      const response = await fetch("/api/analyze-locations", {
+        method: "POST",
+        body: formData,
+      })
+
+      clearInterval(progressInterval)
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to analyze script")
+      }
+
+      const data = await response.json()
+      setProgress(100)
+
+      if (!data.locations || !Array.isArray(data.locations)) {
+        throw new Error("Invalid response format from AI")
+      }
+
+      // Create new project with extracted locations
+      const newProject: LocationProject = {
+        id: crypto.randomUUID(),
+        name: file.name.replace(".pdf", "").toUpperCase(),
+        locations: data.locations,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+
+      addProject(newProject)
+      setCurrentProject(newProject)
+
+      // Small delay before transitioning
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      setIsProcessing(false)
+      setView("results")
+    } catch (error) {
+      clearInterval(progressInterval)
+      console.error("Error processing script:", error)
+      alert(error instanceof Error ? error.message : "Failed to process script. Please try again.")
+      setIsProcessing(false)
+      setProgress(0)
     }
-
-    addProject(newProject)
-    setCurrentProject(newProject)
-    setIsProcessing(false)
-    setView("results")
   }
 
   return (
-    <div className="h-full flex flex-col p-6">
+    <div className="flex flex-col h-full overflow-y-auto">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
+      <header className="flex items-center gap-4 px-6 py-4 border-b border-white/10">
         <button
           onClick={() => setView("projects")}
-          className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+          className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-sm font-sans">Back to Projects</span>
         </button>
-        <div>
-          <h1 className="text-2xl font-bold text-white">New Location Project</h1>
-          <p className="text-white/50 text-sm">
-            Upload a script to generate location descriptions
-          </p>
-        </div>
-      </div>
+      </header>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col items-center justify-center max-w-xl mx-auto w-full">
-        {/* Project Name */}
-        <div className="w-full mb-6">
-          <label className="block text-sm font-medium text-white/70 mb-2">
-            Project Name
-          </label>
-          <input
-            type="text"
-            value={projectName}
-            onChange={(e) => setProjectName(e.target.value)}
-            placeholder="Enter project name"
-            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all"
-          />
-        </div>
+      <div className="flex-1 flex flex-col items-center justify-center p-6">
+        <div className="w-full max-w-2xl">
+          {/* Title */}
+          <h2 className="text-3xl font-bold text-white text-center mb-3 font-sans">
+            Scout Locations from Scripts
+          </h2>
+          <p className="text-white/60 text-center mb-8 font-sans">
+            Upload your script (PDF). AI will scan for scenes to create a detailed Location Scouting List.
+          </p>
 
-        {/* Upload Area */}
-        <div
-          className={`w-full border-2 border-dashed rounded-2xl p-8 text-center transition-all ${
-            dragActive
-              ? "border-amber-400 bg-amber-500/10"
-              : file
-              ? "border-amber-500/50 bg-amber-500/5"
-              : "border-white/20 hover:border-white/30"
-          }`}
-          onDragEnter={handleDrag}
-          onDragLeave={handleDrag}
-          onDragOver={handleDrag}
-          onDrop={handleDrop}
-        >
-          {file ? (
-            <div className="flex flex-col items-center">
-              <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center mb-4">
-                <FileText className="w-8 h-8 text-amber-400" />
-              </div>
-              <p className="text-white font-medium mb-1">{file.name}</p>
-              <p className="text-white/50 text-sm mb-4">
-                {(file.size / 1024).toFixed(1)} KB
-              </p>
-              <button
-                onClick={() => setFile(null)}
-                className="text-sm text-white/50 hover:text-white underline"
-              >
-                Remove file
-              </button>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center">
-              <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
-                <Upload className="w-8 h-8 text-white/40" />
-              </div>
-              <p className="text-white font-medium mb-1">
-                Drop your script here
-              </p>
-              <p className="text-white/50 text-sm mb-4">
-                or click to browse (PDF, TXT, Fountain)
-              </p>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="px-4 py-2 bg-white/10 hover:bg-white/15 rounded-lg text-white text-sm transition-colors"
-              >
-                Browse Files
-              </button>
-            </div>
-          )}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf,.txt,.fountain"
-            onChange={handleFileChange}
-            className="hidden"
-          />
-        </div>
+          <div className="w-full h-px bg-white/10 mb-8" />
 
-        {/* Analyze Button */}
-        <button
-          onClick={handleAnalyze}
-          disabled={!file || !projectName.trim() || isProcessing}
-          className="w-full mt-6 flex items-center justify-center gap-2 py-4 bg-amber-500 hover:bg-amber-600 disabled:bg-amber-500/30 disabled:cursor-not-allowed rounded-xl text-white font-medium transition-colors"
-        >
           {isProcessing ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              Analyzing script...
-            </>
+            /* Processing State */
+            <div className="flex flex-col items-center justify-center py-16">
+              <Loader2 className="w-12 h-12 text-amber-400 animate-spin mb-4" />
+              <p className="text-white font-sans mb-2">Analyzing script for locations...</p>
+              <div className="w-64 h-2 bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-amber-500 transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              <p className="text-white/50 text-sm mt-2 font-sans">{Math.round(progress)}%</p>
+            </div>
+          ) : file ? (
+            /* File Selected State */
+            <div className="flex flex-col items-center">
+              <div className="flex items-center gap-4 p-4 bg-[#1a2e23] rounded-xl border border-white/10 mb-6 w-full max-w-md">
+                <div className="w-12 h-12 bg-amber-500/20 rounded-lg flex items-center justify-center">
+                  <FileText className="w-6 h-6 text-amber-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white font-sans font-medium truncate">{file.name}</p>
+                  <p className="text-white/50 text-sm font-sans">
+                    {(file.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                </div>
+                <button
+                  onClick={() => setFile(null)}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-white/50" />
+                </button>
+              </div>
+              <button
+                onClick={handleUpload}
+                className="px-8 py-3 bg-amber-500 hover:bg-amber-400 text-black font-semibold rounded-xl transition-colors font-sans"
+              >
+                Extract Locations
+              </button>
+            </div>
           ) : (
-            <>
-              <Sparkles className="w-5 h-5" />
-              Analyze Locations
-            </>
+            /* Upload Dropzone */
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={`
+                flex flex-col items-center justify-center p-12 rounded-2xl border-2 border-dashed cursor-pointer transition-all
+                ${isDragging
+                  ? "border-amber-400 bg-amber-500/10"
+                  : "border-white/20 hover:border-white/40 bg-[#1a2e23]/50"
+                }
+              `}
+            >
+              <div className="w-16 h-16 bg-[#2a3f33] rounded-full flex items-center justify-center mb-4">
+                <Upload className="w-7 h-7 text-amber-400" />
+              </div>
+              <p className="text-white font-sans font-medium mb-1">
+                Click to upload or drag a file here
+              </p>
+              <p className="text-white/50 text-sm font-sans">PDF files only</p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/pdf"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+            </div>
           )}
-        </button>
+        </div>
       </div>
     </div>
   )

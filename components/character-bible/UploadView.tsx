@@ -1,196 +1,219 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { ArrowLeft, Upload, FileText, Loader2, Sparkles } from "lucide-react"
+import { Upload, ArrowLeft, Loader2, FileText, X } from "lucide-react"
 import { useCharacterBible } from "./CharacterBibleContext"
-import { CharacterBible, Character } from "@/types/character-bible"
+import { Character, CharacterBible } from "@/types/character-bible"
 
 export default function UploadView() {
-  const { setView, addBible, setCurrentBible } = useCharacterBible()
+  const { setView, setCurrentBible, addBible } = useCharacterBible()
+  const [isDragging, setIsDragging] = useState(false)
   const [file, setFile] = useState<File | null>(null)
-  const [projectName, setProjectName] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
-  const [dragActive, setDragActive] = useState(false)
+  const [progress, setProgress] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleDrag = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
-    e.stopPropagation()
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true)
-    } else if (e.type === "dragleave") {
-      setDragActive(false)
-    }
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
   }
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
-    e.stopPropagation()
-    setDragActive(false)
-
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const droppedFile = e.dataTransfer.files[0]
-      if (droppedFile.type === "application/pdf" || droppedFile.name.endsWith(".pdf") || droppedFile.name.endsWith(".txt") || droppedFile.name.endsWith(".fountain")) {
-        setFile(droppedFile)
-        if (!projectName) {
-          setProjectName(droppedFile.name.replace(/\.[^/.]+$/, ""))
-        }
-      }
+    setIsDragging(false)
+    const droppedFile = e.dataTransfer.files[0]
+    if (droppedFile?.type === "application/pdf") {
+      setFile(droppedFile)
     }
   }
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const selectedFile = e.target.files[0]
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0]
+    if (selectedFile?.type === "application/pdf") {
       setFile(selectedFile)
-      if (!projectName) {
-        setProjectName(selectedFile.name.replace(/\.[^/.]+$/, ""))
-      }
     }
   }
 
-  const handleAnalyze = async () => {
-    if (!file || !projectName.trim()) return
+  const handleProcess = async () => {
+    if (!file) return
 
     setIsProcessing(true)
+    setProgress(0)
 
-    // Simulate AI analysis
-    await new Promise((resolve) => setTimeout(resolve, 2500))
+    // Simulate progress while API processes
+    const progressInterval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 85) {
+          clearInterval(progressInterval)
+          return 85
+        }
+        return prev + Math.random() * 10
+      })
+    }, 800)
 
-    // Generate mock characters
-    const mockCharacters: Character[] = [
-      { id: "1", name: "Dr. Alan Grant", age: "40s", gender: "Male", ethnicity: "Caucasian", scenes: 24, castingNotes: "A renowned paleontologist who must balance scientific curiosity with survival instincts." },
-      { id: "2", name: "Dr. Ellie Sattler", age: "30s", gender: "Female", ethnicity: "Caucasian", scenes: 18, castingNotes: "A paleobotanist with sharp instincts and a strong moral compass." },
-      { id: "3", name: "Ian Malcolm", age: "40s", gender: "Male", ethnicity: "Caucasian", scenes: 15, castingNotes: "A charismatic chaos theorist who predicted the disaster." },
-      { id: "4", name: "John Hammond", age: "70s", gender: "Male", ethnicity: "Caucasian", scenes: 12, castingNotes: "An eccentric billionaire with childlike wonder and dangerous ambition." },
-      { id: "5", name: "Tim Murphy", age: "10s", gender: "Male", ethnicity: "Caucasian", scenes: 10, castingNotes: "A dinosaur-obsessed boy who must face his fears." },
-      { id: "6", name: "Lex Murphy", age: "10s", gender: "Female", ethnicity: "Caucasian", scenes: 10, castingNotes: "A tech-savvy teenager who saves the day with her computer skills." },
-    ]
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
 
-    const newBible: CharacterBible = {
-      id: Date.now().toString(),
-      name: projectName,
-      characters: mockCharacters,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      const response = await fetch("/api/analyze-characters", {
+        method: "POST",
+        body: formData,
+      })
+
+      clearInterval(progressInterval)
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to analyze script")
+      }
+
+      const data = await response.json()
+      setProgress(100)
+
+      if (!data.characters || !Array.isArray(data.characters)) {
+        throw new Error("Invalid response format from AI")
+      }
+
+      const scriptName = file.name.replace(".pdf", "").toUpperCase()
+      const newBible: CharacterBible = {
+        id: crypto.randomUUID(),
+        name: `${scriptName} Script`,
+        characters: data.characters,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+
+      addBible(newBible)
+      setCurrentBible(newBible)
+      setView("results")
+    } catch (error) {
+      clearInterval(progressInterval)
+      console.error("Error processing script:", error)
+      alert(error instanceof Error ? error.message : "Failed to process script. Please try again.")
+      setIsProcessing(false)
+      setProgress(0)
     }
-
-    addBible(newBible)
-    setCurrentBible(newBible)
-    setIsProcessing(false)
-    setView("results")
   }
 
   return (
-    <div className="h-full flex flex-col p-6">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
+    <div className="flex flex-col h-full">
+      {/* Back Button */}
+      <div className="p-4 border-b border-white/10">
         <button
           onClick={() => setView("list")}
-          className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+          className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-sm font-sans">Back to Projects</span>
         </button>
-        <div>
-          <h1 className="text-2xl font-bold text-white">New Character Bible</h1>
-          <p className="text-white/50 text-sm">
-            Upload a script to generate character descriptions
-          </p>
-        </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col items-center justify-center max-w-xl mx-auto w-full">
-        {/* Project Name */}
-        <div className="w-full mb-6">
-          <label className="block text-sm font-medium text-white/70 mb-2">
-            Project Name
-          </label>
-          <input
-            type="text"
-            value={projectName}
-            onChange={(e) => setProjectName(e.target.value)}
-            placeholder="Enter project name"
-            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
-          />
-        </div>
+      <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-10">
+        <div className="w-full max-w-2xl">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-3 font-sans">
+              Extract Character Bibles
+            </h1>
+            <p className="text-white/60 text-base font-sans max-w-lg mx-auto">
+              Upload your film or TV script (PDF). AI will analyze the text to extract characters and casting notes.
+            </p>
+          </div>
 
-        {/* Upload Area */}
-        <div
-          className={`w-full border-2 border-dashed rounded-2xl p-8 text-center transition-all ${
-            dragActive
-              ? "border-emerald-400 bg-emerald-500/10"
-              : file
-              ? "border-emerald-500/50 bg-emerald-500/5"
-              : "border-white/20 hover:border-white/30"
-          }`}
-          onDragEnter={handleDrag}
-          onDragLeave={handleDrag}
-          onDragOver={handleDrag}
-          onDrop={handleDrop}
-        >
-          {file ? (
-            <div className="flex flex-col items-center">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mb-4">
-                <FileText className="w-8 h-8 text-emerald-400" />
-              </div>
-              <p className="text-white font-medium mb-1">{file.name}</p>
-              <p className="text-white/50 text-sm mb-4">
-                {(file.size / 1024).toFixed(1)} KB
-              </p>
-              <button
-                onClick={() => setFile(null)}
-                className="text-sm text-white/50 hover:text-white underline"
-              >
-                Remove file
-              </button>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center">
-              <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
-                <Upload className="w-8 h-8 text-white/40" />
-              </div>
-              <p className="text-white font-medium mb-1">
-                Drop your script here
-              </p>
-              <p className="text-white/50 text-sm mb-4">
-                or click to browse (PDF, TXT, Fountain)
-              </p>
-              <button
+          {/* Divider */}
+          <div className="w-full h-px bg-white/10 mb-8" />
+
+          {/* Upload Zone */}
+          {!isProcessing ? (
+            <>
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className="px-4 py-2 bg-white/10 hover:bg-white/15 rounded-lg text-white text-sm transition-colors"
+                className={`relative flex flex-col items-center justify-center p-12 rounded-2xl border-2 border-dashed cursor-pointer transition-all duration-200 ${
+                  isDragging
+                    ? "border-sky-400 bg-sky-500/10"
+                    : file
+                    ? "border-emerald-500/50 bg-emerald-500/10"
+                    : "border-white/20 hover:border-white/40 bg-white/[0.02]"
+                }`}
               >
-                Browse Files
-              </button>
-            </div>
-          )}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf,.txt,.fountain"
-            onChange={handleFileChange}
-            className="hidden"
-          />
-        </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
 
-        {/* Analyze Button */}
-        <button
-          onClick={handleAnalyze}
-          disabled={!file || !projectName.trim() || isProcessing}
-          className="w-full mt-6 flex items-center justify-center gap-2 py-4 bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-500/30 disabled:cursor-not-allowed rounded-xl text-white font-medium transition-colors"
-        >
-          {isProcessing ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              Analyzing script...
+                {file ? (
+                  <>
+                    <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mb-4">
+                      <FileText className="w-8 h-8 text-emerald-400" />
+                    </div>
+                    <p className="text-white font-medium font-sans mb-1">{file.name}</p>
+                    <p className="text-white/50 text-sm font-sans">
+                      {(file.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setFile(null)
+                      }}
+                      className="absolute top-3 right-3 p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+                    >
+                      <X className="w-4 h-4 text-white/70" />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-16 h-16 rounded-full bg-sky-500/20 flex items-center justify-center mb-4">
+                      <Upload className="w-8 h-8 text-sky-400" />
+                    </div>
+                    <p className="text-white font-medium font-sans mb-1">
+                      Click to upload or drag a file here
+                    </p>
+                    <p className="text-white/50 text-sm font-sans">PDF files only</p>
+                  </>
+                )}
+              </div>
+
+              {/* Process Button */}
+              {file && (
+                <button
+                  onClick={handleProcess}
+                  className="w-full mt-6 py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl transition-colors font-sans"
+                >
+                  Extract Characters
+                </button>
+              )}
             </>
           ) : (
-            <>
-              <Sparkles className="w-5 h-5" />
-              Analyze Characters
-            </>
+            /* Processing State */
+            <div className="flex flex-col items-center justify-center p-12 rounded-2xl border border-white/10 bg-white/[0.02]">
+              <Loader2 className="w-12 h-12 text-emerald-400 animate-spin mb-4" />
+              <p className="text-white font-medium font-sans mb-2">
+                Analyzing script...
+              </p>
+              <p className="text-white/50 text-sm font-sans mb-4">
+                Extracting characters and casting notes
+              </p>
+              <div className="w-full max-w-xs bg-white/10 rounded-full h-2 overflow-hidden">
+                <div
+                  className="h-full bg-emerald-500 transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
           )}
-        </button>
+        </div>
       </div>
     </div>
   )

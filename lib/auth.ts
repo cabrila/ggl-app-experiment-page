@@ -23,9 +23,21 @@ const actionCodeSettings = {
 }
 
 /**
+ * Check if Firebase auth is properly initialized
+ */
+function isAuthInitialized(): boolean {
+  return auth && typeof auth.onIdTokenChanged === "function"
+}
+
+/**
  * Send a magic link to the user's email
  */
 export async function sendMagicLink(email: string): Promise<void> {
+  // Check if auth is properly initialized
+  if (!isAuthInitialized()) {
+    throw new Error("Firebase is not properly configured. Please check your environment variables.")
+  }
+
   const settings = {
     url: `${typeof window !== "undefined" ? window.location.origin : ""}/auth/callback`,
     handleCodeInApp: true,
@@ -48,7 +60,7 @@ export async function sendMagicLink(email: string): Promise<void> {
 export function isMagicLinkCallback(): boolean {
   if (typeof window === "undefined") return false
   // Check if auth is properly initialized
-  if (!auth || typeof auth.onIdTokenChanged !== "function") return false
+  if (!isAuthInitialized()) return false
   
   try {
     return isSignInWithEmailLink(auth, window.location.href)
@@ -61,6 +73,11 @@ export function isMagicLinkCallback(): boolean {
  * Complete the magic link sign-in process
  */
 export async function completeMagicLinkSignIn(email?: string): Promise<User> {
+  // Check if auth is properly initialized
+  if (!isAuthInitialized()) {
+    throw new Error("Firebase is not properly configured. Please check your environment variables.")
+  }
+
   try {
     const storedEmail = typeof window !== "undefined" ? window.localStorage.getItem("emailForSignIn") : null
     const emailToUse = email || storedEmail
@@ -104,7 +121,7 @@ export function subscribeToAuthStateChanges(callback: (user: User | null) => voi
   }
   
   // Check if auth is properly initialized
-  if (!auth || typeof auth.onIdTokenChanged !== "function") {
+  if (!isAuthInitialized()) {
     // Firebase not properly initialized, call callback with null immediately
     setTimeout(() => callback(null), 0)
     return () => {}
@@ -132,7 +149,7 @@ export function getCurrentUser(): User | null {
  */
 export function initRecaptchaVerifier(buttonId: string): RecaptchaVerifier | null {
   // Check if auth is properly initialized
-  if (!auth || typeof auth.onIdTokenChanged !== "function") {
+  if (!isAuthInitialized()) {
     console.warn("Firebase auth not initialized, skipping reCAPTCHA setup")
     return null
   }

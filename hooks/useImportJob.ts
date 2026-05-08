@@ -76,7 +76,11 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
       sourceRef.current = es
 
       es.onopen = () => {
-        console.log("[v0] SSE connection opened")
+        console.log("[v0] SSE connection opened, readyState:", es.readyState)
+      }
+
+      es.onerror = (event) => {
+        console.log("[v0] SSE onerror triggered, readyState:", es.readyState, event)
       }
 
       es.onmessage = (e) => {

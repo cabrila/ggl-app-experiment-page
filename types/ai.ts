@@ -32,20 +32,27 @@ export interface CharacterExtractResult {
   }[]
 }
 
-// actor-extract result (future)
+// actor-extract result
 export interface ActorExtractResult {
   actors: {
     name: string
-    role?: string
+    age?: number
+    playing_age?: string
+    phone?: string
+    email?: string
+    headshot_url?: string
+    notes?: string
     agency?: string
   }[]
 }
 
-// location-overview result (future)
+// location-overview result
 export interface LocationOverviewResult {
   locations: {
     name: string
-    type?: string
+    type?: "INT" | "EXT"
+    time_of_day?: "DAY" | "NIGHT" | "DAWN" | "DUSK"
     description?: string
+    scouting_notes?: string
   }[]
 }

@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server"
 
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || "https://gl-ai-service-dev-1021127710054.europe-west4.run.app"
+const AI_SERVICE_URL =
+  process.env.AI_SERVICE_URL ||
+  "https://gl-ai-service-dev-1021127710054.europe-west4.run.app"
 
 export async function GET(
   request: NextRequest,
@@ -17,11 +19,17 @@ export async function GET(
     const upstream = await fetch(streamUrl, {
       headers: {
         Accept: "text/event-stream",
-        // In production: "Authorization": `Bearer ${await getOidcToken()}`
       },
     })
 
-    console.log("[v0] Upstream response status:", upstream.status, "ok:", upstream.ok, "hasBody:", !!upstream.body)
+    console.log(
+      "[v0] Upstream response status:",
+      upstream.status,
+      "ok:",
+      upstream.ok,
+      "hasBody:",
+      !!upstream.body
+    )
 
     if (!upstream.ok || !upstream.body) {
       console.log("[v0] Upstream stream unavailable, returning error event")
@@ -38,8 +46,35 @@ export async function GET(
       )
     }
 
-    // Proxy the stream directly to the browser
-    return new Response(upstream.body, {
+    // Transform stream to log what we receive
+    const reader = upstream.body.getReader()
+    const decoder = new TextDecoder()
+
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) {
+              console.log("[v0] Upstream stream ended")
+              controller.close()
+              break
+            }
+            const chunk = decoder.decode(value, { stream: true })
+            console.log("[v0] SSE chunk received:", chunk.substring(0, 500))
+            controller.enqueue(value)
+          }
+        } catch (error) {
+          console.error("[v0] Stream error:", error)
+          controller.error(error)
+        }
+      },
+      cancel() {
+        reader.cancel()
+      },
+    })
+
+    return new Response(stream, {
       headers: {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
@@ -48,7 +83,8 @@ export async function GET(
     })
   } catch (error) {
     console.error("Error proxying SSE stream:", error)
-    const message = error instanceof Error ? error.message : "Failed to connect to AI service"
+    const message =
+      error instanceof Error ? error.message : "Failed to connect to AI service"
 
     return new Response(
       `event: error\ndata: ${JSON.stringify({ message })}\n\n`,

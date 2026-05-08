@@ -8,16 +8,23 @@ export async function GET(
 ) {
   const { taskId } = await params
 
+  console.log("[v0] SSE proxy request for taskId:", taskId)
+
   try {
     // Open SSE stream from AI service
-    const upstream = await fetch(`${AI_SERVICE_URL}/tasks/${taskId}/stream`, {
+    const streamUrl = `${AI_SERVICE_URL}/tasks/${taskId}/stream`
+    console.log("[v0] Fetching upstream SSE:", streamUrl)
+    const upstream = await fetch(streamUrl, {
       headers: {
         Accept: "text/event-stream",
         // In production: "Authorization": `Bearer ${await getOidcToken()}`
       },
     })
 
+    console.log("[v0] Upstream response status:", upstream.status, "ok:", upstream.ok, "hasBody:", !!upstream.body)
+
     if (!upstream.ok || !upstream.body) {
+      console.log("[v0] Upstream stream unavailable, returning error event")
       return new Response(
         `event: error\ndata: ${JSON.stringify({ message: "Upstream stream unavailable" })}\n\n`,
         {

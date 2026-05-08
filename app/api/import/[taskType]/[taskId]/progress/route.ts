@@ -12,96 +12,86 @@ export async function GET(
 
   console.log("[v0] SSE proxy request for taskId:", taskId)
 
-  try {
-    // Open SSE stream from AI service
-    const streamUrl = `${AI_SERVICE_URL}/tasks/${taskId}/stream`
-    console.log("[v0] Fetching upstream SSE:", streamUrl)
-    const upstream = await fetch(streamUrl, {
-      headers: {
-        Accept: "text/event-stream",
-      },
-    })
+  const encoder = new TextEncoder()
 
-    console.log(
-      "[v0] Upstream response status:",
-      upstream.status,
-      "ok:",
-      upstream.ok,
-      "hasBody:",
-      !!upstream.body
-    )
+  const stream = new ReadableStream({
+    async start(controller) {
+      // Send immediate keep-alive to establish connection
+      controller.enqueue(encoder.encode(": connected\n\n"))
+      console.log("[v0] Sent initial keep-alive")
 
-    if (!upstream.ok || !upstream.body) {
-      console.log("[v0] Upstream stream unavailable, returning error event")
-      return new Response(
-        `event: error\ndata: ${JSON.stringify({ message: "Upstream stream unavailable" })}\n\n`,
-        {
-          status: 200,
-          headers: {
-            "Content-Type": "text/event-stream",
-            "Cache-Control": "no-cache",
-            Connection: "keep-alive",
-          },
-        }
-      )
-    }
-
-    // Transform stream to log what we receive
-    const reader = upstream.body.getReader()
-    const decoder = new TextDecoder()
-    const encoder = new TextEncoder()
-
-    const stream = new ReadableStream({
-      async start(controller) {
-        // Send initial comment to establish connection
-        controller.enqueue(encoder.encode(": keep-alive\n\n"))
-        
+      // Start keep-alive interval while waiting for upstream
+      const keepAliveInterval = setInterval(() => {
         try {
-          while (true) {
-            const { done, value } = await reader.read()
-            if (done) {
-              console.log("[v0] Upstream stream ended")
-              controller.close()
-              break
-            }
-            const chunk = decoder.decode(value, { stream: true })
-            console.log("[v0] SSE chunk received:", chunk.substring(0, 500))
-            controller.enqueue(value)
-          }
-        } catch (error) {
-          console.error("[v0] Stream error:", error)
-          controller.error(error)
+          controller.enqueue(encoder.encode(": keep-alive\n\n"))
+          console.log("[v0] Sent keep-alive ping")
+        } catch {
+          // Stream may be closed
+          clearInterval(keepAliveInterval)
         }
-      },
-      cancel() {
-        reader.cancel()
-      },
-    })
+      }, 5000)
 
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
-      },
-    })
-  } catch (error) {
-    console.error("Error proxying SSE stream:", error)
-    const message =
-      error instanceof Error ? error.message : "Failed to connect to AI service"
+      try {
+        const streamUrl = `${AI_SERVICE_URL}/tasks/${taskId}/stream`
+        console.log("[v0] Fetching upstream SSE:", streamUrl)
 
-    return new Response(
-      `event: error\ndata: ${JSON.stringify({ message })}\n\n`,
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache",
-          Connection: "keep-alive",
-        },
+        const upstream = await fetch(streamUrl, {
+          headers: {
+            Accept: "text/event-stream",
+          },
+        })
+
+        console.log(
+          "[v0] Upstream response status:",
+          upstream.status,
+          "ok:",
+          upstream.ok
+        )
+
+        clearInterval(keepAliveInterval)
+
+        if (!upstream.ok || !upstream.body) {
+          const errorEvent = `event: error\ndata: ${JSON.stringify({ message: "Upstream stream unavailable" })}\n\n`
+          controller.enqueue(encoder.encode(errorEvent))
+          controller.close()
+          return
+        }
+
+        const reader = upstream.body.getReader()
+        const decoder = new TextDecoder()
+
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) {
+            console.log("[v0] Upstream stream ended")
+            controller.close()
+            break
+          }
+          const chunk = decoder.decode(value, { stream: true })
+          console.log("[v0] SSE chunk received:", chunk.substring(0, 500))
+          controller.enqueue(value)
+        }
+      } catch (error) {
+        clearInterval(keepAliveInterval)
+        console.error("[v0] Stream error:", error)
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Failed to connect to AI service"
+        const errorEvent = `event: error\ndata: ${JSON.stringify({ message })}\n\n`
+        controller.enqueue(encoder.encode(errorEvent))
+        controller.close()
       }
-    )
-  }
+    },
+  })
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
+  })
 }
 
 // Disable static generation for this route

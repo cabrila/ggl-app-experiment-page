@@ -49,9 +49,13 @@ export async function GET(
     // Transform stream to log what we receive
     const reader = upstream.body.getReader()
     const decoder = new TextDecoder()
+    const encoder = new TextEncoder()
 
     const stream = new ReadableStream({
       async start(controller) {
+        // Send initial comment to establish connection
+        controller.enqueue(encoder.encode(": keep-alive\n\n"))
+        
         try {
           while (true) {
             const { done, value } = await reader.read()

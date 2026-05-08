@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import mammoth from "mammoth"
-import pdf from "pdf-parse"
+import { extractText, getDocumentProxy } from "unpdf"
 
 const AI_SERVICE_URL =
   process.env.AI_SERVICE_URL ||
@@ -14,8 +14,10 @@ async function extractTextFromFile(file: File): Promise<string> {
   const buffer = Buffer.from(await file.arrayBuffer())
 
   if (file.type === "application/pdf") {
-    const data = await pdf(buffer)
-    return data.text
+    // Use unpdf for PDF text extraction - compatible with modern bundlers
+    const pdf = await getDocumentProxy(new Uint8Array(buffer))
+    const { text } = await extractText(pdf, { mergePages: true })
+    return text
   }
 
   if (
@@ -30,12 +32,10 @@ async function extractTextFromFile(file: File): Promise<string> {
     return buffer.toString("utf-8")
   }
 
-  // For xlsx, we'd need a different library - for now return empty
   if (
     file.type ===
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   ) {
-    // TODO: Add xlsx support with a library like xlsx
     throw new Error("Excel file support coming soon. Please convert to CSV or PDF.")
   }
 
@@ -86,7 +86,6 @@ export async function POST(
     }
 
     // Extract text from the file
-    console.log("[v0] Extracting text from file:", file.name, file.type)
     const extractedText = await extractTextFromFile(file)
 
     if (!extractedText || extractedText.trim().length === 0) {
@@ -95,8 +94,6 @@ export async function POST(
         { status: 400 }
       )
     }
-
-    console.log("[v0] Extracted text length:", extractedText.length)
 
     // Send to AI service with extracted text
     const aiResponse = await fetch(`${AI_SERVICE_URL}/tasks/upload`, {
@@ -138,7 +135,6 @@ export async function POST(
     }
 
     const result = await aiResponse.json()
-    console.log("[v0] AI service response:", result)
 
     return NextResponse.json({ taskId: result.taskId }, { status: 202 })
   } catch (error) {

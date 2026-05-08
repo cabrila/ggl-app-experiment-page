@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server"
-import mammoth from "mammoth"
-import { extractText, getDocumentProxy } from "unpdf"
 
 const AI_SERVICE_URL =
   process.env.AI_SERVICE_URL ||
@@ -8,39 +6,6 @@ const AI_SERVICE_URL =
 
 // Supported skills
 const SUPPORTED_SKILLS = ["character-extract", "actor-extract", "location-overview"]
-
-// Extract text from various file types
-async function extractTextFromFile(file: File): Promise<string> {
-  const buffer = Buffer.from(await file.arrayBuffer())
-
-  if (file.type === "application/pdf") {
-    // Use unpdf for PDF text extraction - compatible with modern bundlers
-    const pdf = await getDocumentProxy(new Uint8Array(buffer))
-    const { text } = await extractText(pdf, { mergePages: true })
-    return text
-  }
-
-  if (
-    file.type ===
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-  ) {
-    const result = await mammoth.extractRawText({ buffer })
-    return result.value
-  }
-
-  if (file.type === "text/plain" || file.type === "text/csv") {
-    return buffer.toString("utf-8")
-  }
-
-  if (
-    file.type ===
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-  ) {
-    throw new Error("Excel file support coming soon. Please convert to CSV or PDF.")
-  }
-
-  throw new Error(`Unsupported file type: ${file.type}`)
-}
 
 export async function POST(
   request: NextRequest,
@@ -85,27 +50,18 @@ export async function POST(
       )
     }
 
-    // Extract text from the file
-    const extractedText = await extractTextFromFile(file)
-
-    if (!extractedText || extractedText.trim().length === 0) {
-      return NextResponse.json(
-        { error: "Could not extract any text from the file. Please check the file content." },
-        { status: 400 }
-      )
+    // Forward file directly to AI service as multipart/form-data
+    const upstream = new FormData()
+    upstream.append("file", file, file.name) // third arg = filename
+    upstream.append("skill", taskType)
+    if (sourceTitle) {
+      upstream.append("input", JSON.stringify({ source_title: sourceTitle }))
     }
 
-    // Send to AI service with extracted text
     const aiResponse = await fetch(`${AI_SERVICE_URL}/tasks/upload`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        text: extractedText,
-        skill: taskType,
-        source_title: sourceTitle || file.name,
-      }),
+      body: upstream,
+      // NO headers — let fetch set Content-Type automatically with boundary
     })
 
     if (!aiResponse.ok) {

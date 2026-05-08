@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Upload, ArrowLeft, Loader2, FileText, X, AlertCircle, RefreshCw } from "lucide-react"
 import { useCharacterBible } from "./CharacterBibleContext"
 import { Character, CharacterBible } from "@/types/character-bible"
@@ -59,37 +59,39 @@ export default function UploadView() {
     await run(file, sourceTitle)
   }
 
-  // Handle successful extraction
-  if (status === "complete" && result) {
-    const scriptName = file?.name.replace(/\.(pdf|docx)$/i, "").toUpperCase() || "SCRIPT"
+  // Handle successful extraction - use useEffect to avoid setState during render
+  useEffect(() => {
+    if (status === "complete" && result) {
+      const scriptName = file?.name.replace(/\.(pdf|docx)$/i, "").toUpperCase() || "SCRIPT"
 
-    // Map AI service result to our Character type
-    const characters: Character[] = result.characters.map((char) => ({
-      id: crypto.randomUUID(),
-      name: char.name,
-      age: char.age_range || "Unknown",
-      gender: char.gender ? char.gender.charAt(0).toUpperCase() + char.gender.slice(1) : "Unknown",
-      ethnicity: "Not specified",
-      scenes: 0, // AI service doesn't provide scene count
-      castingNotes: [
-        char.type !== "unknown" ? `Role: ${char.type}` : "",
-        char.description || "",
-        char.aliases?.length ? `Also known as: ${char.aliases.join(", ")}` : "",
-      ].filter(Boolean).join(". "),
-    }))
+      // Map AI service result to our Character type
+      const characters: Character[] = result.characters.map((char) => ({
+        id: crypto.randomUUID(),
+        name: char.name,
+        age: char.age_range || "Unknown",
+        gender: char.gender ? char.gender.charAt(0).toUpperCase() + char.gender.slice(1) : "Unknown",
+        ethnicity: "Not specified",
+        scenes: 0, // AI service doesn't provide scene count
+        castingNotes: [
+          char.type !== "unknown" ? `Role: ${char.type}` : "",
+          char.description || "",
+          char.aliases?.length ? `Also known as: ${char.aliases.join(", ")}` : "",
+        ].filter(Boolean).join(". "),
+      }))
 
-    const newBible: CharacterBible = {
-      id: crypto.randomUUID(),
-      name: `${scriptName} Script`,
-      characters,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      const newBible: CharacterBible = {
+        id: crypto.randomUUID(),
+        name: `${scriptName} Script`,
+        characters,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+
+      addBible(newBible)
+      setCurrentBible(newBible)
+      setView("results")
     }
-
-    addBible(newBible)
-    setCurrentBible(newBible)
-    setView("results")
-  }
+  }, [status, result, file, addBible, setCurrentBible, setView])
 
   const handleRetry = () => {
     reset()

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import mammoth from "mammoth"
-// @ts-expect-error - pdf-parse types
-import pdf from "pdf-parse/lib/pdf-parse"
+import pdf from "pdf-parse"
 
 const AI_SERVICE_URL =
   process.env.AI_SERVICE_URL ||

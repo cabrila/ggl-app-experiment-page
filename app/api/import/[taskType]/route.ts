@@ -36,22 +36,32 @@ export async function POST(
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx (for actor-extract)
       "text/csv",
+      "text/plain",
     ]
 
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { error: `Unsupported file type: ${file.type}. Supported types: PDF, DOCX, XLSX, CSV` },
+        { error: `Unsupported file type: ${file.type}. Supported types: PDF, DOCX, XLSX, CSV, TXT` },
         { status: 400 }
       )
     }
 
     // Forward the file directly to the AI service's /tasks/upload endpoint
+    // The AI service expects: file (multipart), skill (string), and optionally source_title
     const aiFormData = new FormData()
-    aiFormData.append("file", file)
+    aiFormData.append("file", file, file.name)
     aiFormData.append("skill", taskType)
     if (sourceTitle) {
       aiFormData.append("source_title", sourceTitle)
     }
+
+    console.log("[v0] Sending to AI service:", {
+      skill: taskType,
+      fileName: file.name,
+      fileType: file.type,
+      fileSize: file.size,
+      sourceTitle,
+    })
 
     const aiResponse = await fetch(`${AI_SERVICE_URL}/tasks/upload`, {
       method: "POST",
@@ -65,8 +75,20 @@ export async function POST(
       
       // Handle specific error codes gracefully
       if (aiResponse.status === 400) {
+        // Parse the error message if possible
+        let errorMessage = "This skill is not available yet. Please try again later."
+        try {
+          const errorJson = JSON.parse(errorText)
+          if (errorJson.message) {
+            errorMessage = Array.isArray(errorJson.message) 
+              ? errorJson.message.join(", ") 
+              : errorJson.message
+          }
+        } catch {
+          // Use default error message
+        }
         return NextResponse.json(
-          { error: `This skill is not available yet. Please try again later.` },
+          { error: errorMessage },
           { status: 400 }
         )
       }
@@ -77,9 +99,10 @@ export async function POST(
       )
     }
 
-    const { taskId } = await aiResponse.json()
+    const result = await aiResponse.json()
+    console.log("[v0] AI service response:", result)
 
-    return NextResponse.json({ taskId }, { status: 202 })
+    return NextResponse.json({ taskId: result.taskId }, { status: 202 })
   } catch (error) {
     console.error("Error in import API:", error)
     const message = error instanceof Error ? error.message : "Unknown error"

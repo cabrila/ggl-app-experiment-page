@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || "https://gl-ai-service-dev-1021127710054.europe-west4.run.app"
+const AI_SERVICE_URL =
+  process.env.AI_SERVICE_URL ||
+  "https://gl-ai-service-dev-1021127710054.europe-west4.run.app"
 
 // Supported skills
 const SUPPORTED_SKILLS = ["character-extract", "actor-extract", "location-overview"]

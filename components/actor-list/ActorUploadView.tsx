@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Upload, ArrowLeft, FileText, X, Loader2, AlertCircle, RefreshCw } from "lucide-react"
 import { useActorList } from "./ActorListContext"
 import { Actor } from "@/types/actor-list"
@@ -61,24 +61,26 @@ export default function ActorUploadView() {
     await run(file, sourceTitle)
   }
 
-  // Handle successful extraction
-  if (status === "complete" && result) {
-    // Map AI service result to our Actor type
-    const actors: Actor[] = result.actors.map((actor, index) => ({
-      id: `${Date.now()}-${index}`,
-      name: actor.name,
-      age: actor.age || 0,
-      playingAge: actor.playing_age || "Unknown",
-      phone: actor.phone || "",
-      email: actor.email || "",
-      headshotUrl: actor.headshot_url || "",
-      notes: actor.notes || "",
-    }))
+  // Handle successful extraction - use useEffect to avoid setState during render
+  useEffect(() => {
+    if (status === "complete" && result && file) {
+      // Map AI service result to our Actor type
+      const actors: Actor[] = result.actors.map((actor, index) => ({
+        id: `${Date.now()}-${index}`,
+        name: actor.name,
+        age: actor.age || 0,
+        playingAge: actor.playing_age || "Unknown",
+        phone: actor.phone || "",
+        email: actor.email || "",
+        headshotUrl: actor.headshot_url || "",
+        notes: actor.notes || "",
+      }))
 
-    // Create project with extracted actors
-    const projectName = file?.name.replace(/\.[^/.]+$/, "") || "Imported Actors"
-    createProject(projectName, actors)
-  }
+      // Create project with extracted actors
+      const projectName = file.name.replace(/\.[^/.]+$/, "") || "Imported Actors"
+      createProject(projectName, actors)
+    }
+  }, [status, result, file, createProject])
 
   const handleRetry = () => {
     reset()

@@ -71,24 +71,10 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
       setStatus("running")
       setMessage("Processing...")
 
-      console.log("[v0] Opening SSE stream:", `/api/import/${taskType}/${newTaskId}/progress`)
       const es = new EventSource(`/api/import/${taskType}/${newTaskId}/progress`)
       sourceRef.current = es
 
-      es.onopen = () => {
-        console.log("[v0] SSE connection opened, readyState:", es.readyState)
-      }
-
-      es.onerror = (event) => {
-        console.log("[v0] SSE onerror triggered, readyState:", es.readyState, event)
-      }
-
-      es.onmessage = (e) => {
-        console.log("[v0] SSE message:", e.data)
-      }
-
       es.addEventListener("progress", (e) => {
-        console.log("[v0] Progress event:", e.data)
         try {
           const data = JSON.parse(e.data)
           setMessage(data.message || "Processing...")
@@ -108,12 +94,7 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
         }
       })
 
-      es.addEventListener("state_change", (e) => {
-        console.log("[v0] State change event:", e.data)
-      })
-
       es.addEventListener("complete", (e) => {
-        console.log("[v0] Complete event:", e.data)
         try {
           const data = JSON.parse(e.data)
           setResult(data.result as T)
@@ -128,7 +109,6 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
       })
 
       es.addEventListener("error", (e) => {
-        console.log("[v0] Error event:", e)
         // EventSource also fires this for connection errors (no e.data)
         try {
           const messageEvent = e as MessageEvent

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Upload, ArrowLeft, FileText, Loader2, X, AlertCircle, RefreshCw } from "lucide-react"
 import { useLocationScouting } from "./LocationScoutingContext"
 import { Location, LocationProject } from "@/types/location-scouting"
@@ -59,31 +59,33 @@ export default function LocationUploadView() {
     await run(file, sourceTitle)
   }
 
-  // Handle successful extraction
-  if (status === "complete" && result) {
-    // Map AI service result to our Location type
-    const locations: Location[] = result.locations.map((loc, index) => ({
-      id: `${Date.now()}-${index}`,
-      name: loc.name,
-      type: loc.type || "EXT",
-      timeOfDay: loc.time_of_day || "DAY",
-      description: loc.description || "",
-      scoutingNotes: loc.scouting_notes || "",
-    }))
+  // Handle successful extraction - use useEffect to avoid setState during render
+  useEffect(() => {
+    if (status === "complete" && result && file) {
+      // Map AI service result to our Location type
+      const locations: Location[] = result.locations.map((loc, index) => ({
+        id: `${Date.now()}-${index}`,
+        name: loc.name,
+        type: loc.type === "INT/EXT" ? "INT" : (loc.type === "unknown" ? "INT" : loc.type) || "EXT",
+        timeOfDay: loc.time_of_day === "unknown" ? "DAY" : loc.time_of_day || "DAY",
+        description: loc.description || "",
+        scoutingNotes: loc.scouting_notes || "",
+      }))
 
-    // Create new project with extracted locations
-    const newProject: LocationProject = {
-      id: crypto.randomUUID(),
-      name: file?.name.replace(/\.(pdf|docx)$/i, "").toUpperCase() || "Imported Locations",
-      locations,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      // Create new project with extracted locations
+      const newProject: LocationProject = {
+        id: crypto.randomUUID(),
+        name: file.name.replace(/\.(pdf|docx)$/i, "").toUpperCase() || "Imported Locations",
+        locations,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+
+      addProject(newProject)
+      setCurrentProject(newProject)
+      setView("results")
     }
-
-    addProject(newProject)
-    setCurrentProject(newProject)
-    setView("results")
-  }
+  }, [status, result, file, addProject, setCurrentProject, setView])
 
   const handleRetry = () => {
     reset()

@@ -2,6 +2,8 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Gabarito } from 'next/font/google'
 import "./globals.css"
+import GoogleAnalytics from "@/components/analytics/GoogleAnalytics"
+import AnalyticsProvider from "@/components/analytics/AnalyticsProvider"
 
 const gabarito = Gabarito({
   subsets: ["latin"],
@@ -24,7 +26,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${gabarito.variable} antialiased bg-[#0a2618]`}>
       <body className="font-sans">
-        {children}
+        <GoogleAnalytics />
+        <AnalyticsProvider>
+          {children}
+        </AnalyticsProvider>
       </body>
     </html>
   )

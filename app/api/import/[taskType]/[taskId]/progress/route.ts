@@ -9,22 +9,17 @@ export async function GET(
   { params }: { params: Promise<{ taskType: string; taskId: string }> }
 ) {
   const { taskId } = await params
-
-  console.log("[v0] SSE proxy request for taskId:", taskId)
-
   const encoder = new TextEncoder()
 
   const stream = new ReadableStream({
     async start(controller) {
       // Send immediate keep-alive to establish connection
       controller.enqueue(encoder.encode(": connected\n\n"))
-      console.log("[v0] Sent initial keep-alive")
 
       // Start keep-alive interval while waiting for upstream
       const keepAliveInterval = setInterval(() => {
         try {
           controller.enqueue(encoder.encode(": keep-alive\n\n"))
-          console.log("[v0] Sent keep-alive ping")
         } catch {
           // Stream may be closed
           clearInterval(keepAliveInterval)
@@ -33,20 +28,12 @@ export async function GET(
 
       try {
         const streamUrl = `${AI_SERVICE_URL}/tasks/${taskId}/stream`
-        console.log("[v0] Fetching upstream SSE:", streamUrl)
 
         const upstream = await fetch(streamUrl, {
           headers: {
             Accept: "text/event-stream",
           },
         })
-
-        console.log(
-          "[v0] Upstream response status:",
-          upstream.status,
-          "ok:",
-          upstream.ok
-        )
 
         clearInterval(keepAliveInterval)
 
@@ -63,17 +50,13 @@ export async function GET(
         while (true) {
           const { done, value } = await reader.read()
           if (done) {
-            console.log("[v0] Upstream stream ended")
             controller.close()
             break
           }
-          const chunk = decoder.decode(value, { stream: true })
-          console.log("[v0] SSE chunk received:", chunk.substring(0, 500))
           controller.enqueue(value)
         }
       } catch (error) {
         clearInterval(keepAliveInterval)
-        console.error("[v0] Stream error:", error)
         const message =
           error instanceof Error
             ? error.message

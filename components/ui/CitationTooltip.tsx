@@ -1,25 +1,22 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef } from "react"
 import { Info } from "lucide-react"
-import type { Citations } from "@/types/character-bible"
+import type { Character } from "@/types/character-bible"
+import { getFieldCitation } from "@/types/character-bible"
 
 interface CitationTooltipProps {
-  citeKey: string | undefined
-  citations: Citations | undefined
+  character: Character
+  fieldPath: string
   className?: string
 }
 
-export default function CitationTooltip({ citeKey, citations, className = "" }: CitationTooltipProps) {
+export default function CitationTooltip({ character, fieldPath, className = "" }: CitationTooltipProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const tooltipRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
 
-  // Don't render if no citation key or citations map
-  if (!citeKey || !citations) return null
-
-  // Look up the citation text
-  const citationText = citations[citeKey as keyof Citations]
+  // Use the two-step lookup
+  const citationText = getFieldCitation(character, fieldPath)
 
   // Don't render if citation doesn't resolve
   if (!citationText) return null
@@ -41,7 +38,6 @@ export default function CitationTooltip({ citeKey, citations, className = "" }: 
 
       {isOpen && (
         <div
-          ref={tooltipRef}
           role="tooltip"
           className="absolute z-50 left-0 mt-1 top-full"
         >
@@ -62,18 +58,18 @@ export default function CitationTooltip({ citeKey, citations, className = "" }: 
 // Wrapper component for values with citations
 interface CitedValueProps {
   value: string | undefined
-  citeKey: string | undefined
-  citations: Citations | undefined
+  character: Character
+  fieldPath: string
   className?: string
 }
 
-export function CitedValue({ value, citeKey, citations, className = "" }: CitedValueProps) {
+export function CitedValue({ value, character, fieldPath, className = "" }: CitedValueProps) {
   if (!value) return null
 
   return (
     <span className={`relative inline-flex items-center ${className}`}>
       <span>{value}</span>
-      <CitationTooltip citeKey={citeKey} citations={citations} />
+      <CitationTooltip character={character} fieldPath={fieldPath} />
     </span>
   )
 }

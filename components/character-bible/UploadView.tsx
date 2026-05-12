@@ -64,7 +64,7 @@ export default function UploadView() {
     if (status === "complete" && result) {
       const scriptName = file?.name.replace(/\.(pdf|docx)$/i, "").toUpperCase() || "SCRIPT"
 
-      // Map AI service result to our Character type (new GGO/OMC shape)
+      // Map AI service result to our Character type (new array-based citation shape)
       const characters: Character[] = result.characters.map((char) => ({
         // Server-managed fields
         id: crypto.randomUUID(),
@@ -72,17 +72,16 @@ export default function UploadView() {
 
         // GGO/OMC payload - pass through directly from AI
         entityType: char.entityType,
-        _cite: char._cite,
         identifier: char.identifier,
         name: char.name,
-        _cite_name: char._cite_name,
         alternateNames: char.alternateNames,
 
         // Profile - pass through directly
         profile: char.profile,
 
-        // Citations map
-        _citations: char._citations,
+        // NEW citation shape (arrays)
+        citations: char.citations || [],
+        fieldCitations: char.fieldCitations || [],
       }))
 
       const newBible: CharacterBible = {

@@ -64,19 +64,25 @@ export default function UploadView() {
     if (status === "complete" && result) {
       const scriptName = file?.name.replace(/\.(pdf|docx)$/i, "").toUpperCase() || "SCRIPT"
 
-      // Map AI service result to our Character type
+      // Map AI service result to our Character type (new GGO/OMC shape)
       const characters: Character[] = result.characters.map((char) => ({
+        // Server-managed fields
         id: crypto.randomUUID(),
+        source: "ai" as const,
+
+        // GGO/OMC payload - pass through directly from AI
+        entityType: char.entityType,
+        _cite: char._cite,
+        identifier: char.identifier,
         name: char.name,
-        age: char.age_range || "Unknown",
-        gender: char.gender ? char.gender.charAt(0).toUpperCase() + char.gender.slice(1) : "Unknown",
-        ethnicity: "Not specified",
-        scenes: 0, // AI service doesn't provide scene count
-        castingNotes: [
-          char.type !== "unknown" ? `Role: ${char.type}` : "",
-          char.description || "",
-          char.aliases?.length ? `Also known as: ${char.aliases.join(", ")}` : "",
-        ].filter(Boolean).join(". "),
+        _cite_name: char._cite_name,
+        alternateNames: char.alternateNames,
+
+        // Profile - pass through directly
+        profile: char.profile,
+
+        // Citations map
+        _citations: char._citations,
       }))
 
       const newBible: CharacterBible = {

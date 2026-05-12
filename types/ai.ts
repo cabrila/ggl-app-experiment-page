@@ -20,16 +20,58 @@ export interface TaskDocument {
   updatedAt: string
 }
 
-// character-extract result from AI service
+// character-extract result from AI service (new GGO/OMC shape)
 export interface CharacterExtractResult {
-  characters: {
-    name: string
-    type: "lead" | "supporting" | "minor" | "unknown"
-    aliases?: string[]
-    description?: string
-    gender?: "male" | "female" | "non-binary" | "unknown"
-    age_range?: string
-  }[]
+  characters: AICharacter[]
+}
+
+// Single character from AI service
+export interface AICharacter {
+  entityType: "omc:Character"
+  _cite: string
+  identifier: {
+    identifierScope: string
+    identifierValue: string
+    _cite: string
+  }
+  name: string
+  _cite_name: string
+  alternateNames?: string[]
+
+  profile?: {
+    gender?: {
+      gender?: string
+      genderPronoun?: string
+      _cite_gender?: string
+      _cite_genderPronoun?: string
+    }
+    physicalCharacteristics?: {
+      species?: string
+      hairColor?: string
+      hairLength?: string
+      eyeColor?: string
+      weight?: string
+      height?: string
+      _cite_species?: string
+      _cite_hairColor?: string
+      _cite_hairLength?: string
+      _cite_eyeColor?: string
+      _cite_weight?: string
+      _cite_height?: string
+    }
+    background?: string
+    _cite_background?: string
+    castingProfile?: {
+      ageRange?: { playingAge?: string }
+      _cite_playingAge?: string
+    }
+    ethnicity?: string
+    _cite_ethnicity?: string
+    castingNotes?: string
+    _cite_castingNotes?: string
+  }
+
+  _citations: Record<`c${number}`, string>
 }
 
 // actor-extract result
@@ -50,8 +92,8 @@ export interface ActorExtractResult {
 export interface LocationOverviewResult {
   locations: {
     name: string
-    type?: "INT" | "EXT"
-    time_of_day?: "DAY" | "NIGHT" | "DAWN" | "DUSK"
+    type?: "INT" | "EXT" | "INT/EXT" | "unknown"
+    time_of_day?: "DAY" | "NIGHT" | "DAWN" | "DUSK" | "unknown"
     description?: string
     scouting_notes?: string
   }[]

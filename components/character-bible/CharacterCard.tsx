@@ -1,8 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { Trash2, X, Save, Pencil } from "lucide-react"
+import { Trash2, X, Save, Pencil, ChevronDown, ChevronUp } from "lucide-react"
 import { Character } from "@/types/character-bible"
+import { CitedValue } from "@/components/ui/CitationTooltip"
 
 interface CharacterCardProps {
   character: Character
@@ -12,17 +13,61 @@ interface CharacterCardProps {
 
 export default function CharacterCard({ character, onUpdate, onDelete }: CharacterCardProps) {
   const [isEditing, setIsEditing] = useState(false)
-  const [editState, setEditState] = useState<Character>(character)
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [editState, setEditState] = useState({
+    name: character.name,
+    alternateNames: character.alternateNames?.join(", ") || "",
+    gender: character.profile?.gender?.gender || "",
+    genderPronoun: character.profile?.gender?.genderPronoun || "",
+    playingAge: character.profile?.castingProfile?.ageRange?.playingAge || "",
+    ethnicity: character.profile?.ethnicity || "",
+    background: character.profile?.background || "",
+    castingNotes: character.profile?.castingNotes || "",
+  })
 
   const handleSave = () => {
-    onUpdate(editState)
+    const updates: Partial<Character> = {
+      name: editState.name,
+      alternateNames: editState.alternateNames ? editState.alternateNames.split(",").map(s => s.trim()).filter(Boolean) : undefined,
+      profile: {
+        ...character.profile,
+        gender: {
+          ...character.profile?.gender,
+          gender: editState.gender || undefined,
+          genderPronoun: editState.genderPronoun || undefined,
+        },
+        castingProfile: {
+          ...character.profile?.castingProfile,
+          ageRange: editState.playingAge ? { playingAge: editState.playingAge } : undefined,
+        },
+        ethnicity: editState.ethnicity || undefined,
+        background: editState.background || undefined,
+        castingNotes: editState.castingNotes || undefined,
+      },
+    }
+    onUpdate(updates)
     setIsEditing(false)
   }
 
   const handleCancel = () => {
-    setEditState(character)
+    setEditState({
+      name: character.name,
+      alternateNames: character.alternateNames?.join(", ") || "",
+      gender: character.profile?.gender?.gender || "",
+      genderPronoun: character.profile?.gender?.genderPronoun || "",
+      playingAge: character.profile?.castingProfile?.ageRange?.playingAge || "",
+      ethnicity: character.profile?.ethnicity || "",
+      background: character.profile?.background || "",
+      castingNotes: character.profile?.castingNotes || "",
+    })
     setIsEditing(false)
   }
+
+  // Helper to get physical characteristics that are populated
+  const physicalChars = character.profile?.physicalCharacteristics
+  const hasPhysicalChars = physicalChars && Object.entries(physicalChars)
+    .filter(([key]) => !key.startsWith("_cite"))
+    .some(([, value]) => value)
 
   if (isEditing) {
     return (
@@ -40,16 +85,31 @@ export default function CharacterCard({ character, onUpdate, onDelete }: Charact
           />
         </div>
 
+        {/* Alternate Names */}
+        <div className="mb-4">
+          <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-2">
+            Alternate Names (comma-separated)
+          </label>
+          <input
+            type="text"
+            value={editState.alternateNames}
+            onChange={(e) => setEditState({ ...editState, alternateNames: e.target.value })}
+            placeholder="e.g. BOB, ROBERTO"
+            className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans focus:outline-none focus:border-emerald-500/50"
+          />
+        </div>
+
         {/* Age & Gender Row */}
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
             <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-2">
-              Age
+              Playing Age
             </label>
             <input
               type="text"
-              value={editState.age}
-              onChange={(e) => setEditState({ ...editState, age: e.target.value })}
+              value={editState.playingAge}
+              onChange={(e) => setEditState({ ...editState, playingAge: e.target.value })}
+              placeholder="e.g. 30s, 25-35"
               className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans focus:outline-none focus:border-emerald-500/50"
             />
           </div>
@@ -66,8 +126,20 @@ export default function CharacterCard({ character, onUpdate, onDelete }: Charact
           </div>
         </div>
 
-        {/* Ethnicity & Scenes Row */}
+        {/* Pronoun & Ethnicity Row */}
         <div className="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-2">
+              Pronouns
+            </label>
+            <input
+              type="text"
+              value={editState.genderPronoun}
+              onChange={(e) => setEditState({ ...editState, genderPronoun: e.target.value })}
+              placeholder="e.g. she/her, he/him"
+              className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans focus:outline-none focus:border-emerald-500/50"
+            />
+          </div>
           <div>
             <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-2">
               Ethnicity
@@ -79,17 +151,19 @@ export default function CharacterCard({ character, onUpdate, onDelete }: Charact
               className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans focus:outline-none focus:border-emerald-500/50"
             />
           </div>
-          <div>
-            <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-2">
-              Scenes
-            </label>
-            <input
-              type="number"
-              value={editState.scenes}
-              onChange={(e) => setEditState({ ...editState, scenes: parseInt(e.target.value) || 0 })}
-              className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans focus:outline-none focus:border-emerald-500/50"
-            />
-          </div>
+        </div>
+
+        {/* Background */}
+        <div className="mb-4">
+          <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-2">
+            Background
+          </label>
+          <textarea
+            value={editState.background}
+            onChange={(e) => setEditState({ ...editState, background: e.target.value })}
+            rows={3}
+            className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans resize-none focus:outline-none focus:border-emerald-500/50"
+          />
         </div>
 
         {/* Casting Notes */}
@@ -100,7 +174,7 @@ export default function CharacterCard({ character, onUpdate, onDelete }: Charact
           <textarea
             value={editState.castingNotes}
             onChange={(e) => setEditState({ ...editState, castingNotes: e.target.value })}
-            rows={4}
+            rows={3}
             className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans resize-none focus:outline-none focus:border-emerald-500/50"
           />
         </div>
@@ -156,56 +230,190 @@ export default function CharacterCard({ character, onUpdate, onDelete }: Charact
         </button>
       </div>
 
-      {/* Character Name */}
-      <h3 className="text-xl font-bold text-white mb-4 font-sans uppercase tracking-wide pr-20">
-        {character.name}
-      </h3>
+      {/* Character Name with Citation */}
+      <div className="mb-2 pr-20">
+        <h3 className="text-xl font-bold text-white font-sans uppercase tracking-wide inline-flex items-center">
+          <CitedValue 
+            value={character.name} 
+            citeKey={character._cite_name} 
+            citations={character._citations}
+          />
+        </h3>
+      </div>
+
+      {/* Alternate Names */}
+      {character.alternateNames && character.alternateNames.length > 0 && (
+        <p className="text-sm text-white/50 mb-3 font-sans">
+          also: {character.alternateNames.join(", ")}
+        </p>
+      )}
 
       {/* Attributes Grid */}
-      <div className="grid grid-cols-4 gap-2 mb-4 p-3 bg-[#0f1f17] rounded-lg">
-        <div>
-          <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1">
-            Age
-          </p>
-          <p className="text-sm text-white font-sans truncate" title={character.age}>
-            {character.age}
-          </p>
-        </div>
-        <div>
-          <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1">
-            Gender
-          </p>
-          <p className="text-sm text-white font-sans truncate" title={character.gender}>
-            {character.gender}
-          </p>
-        </div>
-        <div>
-          <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1">
-            Ethnicity
-          </p>
-          <p className="text-sm text-white font-sans truncate" title={character.ethnicity}>
-            {character.ethnicity}
-          </p>
-        </div>
-        <div>
-          <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1">
-            Scenes
-          </p>
-          <p className="text-sm text-white font-sans">
-            {character.scenes}
-          </p>
-        </div>
+      <div className="grid grid-cols-3 gap-2 mb-4 p-3 bg-[#0f1f17] rounded-lg">
+        {/* Age/Playing Age */}
+        {character.profile?.castingProfile?.ageRange?.playingAge && (
+          <div>
+            <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1">
+              Age
+            </p>
+            <p className="text-sm text-white font-sans truncate">
+              <CitedValue
+                value={character.profile.castingProfile.ageRange.playingAge}
+                citeKey={character.profile.castingProfile._cite_playingAge}
+                citations={character._citations}
+              />
+            </p>
+          </div>
+        )}
+
+        {/* Gender with Pronoun */}
+        {character.profile?.gender?.gender && (
+          <div>
+            <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1">
+              Gender
+            </p>
+            <p className="text-sm text-white font-sans truncate">
+              <CitedValue
+                value={character.profile.gender.gender}
+                citeKey={character.profile.gender._cite_gender}
+                citations={character._citations}
+              />
+              {character.profile.gender.genderPronoun && (
+                <span className="text-white/50">
+                  {" "}· <CitedValue
+                    value={character.profile.gender.genderPronoun}
+                    citeKey={character.profile.gender._cite_genderPronoun}
+                    citations={character._citations}
+                  />
+                </span>
+              )}
+            </p>
+          </div>
+        )}
+
+        {/* Ethnicity */}
+        {character.profile?.ethnicity && (
+          <div>
+            <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1">
+              Ethnicity
+            </p>
+            <p className="text-sm text-white font-sans truncate">
+              <CitedValue
+                value={character.profile.ethnicity}
+                citeKey={character.profile._cite_ethnicity}
+                citations={character._citations}
+              />
+            </p>
+          </div>
+        )}
       </div>
 
+      {/* Background (replaces old description) */}
+      {character.profile?.background && (
+        <div className="p-3 bg-[#0f1f17] rounded-lg mb-3">
+          <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-2">
+            Background
+          </p>
+          <p className="text-sm text-white/80 font-sans leading-relaxed">
+            <CitedValue
+              value={character.profile.background}
+              citeKey={character.profile._cite_background}
+              citations={character._citations}
+            />
+          </p>
+        </div>
+      )}
+
       {/* Casting Notes */}
-      <div className="p-3 bg-[#0f1f17] rounded-lg">
-        <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-2">
-          Casting Notes & Character Traits
-        </p>
-        <p className="text-sm text-white/80 font-sans leading-relaxed">
-          {character.castingNotes}
-        </p>
-      </div>
+      {character.profile?.castingNotes && (
+        <div className="p-3 bg-[#0f1f17] rounded-lg mb-3">
+          <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-2">
+            Casting Notes
+          </p>
+          <p className="text-sm text-white/80 font-sans leading-relaxed">
+            <CitedValue
+              value={character.profile.castingNotes}
+              citeKey={character.profile._cite_castingNotes}
+              citations={character._citations}
+            />
+          </p>
+        </div>
+      )}
+
+      {/* Expandable Physical Characteristics */}
+      {hasPhysicalChars && (
+        <div className="mt-3">
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="flex items-center gap-2 text-sm text-white/50 hover:text-white/70 transition-colors w-full"
+          >
+            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            <span className="font-sans">Physical Characteristics</span>
+          </button>
+
+          {isExpanded && (
+            <div className="mt-3 p-3 bg-[#0f1f17] rounded-lg space-y-2">
+              {physicalChars?.species && (
+                <div className="flex justify-between">
+                  <span className="text-xs text-white/50 uppercase">Species</span>
+                  <span className="text-sm text-white">
+                    <CitedValue value={physicalChars.species} citeKey={physicalChars._cite_species} citations={character._citations} />
+                  </span>
+                </div>
+              )}
+              {physicalChars?.hairColor && (
+                <div className="flex justify-between">
+                  <span className="text-xs text-white/50 uppercase">Hair Color</span>
+                  <span className="text-sm text-white">
+                    <CitedValue value={physicalChars.hairColor} citeKey={physicalChars._cite_hairColor} citations={character._citations} />
+                  </span>
+                </div>
+              )}
+              {physicalChars?.hairLength && (
+                <div className="flex justify-between">
+                  <span className="text-xs text-white/50 uppercase">Hair Length</span>
+                  <span className="text-sm text-white">
+                    <CitedValue value={physicalChars.hairLength} citeKey={physicalChars._cite_hairLength} citations={character._citations} />
+                  </span>
+                </div>
+              )}
+              {physicalChars?.eyeColor && (
+                <div className="flex justify-between">
+                  <span className="text-xs text-white/50 uppercase">Eye Color</span>
+                  <span className="text-sm text-white">
+                    <CitedValue value={physicalChars.eyeColor} citeKey={physicalChars._cite_eyeColor} citations={character._citations} />
+                  </span>
+                </div>
+              )}
+              {physicalChars?.height && (
+                <div className="flex justify-between">
+                  <span className="text-xs text-white/50 uppercase">Height</span>
+                  <span className="text-sm text-white">
+                    <CitedValue value={physicalChars.height} citeKey={physicalChars._cite_height} citations={character._citations} />
+                  </span>
+                </div>
+              )}
+              {physicalChars?.weight && (
+                <div className="flex justify-between">
+                  <span className="text-xs text-white/50 uppercase">Weight</span>
+                  <span className="text-sm text-white">
+                    <CitedValue value={physicalChars.weight} citeKey={physicalChars._cite_weight} citations={character._citations} />
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Identifier (footer caption) */}
+      {character.identifier?.identifierValue && (
+        <div className="mt-4 pt-3 border-t border-white/5">
+          <p className="text-xs text-white/30 font-mono truncate">
+            {character.identifier.identifierValue}
+          </p>
+        </div>
+      )}
     </div>
   )
 }

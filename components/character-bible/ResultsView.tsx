@@ -39,22 +39,35 @@ export default function ResultsView() {
     )
   }
 
-  const filteredCharacters = currentBible.characters.filter((character) =>
-    character.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    character.castingNotes.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (character.ethnicity && character.ethnicity.toLowerCase().includes(searchQuery.toLowerCase()))
-  )
+  const filteredCharacters = currentBible.characters.filter((character) => {
+    const query = searchQuery.toLowerCase()
+    return (
+      character.name.toLowerCase().includes(query) ||
+      (character.profile?.castingNotes?.toLowerCase().includes(query)) ||
+      (character.profile?.ethnicity?.toLowerCase().includes(query)) ||
+      (character.profile?.background?.toLowerCase().includes(query)) ||
+      (character.alternateNames?.some(name => name.toLowerCase().includes(query)))
+    )
+  })
 
   const handleAddCharacter = () => {
     const id = crypto.randomUUID()
     const newCharacter: Character = {
       id,
+      source: "manual",
+      entityType: "omc:Character",
+      _cite: "c1",
+      identifier: {
+        identifierScope: "local",
+        identifierValue: `char-${id.slice(0, 8)}`,
+        _cite: "c0",
+      },
       name: "New Character",
-      age: "",
-      gender: "",
-      ethnicity: "Not specified",
-      scenes: 0,
-      castingNotes: "",
+      _cite_name: "c1",
+      _citations: {
+        c0: "Manually created character",
+        c1: "Manually created character",
+      },
     }
     addCharacter(currentBible.id, newCharacter)
     setNewItemId(id)

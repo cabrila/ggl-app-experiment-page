@@ -66,7 +66,6 @@ export default function CharacterCard({ character, onUpdate, onDelete }: Charact
   // Helper to get physical characteristics that are populated
   const physicalChars = character.profile?.physicalCharacteristics
   const hasPhysicalChars = physicalChars && Object.entries(physicalChars)
-    .filter(([key]) => !key.startsWith("_cite"))
     .some(([, value]) => value)
 
   if (isEditing) {
@@ -235,8 +234,8 @@ export default function CharacterCard({ character, onUpdate, onDelete }: Charact
         <h3 className="text-xl font-bold text-white font-sans uppercase tracking-wide inline-flex items-center">
           <CitedValue 
             value={character.name} 
-            citeKey={character._cite_name} 
-            citations={character._citations}
+            character={character}
+            fieldPath="name"
           />
         </h3>
       </div>
@@ -259,8 +258,8 @@ export default function CharacterCard({ character, onUpdate, onDelete }: Charact
             <p className="text-sm text-white font-sans truncate">
               <CitedValue
                 value={character.profile.castingProfile.ageRange.playingAge}
-                citeKey={character.profile.castingProfile._cite_playingAge}
-                citations={character._citations}
+                character={character}
+                fieldPath="profile.castingProfile.ageRange.playingAge"
               />
             </p>
           </div>
@@ -275,15 +274,15 @@ export default function CharacterCard({ character, onUpdate, onDelete }: Charact
             <p className="text-sm text-white font-sans truncate">
               <CitedValue
                 value={character.profile.gender.gender}
-                citeKey={character.profile.gender._cite_gender}
-                citations={character._citations}
+                character={character}
+                fieldPath="profile.gender.gender"
               />
               {character.profile.gender.genderPronoun && (
                 <span className="text-white/50">
                   {" "}· <CitedValue
                     value={character.profile.gender.genderPronoun}
-                    citeKey={character.profile.gender._cite_genderPronoun}
-                    citations={character._citations}
+                    character={character}
+                    fieldPath="profile.gender.genderPronoun"
                   />
                 </span>
               )}
@@ -300,8 +299,8 @@ export default function CharacterCard({ character, onUpdate, onDelete }: Charact
             <p className="text-sm text-white font-sans truncate">
               <CitedValue
                 value={character.profile.ethnicity}
-                citeKey={character.profile._cite_ethnicity}
-                citations={character._citations}
+                character={character}
+                fieldPath="profile.ethnicity"
               />
             </p>
           </div>
@@ -317,8 +316,8 @@ export default function CharacterCard({ character, onUpdate, onDelete }: Charact
           <p className="text-sm text-white/80 font-sans leading-relaxed">
             <CitedValue
               value={character.profile.background}
-              citeKey={character.profile._cite_background}
-              citations={character._citations}
+              character={character}
+              fieldPath="profile.background"
             />
           </p>
         </div>
@@ -333,8 +332,8 @@ export default function CharacterCard({ character, onUpdate, onDelete }: Charact
           <p className="text-sm text-white/80 font-sans leading-relaxed">
             <CitedValue
               value={character.profile.castingNotes}
-              citeKey={character.profile._cite_castingNotes}
-              citations={character._citations}
+              character={character}
+              fieldPath="profile.castingNotes"
             />
           </p>
         </div>
@@ -357,7 +356,7 @@ export default function CharacterCard({ character, onUpdate, onDelete }: Charact
                 <div className="flex justify-between">
                   <span className="text-xs text-white/50 uppercase">Species</span>
                   <span className="text-sm text-white">
-                    <CitedValue value={physicalChars.species} citeKey={physicalChars._cite_species} citations={character._citations} />
+                    <CitedValue value={physicalChars.species} character={character} fieldPath="profile.physicalCharacteristics.species" />
                   </span>
                 </div>
               )}
@@ -365,7 +364,7 @@ export default function CharacterCard({ character, onUpdate, onDelete }: Charact
                 <div className="flex justify-between">
                   <span className="text-xs text-white/50 uppercase">Hair Color</span>
                   <span className="text-sm text-white">
-                    <CitedValue value={physicalChars.hairColor} citeKey={physicalChars._cite_hairColor} citations={character._citations} />
+                    <CitedValue value={physicalChars.hairColor} character={character} fieldPath="profile.physicalCharacteristics.hairColor" />
                   </span>
                 </div>
               )}
@@ -373,7 +372,7 @@ export default function CharacterCard({ character, onUpdate, onDelete }: Charact
                 <div className="flex justify-between">
                   <span className="text-xs text-white/50 uppercase">Hair Length</span>
                   <span className="text-sm text-white">
-                    <CitedValue value={physicalChars.hairLength} citeKey={physicalChars._cite_hairLength} citations={character._citations} />
+                    <CitedValue value={physicalChars.hairLength} character={character} fieldPath="profile.physicalCharacteristics.hairLength" />
                   </span>
                 </div>
               )}
@@ -381,7 +380,7 @@ export default function CharacterCard({ character, onUpdate, onDelete }: Charact
                 <div className="flex justify-between">
                   <span className="text-xs text-white/50 uppercase">Eye Color</span>
                   <span className="text-sm text-white">
-                    <CitedValue value={physicalChars.eyeColor} citeKey={physicalChars._cite_eyeColor} citations={character._citations} />
+                    <CitedValue value={physicalChars.eyeColor} character={character} fieldPath="profile.physicalCharacteristics.eyeColor" />
                   </span>
                 </div>
               )}
@@ -389,7 +388,7 @@ export default function CharacterCard({ character, onUpdate, onDelete }: Charact
                 <div className="flex justify-between">
                   <span className="text-xs text-white/50 uppercase">Height</span>
                   <span className="text-sm text-white">
-                    <CitedValue value={physicalChars.height} citeKey={physicalChars._cite_height} citations={character._citations} />
+                    <CitedValue value={physicalChars.height} character={character} fieldPath="profile.physicalCharacteristics.height" />
                   </span>
                 </div>
               )}
@@ -397,7 +396,7 @@ export default function CharacterCard({ character, onUpdate, onDelete }: Charact
                 <div className="flex justify-between">
                   <span className="text-xs text-white/50 uppercase">Weight</span>
                   <span className="text-sm text-white">
-                    <CitedValue value={physicalChars.weight} citeKey={physicalChars._cite_weight} citations={character._citations} />
+                    <CitedValue value={physicalChars.weight} character={character} fieldPath="profile.physicalCharacteristics.weight" />
                   </span>
                 </div>
               )}

@@ -20,30 +20,36 @@ export interface TaskDocument {
   updatedAt: string
 }
 
-// character-extract result from AI service (new GGO/OMC shape)
+// Citation types matching new shape
+export interface AICitationEntry {
+  id: string
+  text: string
+}
+
+export interface AIFieldCitation {
+  field: string
+  citationId: string
+}
+
+// character-extract result from AI service (new array-based citation shape)
 export interface CharacterExtractResult {
   characters: AICharacter[]
 }
 
-// Single character from AI service
+// Single character from AI service with new citation shape
 export interface AICharacter {
   entityType: "omc:Character"
-  _cite: string
   identifier: {
     identifierScope: string
     identifierValue: string
-    _cite: string
   }
   name: string
-  _cite_name: string
   alternateNames?: string[]
 
   profile?: {
     gender?: {
       gender?: string
       genderPronoun?: string
-      _cite_gender?: string
-      _cite_genderPronoun?: string
     }
     physicalCharacteristics?: {
       species?: string
@@ -52,26 +58,18 @@ export interface AICharacter {
       eyeColor?: string
       weight?: string
       height?: string
-      _cite_species?: string
-      _cite_hairColor?: string
-      _cite_hairLength?: string
-      _cite_eyeColor?: string
-      _cite_weight?: string
-      _cite_height?: string
     }
     background?: string
-    _cite_background?: string
     castingProfile?: {
       ageRange?: { playingAge?: string }
-      _cite_playingAge?: string
     }
     ethnicity?: string
-    _cite_ethnicity?: string
     castingNotes?: string
-    _cite_castingNotes?: string
   }
 
-  _citations: Record<`c${number}`, string>
+  // NEW citation shape (arrays, not maps)
+  citations: AICitationEntry[]
+  fieldCitations: AIFieldCitation[]
 }
 
 // actor-extract result

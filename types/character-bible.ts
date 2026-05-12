@@ -1,19 +1,28 @@
-// Character identifier following OMC spec
-export interface CharacterIdentifier {
-  identifierScope: string
-  identifierValue: string
-  _cite: string
+// Citation entry - a single source line
+export interface CitationEntry {
+  id: string              // "c0", "c1", "c2", ...
+  text: string            // verbatim source line
 }
 
-// Gender profile with citation support
+// Field citation - maps a field path to a citation id
+export interface FieldCitation {
+  field: string           // "entity" | "identifier" | "name" | dotted profile path
+  citationId: string      // must reference an id in citations[]
+}
+
+// Character identifier following OMC spec
+export interface CharacterIdentifier {
+  identifierScope: string   // always "gogreenlightai"
+  identifierValue: string
+}
+
+// Gender profile
 export interface GenderProfile {
   gender?: string
   genderPronoun?: string
-  _cite_gender?: string
-  _cite_genderPronoun?: string
 }
 
-// Physical characteristics with citation support
+// Physical characteristics
 export interface PhysicalCharacteristics {
   species?: string
   hairColor?: string
@@ -21,18 +30,11 @@ export interface PhysicalCharacteristics {
   eyeColor?: string
   weight?: string
   height?: string
-  _cite_species?: string
-  _cite_hairColor?: string
-  _cite_hairLength?: string
-  _cite_eyeColor?: string
-  _cite_weight?: string
-  _cite_height?: string
 }
 
 // Casting profile with age range
 export interface CastingProfile {
   ageRange?: { playingAge?: string }
-  _cite_playingAge?: string
 }
 
 // Character profile containing all nested data
@@ -40,18 +42,12 @@ export interface CharacterProfile {
   gender?: GenderProfile
   physicalCharacteristics?: PhysicalCharacteristics
   background?: string
-  _cite_background?: string
   castingProfile?: CastingProfile
   ethnicity?: string
-  _cite_ethnicity?: string
   castingNotes?: string
-  _cite_castingNotes?: string
 }
 
-// Citations map type
-export type Citations = Record<`c${number}`, string>
-
-// Main Character interface following GGO/OMC spec
+// Main Character interface following GGO/OMC spec with new citation shape
 export interface Character {
   // Server-managed fields
   id: string
@@ -64,17 +60,16 @@ export interface Character {
 
   // GGO/OMC payload
   entityType: "omc:Character"
-  _cite: string
   identifier: CharacterIdentifier
   name: string
-  _cite_name: string
   alternateNames?: string[]
 
   // Profile (optional - sparse entries are valid)
   profile?: CharacterProfile
 
-  // Citations map
-  _citations: Citations
+  // NEW citation shape (arrays, not maps)
+  citations: CitationEntry[]
+  fieldCitations: FieldCitation[]
 }
 
 export interface CharacterBible {
@@ -87,3 +82,19 @@ export interface CharacterBible {
 }
 
 export type CharacterBibleView = "list" | "upload" | "results"
+
+// Helper function: get citation text for a field path
+export function getFieldCitation(character: Character, fieldPath: string): string | undefined {
+  // Step 1: Find the fieldCitations entry for this field
+  const fieldCitation = character.fieldCitations?.find(fc => fc.field === fieldPath)
+  if (!fieldCitation) return undefined
+
+  // Step 2: Look up the citation text by matching citationId to citations[].id
+  const citation = character.citations?.find(c => c.id === fieldCitation.citationId)
+  return citation?.text
+}
+
+// Convenience: get entity-level citation
+export function getEntityCitation(character: Character): string | undefined {
+  return getFieldCitation(character, "entity")
+}

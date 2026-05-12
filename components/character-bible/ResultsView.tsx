@@ -56,18 +56,20 @@ export default function ResultsView() {
       id,
       source: "manual",
       entityType: "omc:Character",
-      _cite: "c1",
       identifier: {
         identifierScope: "local",
         identifierValue: `char-${id.slice(0, 8)}`,
-        _cite: "c0",
       },
       name: "New Character",
-      _cite_name: "c1",
-      _citations: {
-        c0: "Manually created character",
-        c1: "Manually created character",
-      },
+      // NEW citation shape (arrays)
+      citations: [
+        { id: "c0", text: "Manually created character" },
+      ],
+      fieldCitations: [
+        { field: "entity", citationId: "c0" },
+        { field: "identifier", citationId: "c0" },
+        { field: "name", citationId: "c0" },
+      ],
     }
     addCharacter(currentBible.id, newCharacter)
     setNewItemId(id)

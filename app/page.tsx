@@ -15,6 +15,9 @@ export default function App() {
   const [view, setView] = useState<"login" | "splash" | "character-bible" | "location-overview" | "actor-database" | "public-casting">("login")
   const [user, setUser] = useState<User | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // Dev-only bypass: when true, the auth reconcile effect is disabled so the
+  // user can navigate the app without being signed in. Reset on sign-out.
+  const [bypassAuth, setBypassAuth] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -52,15 +55,16 @@ export default function App() {
   // OR the explicit onSignedIn callback, this effect deterministically moves
   // them to splash (and back to login on sign-out).
   useEffect(() => {
-    console.log("[v0] page: reconcile effect — user:", user?.uid ?? null, "view:", view)
+    // Dev-only "Bypass login" suspends the reconcile so an unauthenticated
+    // user can explore the app. As soon as they actually sign in or sign out
+    // via real auth, the bypass turns off and normal routing resumes.
+    if (bypassAuth && !user) return
     if (user && view === "login") {
-      console.log("[v0] page: user signed in while on login → switching to splash")
       setView("splash")
     } else if (!user && view !== "login") {
-      console.log("[v0] page: user signed out → switching to login")
       setView("login")
     }
-  }, [user, view])
+  }, [user, view, bypassAuth])
 
   const handleSignOut = async () => {
     try {
@@ -70,11 +74,13 @@ export default function App() {
     }
     // The auth subscription + reconcile effect will route to login,
     // but set it explicitly here too for immediate feedback.
+    setBypassAuth(false)
     setUser(null)
     setView("login")
   }
 
   const handleDemoAccess = () => {
+    setBypassAuth(true)
     setView("splash")
   }
 

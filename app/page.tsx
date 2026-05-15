@@ -34,15 +34,12 @@ export default function App() {
 
     // Subscribe to authentication state changes
     const unsubscribe = subscribeToAuthStateChanges((authUser) => {
-      console.log("[v0] auth state changed, authUser:", authUser?.uid ?? null)
       if (!mounted) return
       setUser(authUser)
       setView((current) => {
         if (authUser) {
           // Signed in: route to splash unless already inside the app
-          const next = current === "login" ? "splash" : current
-          console.log("[v0] routing", current, "→", next)
-          return next
+          return current === "login" ? "splash" : current
         }
         // Signed out: always return to login
         return "login"
@@ -72,7 +69,7 @@ export default function App() {
   const renderView = () => {
     switch (view) {
       case "login":
-        return <LoginScreen onDemoAccess={handleDemoAccess} />
+        return <LoginScreen onDemoAccess={handleDemoAccess} onSignedIn={() => setView("splash")} />
       case "splash":
         return (
           <CastingProvider>
@@ -104,7 +101,7 @@ export default function App() {
           </CastingProvider>
         )
       default:
-        return <LoginScreen onDemoAccess={handleDemoAccess} />
+        return <LoginScreen onDemoAccess={handleDemoAccess} onSignedIn={() => setView("splash")} />
     }
   }
 

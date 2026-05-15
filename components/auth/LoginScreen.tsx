@@ -16,9 +16,10 @@ type Screen = "enter-credential" | "verify-code" | "success"
 
 interface LoginScreenProps {
   onDemoAccess?: () => void
+  onSignedIn?: () => void
 }
 
-export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
+export default function LoginScreen({ onDemoAccess, onSignedIn }: LoginScreenProps) {
   const [authMethod, setAuthMethod] = useState<AuthMethod>("email")
   const [email, setEmail] = useState("")
   const [phoneNumber, setPhoneNumber] = useState("")
@@ -170,7 +171,6 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
 
   const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("[v0] handleVerifyCode fired, code length:", verificationCode.length)
 
     if (verificationCode.length !== 6) {
       setErrorMessage("Please enter the 6-digit verification code")
@@ -181,15 +181,14 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
     setErrorMessage("")
 
     try {
-      console.log("[v0] Calling verifyPhoneCode...")
-      const verifiedUser = await verifyPhoneCode(verificationCode)
-      console.log("[v0] verifyPhoneCode resolved, uid:", verifiedUser.uid)
-      // Auth state change handled by parent. As a safety net, mark success so
-      // even if onAuthStateChanged is delayed, we leave the verifying spinner.
-      setScreen("success")
+      await verifyPhoneCode(verificationCode)
       setIsLoading(false)
+      // Explicitly notify parent that sign-in succeeded.
+      // This is the primary trigger for the splash transition — we no longer
+      // rely solely on onAuthStateChanged, which can be delayed or miss firing.
+      onSignedIn?.()
     } catch (error) {
-      console.error("[v0] verifyPhoneCode threw:", error)
+      setIsLoading(false)
       let errorMsg = "Invalid verification code. Please try again."
       if (error && typeof error === "object" && "code" in error) {
         const code = (error as { code: string }).code

@@ -18,7 +18,7 @@ export default function App() {
 
   useEffect(() => {
     let mounted = true
-    
+
     // Check if this is a magic link callback
     if (typeof window !== "undefined" && isMagicLinkCallback()) {
       completeMagicLinkSignIn()
@@ -32,18 +32,13 @@ export default function App() {
         })
     }
 
-    // Subscribe to authentication state changes
+    // Subscribe to authentication state changes. We ONLY update `user` here —
+    // the routing reconciliation happens in a separate effect below so it
+    // works no matter which path (subscription or explicit onSignedIn) wins.
     const unsubscribe = subscribeToAuthStateChanges((authUser) => {
+      console.log("[v0] page: auth state changed, uid:", authUser?.uid ?? null)
       if (!mounted) return
       setUser(authUser)
-      setView((current) => {
-        if (authUser) {
-          // Signed in: route to splash unless already inside the app
-          return current === "login" ? "splash" : current
-        }
-        // Signed out: always return to login
-        return "login"
-      })
     })
 
     return () => {
@@ -51,6 +46,21 @@ export default function App() {
       unsubscribe()
     }
   }, [])
+
+  // Reconcile view with auth state. This is the single source of truth for
+  // routing transitions. Whether the user signs in via the auth subscription
+  // OR the explicit onSignedIn callback, this effect deterministically moves
+  // them to splash (and back to login on sign-out).
+  useEffect(() => {
+    console.log("[v0] page: reconcile effect — user:", user?.uid ?? null, "view:", view)
+    if (user && view === "login") {
+      console.log("[v0] page: user signed in while on login → switching to splash")
+      setView("splash")
+    } else if (!user && view !== "login") {
+      console.log("[v0] page: user signed out → switching to login")
+      setView("login")
+    }
+  }, [user, view])
 
   const handleSignOut = () => {
     setView("login")

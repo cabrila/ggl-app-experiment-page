@@ -112,27 +112,43 @@ export async function signOut(): Promise<void> {
 }
 
 /**
- * Subscribe to authentication state changes
+ * Subscribe to authentication state changes.
+ * Waits for Firebase to be ready before subscribing, so callers don't
+ * silently get a no-op subscription on cold start.
  */
 export function subscribeToAuthStateChanges(callback: (user: User | null) => void): () => void {
   // Guard against SSR - auth is a placeholder object on server
   if (typeof window === "undefined") {
     return () => {}
   }
-  
-  // Check if auth is properly initialized
-  if (!isAuthInitialized()) {
-    // Firebase not properly initialized, call callback with null immediately
-    setTimeout(() => callback(null), 0)
-    return () => {}
-  }
-  
-  try {
-    return onAuthStateChanged(auth, callback)
-  } catch {
-    // If subscription fails, call callback with null
-    setTimeout(() => callback(null), 0)
-    return () => {}
+
+  let realUnsubscribe: (() => void) | null = null
+  let cancelled = false
+
+  // Wait for Firebase auth to be ready before subscribing
+  waitForAuth()
+    .then(() => {
+      if (cancelled) return
+      if (!isAuthInitialized()) {
+        console.warn("[v0] Firebase auth still not initialized after waitForAuth")
+        callback(null)
+        return
+      }
+      try {
+        realUnsubscribe = onAuthStateChanged(auth, callback)
+      } catch (err) {
+        console.error("[v0] onAuthStateChanged failed:", err)
+        callback(null)
+      }
+    })
+    .catch((err) => {
+      console.error("[v0] waitForAuth failed:", err)
+      if (!cancelled) callback(null)
+    })
+
+  return () => {
+    cancelled = true
+    if (realUnsubscribe) realUnsubscribe()
   }
 }
 
@@ -202,21 +218,14 @@ export async function initRecaptchaVerifierAsync(buttonId: string, maxRetries = 
  * Send a verification code to the user's phone number
  */
 export async function sendPhoneVerificationCode(phoneNumber: string): Promise<void> {
-  console.log("[v0] sendPhoneVerificationCode →", phoneNumber)
   if (!recaptchaVerifier) {
     throw new Error("reCAPTCHA verifier not initialized. Call initRecaptchaVerifier first.")
   }
 
   try {
     confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier)
-    console.log("[v0] signInWithPhoneNumber resolved — verificationId:", (confirmationResult as { verificationId?: string }).verificationId)
   } catch (error: unknown) {
-    console.error("[v0] signInWithPhoneNumber error:", error)
-    if (error && typeof error === "object") {
-      const e = error as { code?: string; message?: string }
-      console.error("[v0] Firebase error code:", e.code)
-      console.error("[v0] Firebase error message:", e.message)
-    }
+    console.error("Error sending phone verification code:", error)
     // After any failure, the verifier is consumed and must be recreated
     if (recaptchaVerifier) {
       recaptchaVerifier.clear()

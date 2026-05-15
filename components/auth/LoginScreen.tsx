@@ -114,7 +114,6 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("[v0] handlePhoneSubmit fired")
 
     const cleanedPhone = phoneNumber.replace(/\s/g, "")
 
@@ -140,10 +139,8 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
 
     try {
       await sendPhoneVerificationCode(cleanedPhone)
-      console.log("[v0] code sent — switching to verify-code screen")
       setScreen("verify-code")
     } catch (error) {
-      console.error("[v0] sendPhoneVerificationCode threw:", error)
       let errorMsg = "Failed to send verification code. Please try again."
       if (error && typeof error === "object" && "code" in error) {
         const code = (error as { code: string }).code

@@ -36,9 +36,14 @@ export default function App() {
     const unsubscribe = subscribeToAuthStateChanges((authUser) => {
       if (!mounted) return
       setUser(authUser)
-      if (authUser) {
-        setView("splash")
-      }
+      setView((current) => {
+        if (authUser) {
+          // Signed in: route to splash unless already inside the app
+          return current === "login" ? "splash" : current
+        }
+        // Signed out: always return to login
+        return "login"
+      })
     })
 
     return () => {

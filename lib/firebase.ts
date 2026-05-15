@@ -1,5 +1,6 @@
 import { initializeApp, getApps, FirebaseApp } from "firebase/app"
 import { getAuth, Auth } from "firebase/auth"
+import { getFirestore, Firestore } from "firebase/firestore"
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -16,6 +17,7 @@ const isConfigValid = firebaseConfig.apiKey && firebaseConfig.projectId
 // Initialize Firebase only on client side or if not already initialized
 let app: FirebaseApp
 let auth: Auth
+let db: Firestore
 
 if (typeof window !== "undefined" && isConfigValid) {
   // Client-side initialization with valid config
@@ -26,16 +28,19 @@ if (typeof window !== "undefined" && isConfigValid) {
       app = getApps()[0]
     }
     auth = getAuth(app)
+    db = getFirestore(app)
   } catch (error) {
     console.error("[v0] Firebase initialization error:", error)
     app = {} as FirebaseApp
     auth = {} as Auth
+    db = {} as Firestore
   }
 } else {
   // Server-side or missing config: create a placeholder
   app = {} as FirebaseApp
   auth = {} as Auth
+  db = {} as Firestore
 }
 
-export { auth }
+export { auth, db }
 export default app

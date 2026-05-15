@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { User } from "firebase/auth"
-import { subscribeToAuthStateChanges, isMagicLinkCallback, completeMagicLinkSignIn } from "@/lib/auth"
+import { subscribeToAuthStateChanges, isMagicLinkCallback, completeMagicLinkSignIn, signOut } from "@/lib/auth"
 import LoginScreen from "@/components/auth/LoginScreen"
 import SplashScreen from "@/components/home/SplashScreen"
 import CharacterBibleScreen from "@/components/character-bible/CharacterBibleScreen"
@@ -62,7 +62,15 @@ export default function App() {
     }
   }, [user, view])
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    try {
+      await signOut()
+    } catch (err) {
+      console.error("[v0] signOut failed:", err)
+    }
+    // The auth subscription + reconcile effect will route to login,
+    // but set it explicitly here too for immediate feedback.
+    setUser(null)
     setView("login")
   }
 

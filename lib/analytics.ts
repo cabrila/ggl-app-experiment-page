@@ -30,8 +30,10 @@ export function isAnalyticsAvailable(): boolean {
   }
   
   if (typeof window.gtag !== "function") {
-    window.gtag = function gtag(...args: unknown[]) {
-      window.dataLayer.push(args)
+    // gtag must push the arguments object, not an array of args
+    window.gtag = function() {
+      // eslint-disable-next-line prefer-rest-params
+      window.dataLayer.push(arguments)
     }
   }
   

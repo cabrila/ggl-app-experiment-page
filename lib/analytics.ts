@@ -17,10 +17,25 @@ declare global {
 export const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
 
 /**
- * Check if analytics is available
+ * Check if analytics is available and ensure gtag is ready
  */
 export function isAnalyticsAvailable(): boolean {
-  return typeof window !== "undefined" && !!GA_MEASUREMENT_ID && typeof window.gtag === "function"
+  if (typeof window === "undefined" || !GA_MEASUREMENT_ID) {
+    return false
+  }
+  
+  // Ensure dataLayer and gtag are initialized
+  if (!window.dataLayer) {
+    window.dataLayer = []
+  }
+  
+  if (typeof window.gtag !== "function") {
+    window.gtag = function gtag(...args: unknown[]) {
+      window.dataLayer.push(args)
+    }
+  }
+  
+  return true
 }
 
 /**

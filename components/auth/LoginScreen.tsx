@@ -11,8 +11,8 @@ import {
 } from "@/lib/auth"
 
 type AuthMethod = "email" | "phone"
-type LoginState = "idle" | "loading" | "success" | "error"
-type PhoneStep = "enter-phone" | "enter-code"
+// Single source of truth: which screen are we showing
+type Screen = "enter-credential" | "verify-code" | "success"
 
 interface LoginScreenProps {
   onDemoAccess?: () => void
@@ -23,8 +23,8 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
   const [email, setEmail] = useState("")
   const [phoneNumber, setPhoneNumber] = useState("")
   const [verificationCode, setVerificationCode] = useState("")
-  const [loginState, setLoginState] = useState<LoginState>("idle")
-  const [phoneStep, setPhoneStep] = useState<PhoneStep>("enter-phone")
+  const [screen, setScreen] = useState<Screen>("enter-credential")
+  const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
   const recaptchaInitialized = useRef(false)
 
@@ -80,22 +80,20 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
 
     if (!email.trim()) {
       setErrorMessage("Please enter your email address")
-      setLoginState("error")
       return
     }
 
     if (!isValidEmail(email)) {
       setErrorMessage("Please enter a valid email address")
-      setLoginState("error")
       return
     }
 
-    setLoginState("loading")
+    setIsLoading(true)
     setErrorMessage("")
 
     try {
       await sendMagicLink(email)
-      setLoginState("success")
+      setScreen("success")
     } catch (error: unknown) {
       let errorMsg = "Failed to send magic link. Please try again."
       if (error && typeof error === "object" && "code" in error) {
@@ -108,48 +106,42 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
           errorMsg = "Domain not authorized. Please contact support."
         }
       }
-      
       setErrorMessage(errorMsg)
-      setLoginState("error")
+    } finally {
+      setIsLoading(false)
     }
   }
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("[v0] handlePhoneSubmit fired", { phoneNumber, recaptchaInitialized: recaptchaInitialized.current })
+    console.log("[v0] handlePhoneSubmit fired")
 
     const cleanedPhone = phoneNumber.replace(/\s/g, "")
 
     if (!isValidPhoneNumber(cleanedPhone)) {
-      console.log("[v0] phone invalid:", cleanedPhone)
       setErrorMessage("Please enter a valid phone number with country code (e.g., +1234567890)")
-      setLoginState("error")
       return
     }
 
-    setLoginState("loading")
+    setIsLoading(true)
     setErrorMessage("")
 
     // Ensure reCAPTCHA is initialized before attempting to send code
     if (!recaptchaInitialized.current) {
-      console.log("[v0] reCAPTCHA not initialized, calling initRecaptchaVerifierAsync...")
       const verifier = await initRecaptchaVerifierAsync("phone-sign-in-button")
-      console.log("[v0] initRecaptchaVerifierAsync returned:", !!verifier)
       if (verifier) {
         recaptchaInitialized.current = true
       } else {
         setErrorMessage("Failed to initialize verification. Please refresh and try again.")
-        setLoginState("error")
+        setIsLoading(false)
         return
       }
     }
 
     try {
-      console.log("[v0] Calling sendPhoneVerificationCode with:", cleanedPhone)
       await sendPhoneVerificationCode(cleanedPhone)
-      console.log("[v0] sendPhoneVerificationCode succeeded, switching to enter-code step")
-      setPhoneStep("enter-code")
-      setLoginState("idle")
+      console.log("[v0] code sent — switching to verify-code screen")
+      setScreen("verify-code")
     } catch (error) {
       console.error("[v0] sendPhoneVerificationCode threw:", error)
       let errorMsg = "Failed to send verification code. Please try again."
@@ -173,8 +165,9 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
         errorMsg = error.message
       }
       setErrorMessage(errorMsg)
-      setLoginState("error")
       recaptchaInitialized.current = false
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -183,16 +176,14 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
 
     if (verificationCode.length !== 6) {
       setErrorMessage("Please enter the 6-digit verification code")
-      setLoginState("error")
       return
     }
 
-    setLoginState("loading")
+    setIsLoading(true)
     setErrorMessage("")
 
     try {
       await verifyPhoneCode(verificationCode)
-      setLoginState("success")
       // Auth state change will be handled by the parent component (page.tsx)
       // which will unmount this LoginScreen and show the splash screen.
     } catch (error) {
@@ -211,14 +202,14 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
         errorMsg = error.message
       }
       setErrorMessage(errorMsg)
-      setLoginState("error")
+      setIsLoading(false)
     }
   }
 
   const handleSwitchMethod = (method: AuthMethod) => {
     setAuthMethod(method)
-    setLoginState("idle")
-    setPhoneStep("enter-phone")
+    setScreen("enter-credential")
+    setIsLoading(false)
     setErrorMessage("")
     setEmail("")
     setPhoneNumber("")
@@ -228,8 +219,8 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
   }
 
   const handleBack = () => {
-    setLoginState("idle")
-    setPhoneStep("enter-phone")
+    setScreen("enter-credential")
+    setIsLoading(false)
     setErrorMessage("")
     setVerificationCode("")
     clearPhoneAuthState()
@@ -277,7 +268,7 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
       {/* Login Form */}
       <div className="w-full max-w-md">
         {/* Success State - Email */}
-        {loginState === "success" && authMethod === "email" && (
+        {screen === "success" && authMethod === "email" && (
           <div className="text-center py-8">
             <div className="flex justify-center mb-4">
               <CheckCircle className="w-16 h-16 text-[#b8e986]" />
@@ -291,7 +282,7 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
             </p>
             <button
               onClick={() => {
-                setLoginState("idle")
+                setScreen("enter-credential")
                 setEmail("")
               }}
               className="mt-6 text-[#b8e986] hover:text-[#c8f096] text-sm underline underline-offset-2 transition-colors font-sans"
@@ -301,8 +292,8 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
           </div>
         )}
 
-        {/* Verification Code State - Phone */}
-        {authMethod === "phone" && phoneStep === "enter-code" && loginState !== "success" && (
+        {/* Verification Code Screen - Phone */}
+        {screen === "verify-code" && authMethod === "phone" && (
           <div>
             <button
               onClick={handleBack}
@@ -325,29 +316,26 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
                 onChange={(e) => {
                   const value = e.target.value.replace(/\D/g, "").slice(0, 6)
                   setVerificationCode(value)
-                  if (loginState === "error") {
-                    setLoginState("idle")
-                    setErrorMessage("")
-                  }
+                  if (errorMessage) setErrorMessage("")
                 }}
                 placeholder="000000"
                 className="w-full px-5 py-4 bg-white rounded-2xl text-gray-700 placeholder-gray-400 text-center text-2xl tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-[#b8e986] transition-shadow font-sans"
-                disabled={loginState === "loading"}
+                disabled={isLoading}
                 autoComplete="one-time-code"
                 inputMode="numeric"
                 autoFocus
               />
 
-              {loginState === "error" && errorMessage && (
+              {errorMessage && (
                 <p className="text-red-300 text-sm text-center font-sans">{errorMessage}</p>
               )}
 
               <button
                 type="submit"
-                disabled={loginState === "loading" || verificationCode.length !== 6}
+                disabled={isLoading || verificationCode.length !== 6}
                 className="w-full py-4 bg-[#b8e986] hover:bg-[#c8f096] disabled:bg-[#b8e986]/50 disabled:cursor-not-allowed rounded-2xl text-[#2d5a3d] font-semibold text-base transition-colors flex items-center justify-center gap-2 font-sans"
               >
-                {loginState === "loading" ? (
+                {isLoading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
                     Verifying...
@@ -360,10 +348,8 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
           </div>
         )}
 
-        {/* Idle/Error States - Show Form */}
-        {(loginState === "idle" || loginState === "error" || loginState === "loading") &&
-          loginState !== "success" &&
-          !(authMethod === "phone" && phoneStep === "enter-code") && (
+        {/* Credential Entry Screen */}
+        {screen === "enter-credential" && (
             <div>
               {/* Auth Method Tabs */}
               <div className="flex mb-6 bg-white/5 rounded-xl p-1">
@@ -400,30 +386,27 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
                       value={email}
                       onChange={(e) => {
                         setEmail(e.target.value)
-                        if (loginState === "error") {
-                          setLoginState("idle")
-                          setErrorMessage("")
-                        }
+                        if (errorMessage) setErrorMessage("")
                       }}
                       placeholder="Enter your email"
                       className="w-full px-5 py-4 bg-white rounded-2xl text-gray-700 placeholder-gray-400 text-base focus:outline-none focus:ring-2 focus:ring-[#b8e986] transition-shadow font-sans"
-                      disabled={loginState === "loading"}
+                      disabled={isLoading}
                       autoComplete="email"
                       autoFocus
                     />
                     <Mail className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   </div>
 
-                  {loginState === "error" && errorMessage && (
+                  {errorMessage && (
                     <p className="text-red-300 text-sm text-center font-sans">{errorMessage}</p>
                   )}
 
                   <button
                     type="submit"
-                    disabled={loginState === "loading" || !email.trim()}
+                    disabled={isLoading || !email.trim()}
                     className="w-full py-4 bg-[#b8e986] hover:bg-[#c8f096] disabled:bg-[#b8e986]/50 disabled:cursor-not-allowed rounded-2xl text-[#2d5a3d] font-semibold text-base transition-colors flex items-center justify-center gap-2 font-sans"
                   >
-                    {loginState === "loading" ? (
+                    {isLoading ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin" />
                         Sending magic link...
@@ -444,14 +427,11 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
                       value={phoneNumber}
                       onChange={(e) => {
                         setPhoneNumber(formatPhoneNumber(e.target.value))
-                        if (loginState === "error") {
-                          setLoginState("idle")
-                          setErrorMessage("")
-                        }
+                        if (errorMessage) setErrorMessage("")
                       }}
                       placeholder="+1 234 567 8900"
                       className="w-full px-5 py-4 bg-white rounded-2xl text-gray-700 placeholder-gray-400 text-base focus:outline-none focus:ring-2 focus:ring-[#b8e986] transition-shadow font-sans"
-                      disabled={loginState === "loading"}
+                      disabled={isLoading}
                       autoComplete="tel"
                       autoFocus
                     />
@@ -462,17 +442,17 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
                     Include your country code (e.g., +1 for US)
                   </p>
 
-                  {loginState === "error" && errorMessage && (
+                  {errorMessage && (
                     <p className="text-red-300 text-sm text-center font-sans">{errorMessage}</p>
                   )}
 
                   <button
                     id="phone-sign-in-button"
                     type="submit"
-                    disabled={loginState === "loading" || !phoneNumber.trim()}
+                    disabled={isLoading || !phoneNumber.trim()}
                     className="w-full py-4 bg-[#b8e986] hover:bg-[#c8f096] disabled:bg-[#b8e986]/50 disabled:cursor-not-allowed rounded-2xl text-[#2d5a3d] font-semibold text-base transition-colors flex items-center justify-center gap-2 font-sans"
                   >
-                    {loginState === "loading" ? (
+                    {isLoading ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin" />
                         Sending code...

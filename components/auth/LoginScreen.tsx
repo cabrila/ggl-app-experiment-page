@@ -239,17 +239,6 @@ export default function LoginScreen({ onDemoAccess, onSignedIn }: LoginScreenPro
           "linear-gradient(180deg, #2d6b3f 0%, #1a4a2a 30%, #0f3520 55%, #0a2618 80%, #061a10 100%)",
       }}
     >
-      {/* Demo Access Button */}
-      {onDemoAccess && (
-        <button
-          onClick={onDemoAccess}
-          aria-label="Enter demo as John Doe"
-          className="absolute top-5 right-5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/35 transition-all duration-200 text-white/60 hover:text-white/90 text-xs font-sans"
-        >
-          Demo
-        </button>
-      )}
-
       {/* Logo */}
       <div className="mb-12">
         <img

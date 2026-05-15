@@ -20,6 +20,38 @@ function isFirestoreInitialized(): boolean {
   return db && typeof db.type === "string"
 }
 
+/**
+ * Firestore rejects documents that contain `undefined` values at any depth.
+ * The AI extraction produces Character objects whose optional fields
+ * (alternateNames, nested profile fields, etc.) are often `undefined`, which
+ * caused addDoc/updateDoc to throw. This helper deep-clones the input and
+ * removes any `undefined` values, leaving `null`s, arrays, Dates, and
+ * Firestore Timestamps intact.
+ */
+function stripUndefined<T>(value: T): T {
+  if (value === undefined) {
+    return undefined as unknown as T
+  }
+  if (value === null) return value
+  if (value instanceof Date) return value
+  if (value instanceof Timestamp) return value
+  if (Array.isArray(value)) {
+    return value
+      .filter((v) => v !== undefined)
+      .map((v) => stripUndefined(v)) as unknown as T
+  }
+  if (typeof value === "object") {
+    const out: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (v === undefined) continue
+      const cleaned = stripUndefined(v)
+      if (cleaned !== undefined) out[k] = cleaned
+    }
+    return out as unknown as T
+  }
+  return value
+}
+
 // Convert Firestore Timestamp to Date
 function convertTimestamp(timestamp: Timestamp | Date): Date {
   if (timestamp instanceof Timestamp) {
@@ -78,12 +110,15 @@ export async function addCharacterBible(
   }
 
   const biblesRef = collection(db, `users/${userId}/characterBibles`)
-  const docRef = await addDoc(biblesRef, {
-    ...bible,
-    isDemo: false,
-    createdAt: Timestamp.fromDate(bible.createdAt),
-    updatedAt: Timestamp.fromDate(bible.updatedAt),
-  })
+  const docRef = await addDoc(
+    biblesRef,
+    stripUndefined({
+      ...bible,
+      isDemo: false,
+      createdAt: Timestamp.fromDate(bible.createdAt),
+      updatedAt: Timestamp.fromDate(bible.updatedAt),
+    })
+  )
   return docRef.id
 }
 
@@ -98,15 +133,15 @@ export async function updateCharacterBible(
 
   const bibleRef = doc(db, `users/${userId}/characterBibles/${bibleId}`)
   const updateData: Record<string, unknown> = { ...updates, updatedAt: Timestamp.now() }
-  
+
   if (updates.createdAt) {
     updateData.createdAt = Timestamp.fromDate(updates.createdAt)
   }
-  
+
   // Remove id from updates as it's not a field
   delete updateData.id
-  
-  await updateDoc(bibleRef, updateData)
+
+  await updateDoc(bibleRef, stripUndefined(updateData))
 }
 
 export async function deleteCharacterBible(
@@ -157,12 +192,15 @@ export async function addActorProject(
   }
 
   const projectsRef = collection(db, `users/${userId}/actorProjects`)
-  const docRef = await addDoc(projectsRef, {
-    ...project,
-    isDemo: false,
-    createdAt: Timestamp.fromDate(project.createdAt),
-    updatedAt: Timestamp.fromDate(project.updatedAt),
-  })
+  const docRef = await addDoc(
+    projectsRef,
+    stripUndefined({
+      ...project,
+      isDemo: false,
+      createdAt: Timestamp.fromDate(project.createdAt),
+      updatedAt: Timestamp.fromDate(project.updatedAt),
+    })
+  )
   return docRef.id
 }
 
@@ -177,14 +215,14 @@ export async function updateActorProject(
 
   const projectRef = doc(db, `users/${userId}/actorProjects/${projectId}`)
   const updateData: Record<string, unknown> = { ...updates, updatedAt: Timestamp.now() }
-  
+
   if (updates.createdAt) {
     updateData.createdAt = Timestamp.fromDate(updates.createdAt)
   }
-  
+
   delete updateData.id
-  
-  await updateDoc(projectRef, updateData)
+
+  await updateDoc(projectRef, stripUndefined(updateData))
 }
 
 export async function deleteActorProject(
@@ -235,12 +273,15 @@ export async function addLocationProject(
   }
 
   const projectsRef = collection(db, `users/${userId}/locationProjects`)
-  const docRef = await addDoc(projectsRef, {
-    ...project,
-    isDemo: false,
-    createdAt: Timestamp.fromDate(project.createdAt),
-    updatedAt: Timestamp.fromDate(project.updatedAt),
-  })
+  const docRef = await addDoc(
+    projectsRef,
+    stripUndefined({
+      ...project,
+      isDemo: false,
+      createdAt: Timestamp.fromDate(project.createdAt),
+      updatedAt: Timestamp.fromDate(project.updatedAt),
+    })
+  )
   return docRef.id
 }
 
@@ -255,14 +296,14 @@ export async function updateLocationProject(
 
   const projectRef = doc(db, `users/${userId}/locationProjects/${projectId}`)
   const updateData: Record<string, unknown> = { ...updates, updatedAt: Timestamp.now() }
-  
+
   if (updates.createdAt) {
     updateData.createdAt = Timestamp.fromDate(updates.createdAt)
   }
-  
+
   delete updateData.id
-  
-  await updateDoc(projectRef, updateData)
+
+  await updateDoc(projectRef, stripUndefined(updateData))
 }
 
 export async function deleteLocationProject(

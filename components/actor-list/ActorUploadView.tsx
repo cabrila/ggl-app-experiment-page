@@ -6,6 +6,7 @@ import { useActorList } from "./ActorListContext"
 import { Actor } from "@/types/actor-list"
 import { useImportJob } from "@/hooks/useImportJob"
 import type { ActorExtractResult } from "@/types/ai"
+import { trackFileUpload, trackExtractClick, trackExtractComplete } from "@/lib/analytics"
 
 export default function ActorUploadView() {
   const { createProject, goBack } = useActorList()
@@ -51,12 +52,17 @@ export default function ActorUploadView() {
     const selectedFile = e.target.files?.[0]
     if (selectedFile && isValidFile(selectedFile)) {
       setFile(selectedFile)
+      const fileExt = selectedFile.name.split('.').pop()?.toLowerCase() || 'unknown'
+      trackFileUpload(fileExt, "actor-list")
     }
   }
 
   const handleProcess = async () => {
     if (!file) return
 
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'unknown'
+    trackExtractClick("actor-list", fileExt)
+    
     const sourceTitle = file.name.replace(/\.[^/.]+$/, "")
     await run(file, sourceTitle)
   }
@@ -78,6 +84,7 @@ export default function ActorUploadView() {
 
       // Create project with extracted actors
       const projectName = file.name.replace(/\.[^/.]+$/, "") || "Imported Actors"
+      trackExtractComplete("actor-list", actors.length)
       createProject(projectName, actors)
     }
   }, [status, result, file, createProject])

@@ -6,6 +6,7 @@ import { useCharacterBible } from "./CharacterBibleContext"
 import { CharacterBible } from "@/types/character-bible"
 import DeleteConfirmationModal from "@/components/ui/DeleteConfirmationModal"
 import EditProjectWithThumbnailModal from "@/components/ui/EditProjectWithThumbnailModal"
+import { trackListCreated, trackDelete } from "@/lib/analytics"
 
 export default function ProjectsList() {
   const { bibles, setView, setCurrentBible, deleteBible, updateBible } = useCharacterBible()
@@ -19,6 +20,7 @@ export default function ProjectsList() {
   }
 
   const handleNewBible = () => {
+    trackListCreated("character-bible")
     setView("upload")
   }
 
@@ -34,6 +36,7 @@ export default function ProjectsList() {
 
   const handleConfirmDelete = () => {
     if (deleteTarget) {
+      trackDelete("character-bible", "list")
       deleteBible(deleteTarget.id)
     }
   }

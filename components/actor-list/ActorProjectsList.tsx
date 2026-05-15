@@ -6,6 +6,7 @@ import { useActorList } from "./ActorListContext"
 import { ActorListProject } from "@/types/actor-list"
 import DeleteConfirmationModal from "@/components/ui/DeleteConfirmationModal"
 import EditProjectWithThumbnailModal from "@/components/ui/EditProjectWithThumbnailModal"
+import { trackListCreated, trackDelete } from "@/lib/analytics"
 
 export default function ActorProjectsList() {
   const { projects, selectProject, deleteProject, updateProject, setView } = useActorList()
@@ -25,6 +26,7 @@ export default function ActorProjectsList() {
 
   const handleConfirmDelete = () => {
     if (deleteTarget) {
+      trackDelete("actor-list", "list")
       deleteProject(deleteTarget.id)
     }
   }
@@ -128,7 +130,10 @@ export default function ActorProjectsList() {
 
         {/* New Actor List Card */}
         <button
-          onClick={() => setView("upload")}
+          onClick={() => {
+            trackListCreated("actor-list")
+            setView("upload")
+          }}
           className="p-5 rounded-xl border-2 border-dashed border-white/20 hover:border-white/40 bg-transparent hover:bg-white/5 transition-all flex flex-col items-center justify-center min-h-[180px] group"
         >
           <div className="w-12 h-12 rounded-full border-2 border-dashed border-white/30 group-hover:border-white/50 flex items-center justify-center mb-4 transition-colors">

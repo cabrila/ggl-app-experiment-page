@@ -1,6 +1,5 @@
 "use client"
 
-import Script from "next/script"
 import { usePathname, useSearchParams } from "next/navigation"
 import { useEffect, Suspense } from "react"
 import { GA_MEASUREMENT_ID, trackPageView } from "@/lib/analytics"
@@ -20,34 +19,50 @@ function PageViewTracker() {
 }
 
 export default function GoogleAnalytics() {
-  if (!GA_MEASUREMENT_ID) {
+  // Only render if GA_MEASUREMENT_ID is defined and valid
+  if (!GA_MEASUREMENT_ID || GA_MEASUREMENT_ID.trim() === "") {
     return null
   }
 
+  const gaId = GA_MEASUREMENT_ID
+
+  useEffect(() => {
+    // Initialize dataLayer and gtag function
+    window.dataLayer = window.dataLayer || []
+    
+    // Define gtag function if not already defined
+    if (typeof window.gtag !== 'function') {
+      window.gtag = function gtag(...args: unknown[]) {
+        window.dataLayer.push(args)
+      }
+    }
+    
+    window.gtag('js', new Date())
+    window.gtag('config', gaId, {
+      page_path: window.location.pathname,
+      send_page_view: true
+    })
+
+    // Load gtag.js script dynamically
+    const script = document.createElement('script')
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`
+    script.async = true
+    document.head.appendChild(script)
+
+    console.log("[v0] Google Analytics initialized")
+
+    return () => {
+      // Cleanup if component unmounts
+      const existingScript = document.querySelector(`script[src*="googletagmanager.com/gtag/js"]`)
+      if (existingScript) {
+        existingScript.remove()
+      }
+    }
+  }, [gaId])
+
   return (
-    <>
-      <Script
-        strategy="afterInteractive"
-        src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-      />
-      <Script
-        id="google-analytics"
-        strategy="afterInteractive"
-        dangerouslySetInnerHTML={{
-          __html: `
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', '${GA_MEASUREMENT_ID}', {
-              page_path: window.location.pathname,
-              send_page_view: true
-            });
-          `,
-        }}
-      />
-      <Suspense fallback={null}>
-        <PageViewTracker />
-      </Suspense>
-    </>
+    <Suspense fallback={null}>
+      <PageViewTracker />
+    </Suspense>
   )
 }

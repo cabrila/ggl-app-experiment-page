@@ -6,6 +6,7 @@ import { useLocationScouting } from "./LocationScoutingContext"
 import { Location, LocationProject } from "@/types/location-scouting"
 import { useImportJob } from "@/hooks/useImportJob"
 import type { LocationOverviewResult } from "@/types/ai"
+import { trackFileUpload, trackExtractClick, trackExtractComplete } from "@/lib/analytics"
 
 export default function LocationUploadView() {
   const { setView, addProject, setCurrentProject } = useLocationScouting()
@@ -49,12 +50,17 @@ export default function LocationUploadView() {
     const selectedFile = e.target.files?.[0]
     if (selectedFile && isValidFile(selectedFile)) {
       setFile(selectedFile)
+      const fileExt = selectedFile.name.split('.').pop()?.toLowerCase() || 'unknown'
+      trackFileUpload(fileExt, "location-overview")
     }
   }
 
   const handleProcess = async () => {
     if (!file) return
 
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'unknown'
+    trackExtractClick("location-overview", fileExt)
+    
     const sourceTitle = file.name.replace(/\.(pdf|docx)$/i, "")
     await run(file, sourceTitle)
   }
@@ -83,6 +89,7 @@ export default function LocationUploadView() {
 
       addProject(newProject)
       setCurrentProject(newProject)
+      trackExtractComplete("location-overview", locations.length)
       setView("results")
     }
   }, [status, result, file, addProject, setCurrentProject, setView])

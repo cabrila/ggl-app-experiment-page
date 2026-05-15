@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { Home, LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone } from "lucide-react"
 import { useCasting } from "@/components/casting/CastingContext"
 import FeedbackModal from "@/components/modals/FeedbackModal"
+import { trackFeatureClick, type FeatureName } from "@/lib/analytics"
 
 type ActiveView = "character-bible" | "location-overview" | "actor-database" | "public-casting"
 
@@ -191,7 +192,10 @@ export default function FeatureLayout({ children, onBack, onSignOut, activeView,
               return (
                 <button
                   key={item.id}
-                  onClick={() => onNavigate?.(item.id)}
+                  onClick={() => {
+                    trackFeatureClick(item.id as FeatureName)
+                    onNavigate?.(item.id)
+                  }}
                   className={`
                     relative w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200
                     ${isActive 

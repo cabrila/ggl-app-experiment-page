@@ -11,7 +11,8 @@ import {
 } from "@/lib/auth"
 
 type AuthMethod = "email" | "phone"
-type LoginState = "idle" | "loading" | "success" | "error" | "verify-code"
+type LoginState = "idle" | "loading" | "success" | "error"
+type PhoneStep = "enter-phone" | "enter-code"
 
 interface LoginScreenProps {
   onDemoAccess?: () => void
@@ -23,6 +24,7 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
   const [phoneNumber, setPhoneNumber] = useState("")
   const [verificationCode, setVerificationCode] = useState("")
   const [loginState, setLoginState] = useState<LoginState>("idle")
+  const [phoneStep, setPhoneStep] = useState<PhoneStep>("enter-phone")
   const [errorMessage, setErrorMessage] = useState("")
   const recaptchaInitialized = useRef(false)
 
@@ -64,15 +66,14 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
     }
   }, [authMethod])
 
-  // Clean up on unmount or method change
+  // Clean up only on full unmount (component leaves the tree)
   useEffect(() => {
     return () => {
-      if (authMethod === "phone") {
-        clearPhoneAuthState()
-        recaptchaInitialized.current = false
-      }
+      clearPhoneAuthState()
+      recaptchaInitialized.current = false
     }
-  }, [authMethod])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -141,7 +142,8 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
 
     try {
       await sendPhoneVerificationCode(cleanedPhone)
-      setLoginState("verify-code")
+      setPhoneStep("enter-code")
+      setLoginState("idle")
     } catch (error) {
       let errorMsg = "Failed to send verification code. Please try again."
       if (error && typeof error === "object" && "code" in error) {
@@ -183,10 +185,24 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
 
     try {
       await verifyPhoneCode(verificationCode)
-      // Auth state change will be handled by the parent component
+      setLoginState("success")
+      // Auth state change will be handled by the parent component (page.tsx)
+      // which will unmount this LoginScreen and show the splash screen.
     } catch (error) {
-      const errorMsg =
-        error instanceof Error ? error.message : "Invalid verification code. Please try again."
+      let errorMsg = "Invalid verification code. Please try again."
+      if (error && typeof error === "object" && "code" in error) {
+        const code = (error as { code: string }).code
+        if (code === "auth/invalid-verification-code") {
+          errorMsg = "Invalid code. Please check the digits and try again."
+        } else if (code === "auth/code-expired") {
+          errorMsg = "Code expired. Go back and request a new one."
+        } else {
+          const message = (error as { message?: string }).message
+          errorMsg = `${code}${message ? ": " + message : ""}`
+        }
+      } else if (error instanceof Error) {
+        errorMsg = error.message
+      }
       setErrorMessage(errorMsg)
       setLoginState("error")
     }
@@ -195,6 +211,7 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
   const handleSwitchMethod = (method: AuthMethod) => {
     setAuthMethod(method)
     setLoginState("idle")
+    setPhoneStep("enter-phone")
     setErrorMessage("")
     setEmail("")
     setPhoneNumber("")
@@ -205,6 +222,7 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
 
   const handleBack = () => {
     setLoginState("idle")
+    setPhoneStep("enter-phone")
     setErrorMessage("")
     setVerificationCode("")
     clearPhoneAuthState()
@@ -277,7 +295,7 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
         )}
 
         {/* Verification Code State - Phone */}
-        {loginState === "verify-code" && authMethod === "phone" && (
+        {authMethod === "phone" && phoneStep === "enter-code" && loginState !== "success" && (
           <div>
             <button
               onClick={handleBack}
@@ -301,7 +319,7 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
                   const value = e.target.value.replace(/\D/g, "").slice(0, 6)
                   setVerificationCode(value)
                   if (loginState === "error") {
-                    setLoginState("verify-code")
+                    setLoginState("idle")
                     setErrorMessage("")
                   }
                 }}
@@ -337,8 +355,8 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
 
         {/* Idle/Error States - Show Form */}
         {(loginState === "idle" || loginState === "error" || loginState === "loading") &&
-          loginState !== "verify-code" &&
-          loginState !== "success" && (
+          loginState !== "success" &&
+          !(authMethod === "phone" && phoneStep === "enter-code") && (
             <div>
               {/* Auth Method Tabs */}
               <div className="flex mb-6 bg-white/5 rounded-xl p-1">

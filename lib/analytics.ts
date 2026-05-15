@@ -229,13 +229,17 @@ export function trackAddItem(feature: FeatureName, itemType: string) {
  * Track export actions (JSON, Excel, PDF)
  */
 export function trackExport(feature: FeatureName, exportFormat: "json" | "excel" | "pdf") {
-  console.log("[v0] trackExport called:", feature, exportFormat)
+  // Debug: Log immediately to verify function is being called
+  if (typeof window !== "undefined") {
+    console.log("[v0] trackExport CALLED - feature:", feature, "format:", exportFormat)
+  }
+  
   if (!isAnalyticsAvailable()) {
     console.log("[v0] Analytics not available for export")
     return
   }
 
-  console.log("[v0] Sending export event")
+  console.log("[v0] Sending export event to GA")
   window.gtag("event", "export", {
     feature_name: feature,
     export_format: exportFormat,

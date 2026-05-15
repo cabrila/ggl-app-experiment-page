@@ -122,7 +122,13 @@ export function CharacterBibleProvider({ children }: { children: ReactNode }) {
         // Set the new bible as current with the Firestore ID
         setCurrentBible({ ...bible, id: newId, isDemo: false })
       } catch (error) {
-        console.error("[v0] Error adding character bible:", error)
+        console.error("[v0] Error adding character bible to Firestore:", error)
+        if (error && typeof error === "object" && "code" in error) {
+          console.error("[v0] Firestore error code:", (error as { code: string }).code)
+        }
+        // Fallback so the user still sees the bible locally for this session.
+        setBibles((prev) => [...prev, bible])
+        setCurrentBible(bible)
       }
     } else {
       // Not logged in, just add to local state (demo mode)

@@ -28,7 +28,7 @@ if (typeof window !== "undefined" && isConfigValid) {
       app = getApps()[0]
     }
     auth = getAuth(app)
-    db = getFirestore(app)
+    db = getFirestore(app, "app-experiment-firestore")
   } catch (error) {
     console.error("[v0] Firebase initialization error:", error)
     app = {} as FirebaseApp

@@ -20,8 +20,11 @@ function PageViewTracker() {
 }
 
 export default function GoogleAnalytics() {
+  console.log("[v0] GA_MEASUREMENT_ID:", GA_MEASUREMENT_ID)
+  
   // Only render if GA_MEASUREMENT_ID is defined and valid
   if (!GA_MEASUREMENT_ID || GA_MEASUREMENT_ID.trim() === "") {
+    console.log("[v0] GA_MEASUREMENT_ID is not set - Google Analytics disabled")
     return null
   }
 

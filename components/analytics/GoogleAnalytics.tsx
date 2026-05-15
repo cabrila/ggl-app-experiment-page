@@ -49,7 +49,7 @@ export default function GoogleAnalytics() {
     script.async = true
     document.head.appendChild(script)
 
-    console.log("[v0] Google Analytics initialized")
+    
 
     return () => {
       // Cleanup if component unmounts

@@ -1,6 +1,5 @@
 "use client"
 
-import Script from "next/script"
 import { usePathname, useSearchParams } from "next/navigation"
 import { useEffect, Suspense } from "react"
 import { GA_MEASUREMENT_ID, trackPageView } from "@/lib/analytics"
@@ -27,35 +26,43 @@ export default function GoogleAnalytics() {
 
   const gaId = GA_MEASUREMENT_ID
 
+  useEffect(() => {
+    // Initialize dataLayer and gtag function
+    window.dataLayer = window.dataLayer || []
+    
+    // Define gtag function if not already defined
+    if (typeof window.gtag !== 'function') {
+      window.gtag = function gtag(...args: unknown[]) {
+        window.dataLayer.push(args)
+      }
+    }
+    
+    window.gtag('js', new Date())
+    window.gtag('config', gaId, {
+      page_path: window.location.pathname,
+      send_page_view: true
+    })
+
+    // Load gtag.js script dynamically
+    const script = document.createElement('script')
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`
+    script.async = true
+    document.head.appendChild(script)
+
+    console.log("[v0] Google Analytics initialized")
+
+    return () => {
+      // Cleanup if component unmounts
+      const existingScript = document.querySelector(`script[src*="googletagmanager.com/gtag/js"]`)
+      if (existingScript) {
+        existingScript.remove()
+      }
+    }
+  }, [gaId])
+
   return (
-    <>
-      {/* Initialize dataLayer and gtag function FIRST (inline, runs immediately) */}
-      <Script
-        id="google-analytics-init"
-        strategy="beforeInteractive"
-        dangerouslySetInnerHTML={{
-          __html: `
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-          `,
-        }}
-      />
-      {/* Load gtag.js and configure after it loads */}
-      <Script
-        src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
-        strategy="afterInteractive"
-        onLoad={() => {
-          window.gtag('config', gaId, {
-            page_path: window.location.pathname,
-            send_page_view: true
-          });
-          console.log("[v0] Google Analytics loaded and configured");
-        }}
-      />
-      <Suspense fallback={null}>
-        <PageViewTracker />
-      </Suspense>
-    </>
+    <Suspense fallback={null}>
+      <PageViewTracker />
+    </Suspense>
   )
 }

@@ -181,13 +181,15 @@ export default function LoginScreen({ onDemoAccess, onSignedIn }: LoginScreenPro
     setErrorMessage("")
 
     try {
-      await verifyPhoneCode(verificationCode)
+      console.log("[v0] LoginScreen: calling verifyPhoneCode...")
+      const verifiedUser = await verifyPhoneCode(verificationCode)
+      console.log("[v0] LoginScreen: verifyPhoneCode resolved, uid:", verifiedUser.uid, "— invoking onSignedIn:", typeof onSignedIn)
       setIsLoading(false)
-      // Explicitly notify parent that sign-in succeeded.
-      // This is the primary trigger for the splash transition — we no longer
-      // rely solely on onAuthStateChanged, which can be delayed or miss firing.
+      // Explicitly notify parent that sign-in succeeded. The parent reconciles
+      // routing via a useEffect on `user`, so this is a redundant safety net.
       onSignedIn?.()
     } catch (error) {
+      console.error("[v0] LoginScreen: verifyPhoneCode threw:", error)
       setIsLoading(false)
       let errorMsg = "Invalid verification code. Please try again."
       if (error && typeof error === "object" && "code" in error) {

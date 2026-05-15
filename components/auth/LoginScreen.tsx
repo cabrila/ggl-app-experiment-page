@@ -170,6 +170,7 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
 
   const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log("[v0] handleVerifyCode fired, code length:", verificationCode.length)
 
     if (verificationCode.length !== 6) {
       setErrorMessage("Please enter the 6-digit verification code")
@@ -180,10 +181,15 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
     setErrorMessage("")
 
     try {
-      await verifyPhoneCode(verificationCode)
-      // Auth state change will be handled by the parent component (page.tsx)
-      // which will unmount this LoginScreen and show the splash screen.
+      console.log("[v0] Calling verifyPhoneCode...")
+      const verifiedUser = await verifyPhoneCode(verificationCode)
+      console.log("[v0] verifyPhoneCode resolved, uid:", verifiedUser.uid)
+      // Auth state change handled by parent. As a safety net, mark success so
+      // even if onAuthStateChanged is delayed, we leave the verifying spinner.
+      setScreen("success")
+      setIsLoading(false)
     } catch (error) {
+      console.error("[v0] verifyPhoneCode threw:", error)
       let errorMsg = "Invalid verification code. Please try again."
       if (error && typeof error === "object" && "code" in error) {
         const code = (error as { code: string }).code

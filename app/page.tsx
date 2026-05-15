@@ -34,12 +34,15 @@ export default function App() {
 
     // Subscribe to authentication state changes
     const unsubscribe = subscribeToAuthStateChanges((authUser) => {
+      console.log("[v0] auth state changed, authUser:", authUser?.uid ?? null)
       if (!mounted) return
       setUser(authUser)
       setView((current) => {
         if (authUser) {
           // Signed in: route to splash unless already inside the app
-          return current === "login" ? "splash" : current
+          const next = current === "login" ? "splash" : current
+          console.log("[v0] routing", current, "→", next)
+          return next
         }
         // Signed out: always return to login
         return "login"

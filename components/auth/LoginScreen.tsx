@@ -143,8 +143,26 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
       await sendPhoneVerificationCode(cleanedPhone)
       setLoginState("verify-code")
     } catch (error) {
-      const errorMsg =
-        error instanceof Error ? error.message : "Failed to send verification code. Please try again."
+      let errorMsg = "Failed to send verification code. Please try again."
+      if (error && typeof error === "object" && "code" in error) {
+        const code = (error as { code: string }).code
+        const message = (error as { message?: string }).message
+        if (code === "auth/too-many-requests") {
+          errorMsg = "Too many attempts from this number. Firebase has temporarily blocked SMS to this phone. Wait a few hours or use a different number."
+        } else if (code === "auth/invalid-phone-number") {
+          errorMsg = "Invalid phone number format. Use +countrycode followed by the number."
+        } else if (code === "auth/quota-exceeded") {
+          errorMsg = "SMS quota exceeded on this Firebase project. Check Firebase Console billing/quota."
+        } else if (code === "auth/captcha-check-failed") {
+          errorMsg = "reCAPTCHA check failed. Refresh the page and try again."
+        } else if (code === "auth/operation-not-allowed") {
+          errorMsg = "Phone sign-in not enabled in Firebase Console → Authentication → Sign-in method."
+        } else {
+          errorMsg = `${code}${message ? ": " + message : ""}`
+        }
+      } else if (error instanceof Error) {
+        errorMsg = error.message
+      }
       setErrorMessage(errorMsg)
       setLoginState("error")
       recaptchaInitialized.current = false

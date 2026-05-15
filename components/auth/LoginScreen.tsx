@@ -116,10 +116,12 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log("[v0] handlePhoneSubmit fired", { phoneNumber, recaptchaInitialized: recaptchaInitialized.current })
 
     const cleanedPhone = phoneNumber.replace(/\s/g, "")
 
     if (!isValidPhoneNumber(cleanedPhone)) {
+      console.log("[v0] phone invalid:", cleanedPhone)
       setErrorMessage("Please enter a valid phone number with country code (e.g., +1234567890)")
       setLoginState("error")
       return
@@ -130,7 +132,9 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
 
     // Ensure reCAPTCHA is initialized before attempting to send code
     if (!recaptchaInitialized.current) {
+      console.log("[v0] reCAPTCHA not initialized, calling initRecaptchaVerifierAsync...")
       const verifier = await initRecaptchaVerifierAsync("phone-sign-in-button")
+      console.log("[v0] initRecaptchaVerifierAsync returned:", !!verifier)
       if (verifier) {
         recaptchaInitialized.current = true
       } else {
@@ -141,10 +145,13 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
     }
 
     try {
+      console.log("[v0] Calling sendPhoneVerificationCode with:", cleanedPhone)
       await sendPhoneVerificationCode(cleanedPhone)
+      console.log("[v0] sendPhoneVerificationCode succeeded, switching to enter-code step")
       setPhoneStep("enter-code")
       setLoginState("idle")
     } catch (error) {
+      console.error("[v0] sendPhoneVerificationCode threw:", error)
       let errorMsg = "Failed to send verification code. Please try again."
       if (error && typeof error === "object" && "code" in error) {
         const code = (error as { code: string }).code

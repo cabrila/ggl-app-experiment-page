@@ -166,13 +166,8 @@ export type FeatureName = "character-bible" | "location-overview" | "actor-list"
  * Track when user clicks on a feature in the sidebar
  */
 export function trackFeatureClick(feature: FeatureName) {
-  console.log("[v0] trackFeatureClick called:", feature)
-  if (!isAnalyticsAvailable()) {
-    console.log("[v0] Analytics not available")
-    return
-  }
+  if (!isAnalyticsAvailable()) return
 
-  console.log("[v0] Sending feature_click event")
   window.gtag("event", "feature_click", {
     feature_name: feature,
   })
@@ -229,17 +224,8 @@ export function trackAddItem(feature: FeatureName, itemType: string) {
  * Track export actions (JSON, Excel, PDF)
  */
 export function trackExport(feature: FeatureName, exportFormat: "json" | "excel" | "pdf") {
-  // Debug: Log immediately to verify function is being called
-  if (typeof window !== "undefined") {
-    console.log("[v0] trackExport CALLED - feature:", feature, "format:", exportFormat)
-  }
-  
-  if (!isAnalyticsAvailable()) {
-    console.log("[v0] Analytics not available for export")
-    return
-  }
+  if (!isAnalyticsAvailable()) return
 
-  console.log("[v0] Sending export event to GA")
   window.gtag("event", "export", {
     feature_name: feature,
     export_format: exportFormat,

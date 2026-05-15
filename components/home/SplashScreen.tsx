@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone, ArrowRight } from "lucide-react"
 import { useCasting } from "@/components/casting/CastingContext"
 import FeedbackModal from "@/components/modals/FeedbackModal"
+import { trackFeatureClick, type FeatureName } from "@/lib/analytics"
 
 const featureButtons = [
   {
@@ -178,6 +179,17 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
               <button
                 key={feature.id}
                 onClick={() => {
+                  // Map feature.id to FeatureName (actor-database -> actor-list)
+                  const featureNameMap: Record<string, FeatureName> = {
+                    "character-bible": "character-bible",
+                    "location-overview": "location-overview",
+                    "actor-database": "actor-list",
+                    "public-casting": "public-casting",
+                  }
+                  const featureName = featureNameMap[feature.id]
+                  if (featureName) {
+                    trackFeatureClick(featureName)
+                  }
                   onNavigate?.(feature.id)
                 }}
                 className="group flex items-start gap-4 p-5 bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 hover:border-white/20 rounded-xl text-left transition-all duration-200"

@@ -20,15 +20,18 @@ function PageViewTracker() {
 }
 
 export default function GoogleAnalytics() {
-  if (!GA_MEASUREMENT_ID) {
+  // Only render if GA_MEASUREMENT_ID is defined and valid
+  if (!GA_MEASUREMENT_ID || GA_MEASUREMENT_ID.trim() === "") {
     return null
   }
+
+  const gaId = GA_MEASUREMENT_ID
 
   return (
     <>
       <Script
         strategy="afterInteractive"
-        src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+        src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
       />
       <Script
         id="google-analytics"
@@ -38,7 +41,7 @@ export default function GoogleAnalytics() {
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', '${GA_MEASUREMENT_ID}', {
+            gtag('config', '${gaId}', {
               page_path: window.location.pathname,
               send_page_view: true
             });

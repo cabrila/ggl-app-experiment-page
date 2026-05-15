@@ -202,14 +202,20 @@ export async function initRecaptchaVerifierAsync(buttonId: string, maxRetries = 
  * Send a verification code to the user's phone number
  */
 export async function sendPhoneVerificationCode(phoneNumber: string): Promise<void> {
+  console.log("[v0] sendPhoneVerificationCode called with:", phoneNumber)
+  console.log("[v0] recaptchaVerifier exists:", !!recaptchaVerifier)
+  console.log("[v0] auth initialized:", isAuthInitialized())
+  
   if (!recaptchaVerifier) {
     throw new Error("reCAPTCHA verifier not initialized. Call initRecaptchaVerifier first.")
   }
 
   try {
+    console.log("[v0] Calling signInWithPhoneNumber...")
     confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier)
+    console.log("[v0] signInWithPhoneNumber succeeded")
   } catch (error: unknown) {
-    console.error("Error sending phone verification code:", error)
+    console.error("[v0] Error sending phone verification code:", error)
     if (recaptchaVerifier) {
       recaptchaVerifier.clear()
       recaptchaVerifier = null

@@ -43,15 +43,26 @@ if (typeof window !== "undefined" && isConfigValid) {
 }
 
 // Promise that resolves when auth is ready
-let authReadyResolve: () => void
 const authReadyPromise = new Promise<void>((resolve) => {
-  authReadyResolve = resolve
+  // Check if auth is already initialized
+  if (typeof window !== "undefined" && isConfigValid && auth && typeof auth.onIdTokenChanged === "function") {
+    resolve()
+  } else if (typeof window !== "undefined") {
+    // Poll for auth to be ready (in case of async loading)
+    const checkAuth = () => {
+      if (auth && typeof auth.onIdTokenChanged === "function") {
+        resolve()
+      } else {
+        setTimeout(checkAuth, 50)
+      }
+    }
+    // Start checking after a small delay
+    setTimeout(checkAuth, 50)
+  } else {
+    // Server-side: resolve immediately (auth won't work anyway)
+    resolve()
+  }
 })
-
-// Check if auth is initialized and resolve the promise
-if (typeof window !== "undefined" && isConfigValid && auth && typeof auth.onIdTokenChanged === "function") {
-  authReadyResolve!()
-}
 
 export function waitForAuth(): Promise<void> {
   return authReadyPromise

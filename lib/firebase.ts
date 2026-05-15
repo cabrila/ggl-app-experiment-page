@@ -28,6 +28,7 @@ if (typeof window !== "undefined" && isConfigValid) {
       app = getApps()[0]
     }
     auth = getAuth(app)
+    // Named Firestore database for this project (not the default one).
     db = getFirestore(app, "app-experiment-firestore")
   } catch (error) {
     console.error("[v0] Firebase initialization error:", error)

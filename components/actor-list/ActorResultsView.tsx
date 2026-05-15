@@ -7,6 +7,7 @@ import ActorCard from "./ActorCard"
 import { Actor } from "@/types/actor-list"
 import { exportActorsAsJSON, exportActorsAsPDF, exportActorsAsExcel } from "@/lib/actor-export"
 import SearchBar from "@/components/ui/SearchBar"
+import { trackAddItem, trackExport, trackDelete } from "@/lib/analytics"
 
 export default function ActorResultsView() {
   const { currentProject, goBack, addActor, updateActor, deleteActor, deleteProject } = useActorList()
@@ -51,22 +52,27 @@ export default function ActorResultsView() {
       notes: "",
     }
     addActor(newActor)
+    trackAddItem("actor-list", "actor")
     setNewItemId(id)
   }
 
   const handleExportJSON = () => {
+    trackExport("actor-list", "json")
     exportActorsAsJSON(currentProject.actors, currentProject.name)
   }
 
   const handleExportPDF = () => {
+    trackExport("actor-list", "pdf")
     exportActorsAsPDF(currentProject.actors, currentProject.name)
   }
 
   const handleExportExcel = () => {
+    trackExport("actor-list", "excel")
     exportActorsAsExcel(currentProject.actors, currentProject.name)
   }
 
   const handleDeleteList = () => {
+    trackDelete("actor-list", "list")
     if (confirm("Are you sure you want to delete this actor list?")) {
       deleteProject(currentProject.id)
     }

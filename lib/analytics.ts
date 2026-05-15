@@ -138,3 +138,91 @@ export function trackAIExtraction(skill: string, itemCount: number) {
     item_count: itemCount,
   })
 }
+
+// ============================================
+// Feature-specific tracking events
+// ============================================
+
+export type FeatureName = "character-bible" | "location-overview" | "actor-list" | "public-casting"
+
+/**
+ * Track when user clicks on a feature in the sidebar
+ */
+export function trackFeatureClick(feature: FeatureName) {
+  if (!isAnalyticsAvailable()) return
+
+  window.gtag("event", "feature_click", {
+    feature_name: feature,
+  })
+}
+
+/**
+ * Track when user creates a new list/project
+ */
+export function trackListCreated(feature: FeatureName) {
+  if (!isAnalyticsAvailable()) return
+
+  window.gtag("event", "list_created", {
+    feature_name: feature,
+  })
+}
+
+/**
+ * Track when user clicks "Extract..." button to start extraction
+ */
+export function trackExtractClick(feature: FeatureName, fileType: string) {
+  if (!isAnalyticsAvailable()) return
+
+  window.gtag("event", "extract_click", {
+    feature_name: feature,
+    file_type: fileType,
+  })
+}
+
+/**
+ * Track when extraction completes successfully
+ */
+export function trackExtractComplete(feature: FeatureName, itemCount: number) {
+  if (!isAnalyticsAvailable()) return
+
+  window.gtag("event", "extract_complete", {
+    feature_name: feature,
+    item_count: itemCount,
+  })
+}
+
+/**
+ * Track when user adds a new item (character, actor, location)
+ */
+export function trackAddItem(feature: FeatureName, itemType: string) {
+  if (!isAnalyticsAvailable()) return
+
+  window.gtag("event", "add_item", {
+    feature_name: feature,
+    item_type: itemType,
+  })
+}
+
+/**
+ * Track export actions (JSON, Excel, PDF)
+ */
+export function trackExport(feature: FeatureName, exportFormat: "json" | "excel" | "pdf") {
+  if (!isAnalyticsAvailable()) return
+
+  window.gtag("event", "export", {
+    feature_name: feature,
+    export_format: exportFormat,
+  })
+}
+
+/**
+ * Track delete actions
+ */
+export function trackDelete(feature: FeatureName, deleteType: "item" | "list") {
+  if (!isAnalyticsAvailable()) return
+
+  window.gtag("event", "delete", {
+    feature_name: feature,
+    delete_type: deleteType,
+  })
+}

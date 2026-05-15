@@ -7,6 +7,7 @@ import CharacterCard from "./CharacterCard"
 import { Character } from "@/types/character-bible"
 import { exportCharactersAsJSON, exportCharactersAsPDF, exportCharactersAsExcel } from "@/lib/character-export"
 import SearchBar from "@/components/ui/SearchBar"
+import { trackAddItem, trackExport, trackDelete } from "@/lib/analytics"
 
 export default function ResultsView() {
   const { currentBible, setView, setCurrentBible, updateCharacter, deleteCharacter, addCharacter, deleteBible } = useCharacterBible()
@@ -72,22 +73,27 @@ export default function ResultsView() {
       ],
     }
     addCharacter(currentBible.id, newCharacter)
+    trackAddItem("character-bible", "character")
     setNewItemId(id)
   }
 
   const handleExportJSON = () => {
+    trackExport("character-bible", "json")
     exportCharactersAsJSON(currentBible.characters, currentBible.name)
   }
 
   const handleExportPDF = () => {
+    trackExport("character-bible", "pdf")
     exportCharactersAsPDF(currentBible.characters, currentBible.name)
   }
 
   const handleExportExcel = () => {
+    trackExport("character-bible", "excel")
     exportCharactersAsExcel(currentBible.characters, currentBible.name)
   }
 
   const handleDeleteList = () => {
+    trackDelete("character-bible", "list")
     setShowDeleteConfirm(true)
   }
 

@@ -6,6 +6,7 @@ import { useLocationScouting } from "./LocationScoutingContext"
 import { LocationProject } from "@/types/location-scouting"
 import DeleteConfirmationModal from "@/components/ui/DeleteConfirmationModal"
 import EditProjectWithThumbnailModal from "@/components/ui/EditProjectWithThumbnailModal"
+import { trackListCreated, trackDelete } from "@/lib/analytics"
 
 export default function LocationProjectsList() {
   const { projects, setView, setCurrentProject, deleteProject, updateProject } = useLocationScouting()
@@ -33,6 +34,7 @@ export default function LocationProjectsList() {
 
   const handleConfirmDelete = () => {
     if (deleteTarget) {
+      trackDelete("location-overview", "list")
       deleteProject(deleteTarget.id)
     }
   }
@@ -134,7 +136,10 @@ export default function LocationProjectsList() {
 
         {/* New Location List Card */}
         <button
-          onClick={() => setView("upload")}
+          onClick={() => {
+            trackListCreated("location-overview")
+            setView("upload")
+          }}
           className="flex flex-col items-center justify-center p-8 rounded-xl border-2 border-dashed border-white/20 hover:border-white/40 bg-transparent hover:bg-white/[0.02] transition-all min-h-[200px]"
         >
           <Plus className="w-8 h-8 text-white/40 mb-3" />

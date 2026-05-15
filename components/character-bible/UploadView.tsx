@@ -6,6 +6,7 @@ import { useCharacterBible } from "./CharacterBibleContext"
 import { Character, CharacterBible } from "@/types/character-bible"
 import { useImportJob } from "@/hooks/useImportJob"
 import type { CharacterExtractResult } from "@/types/ai"
+import { trackFileUpload, trackExtractClick, trackExtractComplete } from "@/lib/analytics"
 
 export default function UploadView() {
   const { setView, setCurrentBible, addBible } = useCharacterBible()
@@ -41,6 +42,8 @@ export default function UploadView() {
     const selectedFile = e.target.files?.[0]
     if (selectedFile && isValidFileType(selectedFile)) {
       setFile(selectedFile)
+      const fileExt = selectedFile.name.split('.').pop()?.toLowerCase() || 'unknown'
+      trackFileUpload(fileExt, "character-bible")
     }
   }
 
@@ -55,6 +58,9 @@ export default function UploadView() {
   const handleProcess = async () => {
     if (!file) return
 
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'unknown'
+    trackExtractClick("character-bible", fileExt)
+    
     const sourceTitle = file.name.replace(/\.(pdf|docx)$/i, "")
     await run(file, sourceTitle)
   }
@@ -94,6 +100,7 @@ export default function UploadView() {
 
       addBible(newBible)
       setCurrentBible(newBible)
+      trackExtractComplete("character-bible", characters.length)
       setView("results")
     }
   }, [status, result, file, addBible, setCurrentBible, setView])

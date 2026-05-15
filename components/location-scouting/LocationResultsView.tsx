@@ -7,6 +7,7 @@ import LocationCard from "./LocationCard"
 import { Location } from "@/types/location-scouting"
 import { exportLocationsAsJSON, exportLocationsAsPDF, exportLocationsAsExcel } from "@/lib/location-export"
 import SearchBar from "@/components/ui/SearchBar"
+import { trackAddItem, trackExport, trackDelete } from "@/lib/analytics"
 
 export default function LocationResultsView() {
   const {
@@ -61,22 +62,27 @@ export default function LocationResultsView() {
       scoutingNotes: "Add scouting notes here...",
     }
     addLocation(currentProject.id, newLocation)
+    trackAddItem("location-overview", "location")
     setNewItemId(id)
   }
 
   const handleExportJSON = () => {
+    trackExport("location-overview", "json")
     exportLocationsAsJSON(currentProject.locations, currentProject.name)
   }
 
   const handleExportPDF = () => {
+    trackExport("location-overview", "pdf")
     exportLocationsAsPDF(currentProject.locations, currentProject.name)
   }
 
   const handleExportExcel = () => {
+    trackExport("location-overview", "excel")
     exportLocationsAsExcel(currentProject.locations, currentProject.name)
   }
 
   const handleDeleteList = () => {
+    trackDelete("location-overview", "list")
     if (confirm("Are you sure you want to delete this entire location list?")) {
       deleteProject(currentProject.id)
     }

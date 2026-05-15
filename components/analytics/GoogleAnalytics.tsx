@@ -20,11 +20,8 @@ function PageViewTracker() {
 }
 
 export default function GoogleAnalytics() {
-  console.log("[v0] GA_MEASUREMENT_ID:", GA_MEASUREMENT_ID)
-  
   // Only render if GA_MEASUREMENT_ID is defined and valid
   if (!GA_MEASUREMENT_ID || GA_MEASUREMENT_ID.trim() === "") {
-    console.log("[v0] GA_MEASUREMENT_ID is not set - Google Analytics disabled")
     return null
   }
 
@@ -32,23 +29,28 @@ export default function GoogleAnalytics() {
 
   return (
     <>
+      {/* Initialize dataLayer and gtag function FIRST (inline, runs immediately) */}
       <Script
-        strategy="afterInteractive"
-        src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
-      />
-      <Script
-        id="google-analytics"
-        strategy="afterInteractive"
+        id="google-analytics-init"
+        strategy="beforeInteractive"
         dangerouslySetInnerHTML={{
           __html: `
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', '${gaId}', {
-              page_path: window.location.pathname,
-              send_page_view: true
-            });
           `,
+        }}
+      />
+      {/* Load gtag.js and configure after it loads */}
+      <Script
+        src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+        strategy="afterInteractive"
+        onLoad={() => {
+          window.gtag('config', gaId, {
+            page_path: window.location.pathname,
+            send_page_view: true
+          });
+          console.log("[v0] Google Analytics loaded and configured");
         }}
       />
       <Suspense fallback={null}>

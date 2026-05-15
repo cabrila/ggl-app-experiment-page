@@ -30,8 +30,10 @@ export function isAnalyticsAvailable(): boolean {
   }
   
   if (typeof window.gtag !== "function") {
-    window.gtag = function gtag(...args: unknown[]) {
-      window.dataLayer.push(args)
+    // gtag must push the arguments object, not an array of args
+    window.gtag = function() {
+      // eslint-disable-next-line prefer-rest-params
+      window.dataLayer.push(arguments)
     }
   }
   
@@ -164,8 +166,13 @@ export type FeatureName = "character-bible" | "location-overview" | "actor-list"
  * Track when user clicks on a feature in the sidebar
  */
 export function trackFeatureClick(feature: FeatureName) {
-  if (!isAnalyticsAvailable()) return
+  console.log("[v0] trackFeatureClick called:", feature)
+  if (!isAnalyticsAvailable()) {
+    console.log("[v0] Analytics not available")
+    return
+  }
 
+  console.log("[v0] Sending feature_click event")
   window.gtag("event", "feature_click", {
     feature_name: feature,
   })
@@ -222,8 +229,13 @@ export function trackAddItem(feature: FeatureName, itemType: string) {
  * Track export actions (JSON, Excel, PDF)
  */
 export function trackExport(feature: FeatureName, exportFormat: "json" | "excel" | "pdf") {
-  if (!isAnalyticsAvailable()) return
+  console.log("[v0] trackExport called:", feature, exportFormat)
+  if (!isAnalyticsAvailable()) {
+    console.log("[v0] Analytics not available for export")
+    return
+  }
 
+  console.log("[v0] Sending export event")
   window.gtag("event", "export", {
     feature_name: feature,
     export_format: exportFormat,

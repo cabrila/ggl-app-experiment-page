@@ -31,9 +31,11 @@ export default function GoogleAnalytics() {
     window.dataLayer = window.dataLayer || []
     
     // Define gtag function if not already defined
+    // IMPORTANT: gtag must push the arguments object, not spread args
     if (typeof window.gtag !== 'function') {
-      window.gtag = function gtag(...args: unknown[]) {
-        window.dataLayer.push(args)
+      window.gtag = function() {
+        // eslint-disable-next-line prefer-rest-params
+        window.dataLayer.push(arguments)
       }
     }
     

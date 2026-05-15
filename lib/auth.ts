@@ -9,7 +9,7 @@ import {
   signInWithPhoneNumber,
   ConfirmationResult,
 } from "firebase/auth"
-import { auth } from "./firebase"
+import { auth, waitForAuth } from "./firebase"
 
 // Store the confirmation result for phone auth verification
 let confirmationResult: ConfirmationResult | null = null
@@ -179,17 +179,45 @@ export function initRecaptchaVerifier(buttonId: string): RecaptchaVerifier | nul
 }
 
 /**
+ * Initialize reCAPTCHA verifier with retry logic, waiting for auth to be ready
+ */
+export async function initRecaptchaVerifierAsync(buttonId: string, maxRetries = 5): Promise<RecaptchaVerifier | null> {
+  // Wait for auth to be ready
+  await waitForAuth()
+  
+  for (let i = 0; i < maxRetries; i++) {
+    const verifier = initRecaptchaVerifier(buttonId)
+    if (verifier) {
+      return verifier
+    }
+    // Wait a bit before retrying
+    await new Promise(resolve => setTimeout(resolve, 200 * (i + 1)))
+  }
+  
+  console.warn("Failed to initialize reCAPTCHA after retries")
+  return null
+}
+
+/**
  * Send a verification code to the user's phone number
  */
 export async function sendPhoneVerificationCode(phoneNumber: string): Promise<void> {
+  console.log("[v0] sendPhoneVerificationCode →", phoneNumber)
   if (!recaptchaVerifier) {
     throw new Error("reCAPTCHA verifier not initialized. Call initRecaptchaVerifier first.")
   }
 
   try {
     confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier)
+    console.log("[v0] signInWithPhoneNumber resolved — verificationId:", (confirmationResult as { verificationId?: string }).verificationId)
   } catch (error: unknown) {
-    console.error("Error sending phone verification code:", error)
+    console.error("[v0] signInWithPhoneNumber error:", error)
+    if (error && typeof error === "object") {
+      const e = error as { code?: string; message?: string }
+      console.error("[v0] Firebase error code:", e.code)
+      console.error("[v0] Firebase error message:", e.message)
+    }
+    // After any failure, the verifier is consumed and must be recreated
     if (recaptchaVerifier) {
       recaptchaVerifier.clear()
       recaptchaVerifier = null

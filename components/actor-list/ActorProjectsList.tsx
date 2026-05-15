@@ -7,6 +7,7 @@ import { ActorListProject } from "@/types/actor-list"
 import DeleteConfirmationModal from "@/components/ui/DeleteConfirmationModal"
 import EditProjectWithThumbnailModal from "@/components/ui/EditProjectWithThumbnailModal"
 import { trackListCreated, trackDelete } from "@/lib/analytics"
+import { Badge } from "@/components/ui/badge"
 
 export default function ActorProjectsList() {
   const { projects, selectProject, deleteProject, updateProject, setView } = useActorList()
@@ -109,9 +110,16 @@ export default function ActorProjectsList() {
               )}
 
               {/* Project Name */}
-              <h3 className="text-base font-semibold text-white mb-2 font-sans pr-16 line-clamp-1">
-                {project.name}
-              </h3>
+              <div className="flex items-center gap-2 mb-2 pr-16">
+                <h3 className="text-base font-semibold text-white font-sans line-clamp-1">
+                  {project.name}
+                </h3>
+                {project.isDemo && (
+                  <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px] px-1.5 py-0">
+                    Demo
+                  </Badge>
+                )}
+              </div>
 
               {/* Meta Info */}
               <div className="flex flex-wrap items-center gap-3 text-xs text-white/50">

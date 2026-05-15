@@ -16,4 +16,5 @@ export interface LocationProject {
   createdAt: Date
   updatedAt: Date
   thumbnailUrl?: string
+  isDemo?: boolean
 }

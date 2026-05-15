@@ -24,4 +24,5 @@ export interface ActorListProject {
   createdAt: Date
   updatedAt: Date
   thumbnailUrl?: string
+  isDemo?: boolean
 }

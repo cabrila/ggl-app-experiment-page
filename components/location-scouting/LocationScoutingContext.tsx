@@ -1,7 +1,15 @@
 "use client"
 
-import { createContext, useContext, useState, ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, ReactNode } from "react"
+import { User } from "firebase/auth"
 import { Location, LocationProject } from "@/types/location-scouting"
+import { subscribeToAuthStateChanges } from "@/lib/auth"
+import {
+  subscribeToLocationProjects,
+  addLocationProject,
+  updateLocationProject as updateLocationProjectInFirestore,
+  deleteLocationProject as deleteLocationProjectFromFirestore,
+} from "@/lib/firestore"
 
 type ViewState = "projects" | "upload" | "results"
 
@@ -9,6 +17,7 @@ interface LocationScoutingContextType {
   projects: LocationProject[]
   currentProject: LocationProject | null
   view: ViewState
+  isLoading: boolean
   setView: (view: ViewState) => void
   setCurrentProject: (project: LocationProject | null) => void
   addProject: (project: LocationProject) => void
@@ -21,13 +30,14 @@ interface LocationScoutingContextType {
 
 const LocationScoutingContext = createContext<LocationScoutingContextType | null>(null)
 
-// Demo data
+// Demo data - shown when user is not logged in
 const demoProjects: LocationProject[] = [
   {
-    id: "1",
+    id: "demo-1",
     name: "JURASSIC PARK Script",
     createdAt: new Date("2026-04-29"),
     updatedAt: new Date("2026-04-29"),
+    isDemo: true,
     locations: [
       {
         id: "1",
@@ -85,88 +95,187 @@ export function LocationScoutingProvider({ children }: { children: ReactNode }) 
   const [projects, setProjects] = useState<LocationProject[]>(demoProjects)
   const [currentProject, setCurrentProject] = useState<LocationProject | null>(null)
   const [view, setView] = useState<ViewState>("projects")
+  const [user, setUser] = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
-  const addProject = (project: LocationProject) => {
-    setProjects((prev) => [...prev, project])
-  }
+  // Subscribe to auth state changes
+  useEffect(() => {
+    const unsubscribe = subscribeToAuthStateChanges((authUser) => {
+      setUser(authUser)
+      if (!authUser) {
+        // User logged out, show demo data
+        setProjects(demoProjects)
+        setCurrentProject(null)
+        setView("projects")
+        setIsLoading(false)
+      }
+    })
 
-  const updateProject = (project: LocationProject) => {
-    setProjects((prev) =>
-      prev.map((p) => (p.id === project.id ? project : p))
+    return () => unsubscribe()
+  }, [])
+
+  // Subscribe to Firestore when user is authenticated
+  useEffect(() => {
+    if (!user) return
+
+    setIsLoading(true)
+    const unsubscribe = subscribeToLocationProjects(
+      user.uid,
+      (firestoreProjects) => {
+        setProjects(firestoreProjects)
+        // Update currentProject if it exists in the new data
+        if (currentProject) {
+          const updated = firestoreProjects.find((p) => p.id === currentProject.id)
+          if (updated) {
+            setCurrentProject(updated)
+          }
+        }
+        setIsLoading(false)
+      },
+      (error) => {
+        console.error("[v0] Error subscribing to location projects:", error)
+        setIsLoading(false)
+      }
     )
-    if (currentProject?.id === project.id) {
-      setCurrentProject(project)
+
+    return () => unsubscribe()
+  }, [user])
+
+  const addProject = async (project: LocationProject) => {
+    if (user) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { id, isDemo, ...projectData } = project
+        const newId = await addLocationProject(user.uid, projectData)
+        // Firestore subscription will update the state
+        setCurrentProject({ ...project, id: newId, isDemo: false })
+      } catch (error) {
+        console.error("[v0] Error adding location project:", error)
+      }
+    } else {
+      // Demo mode
+      setProjects((prev) => [...prev, project])
     }
   }
 
-  const deleteProject = (projectId: string) => {
-    setProjects((prev) => prev.filter((p) => p.id !== projectId))
+  const updateProject = async (project: LocationProject) => {
+    const existingProject = projects.find((p) => p.id === project.id)
+    if (!existingProject) return
+
+    if (user && !existingProject.isDemo) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { id, isDemo, ...projectData } = project
+        await updateLocationProjectInFirestore(user.uid, project.id, projectData)
+        // Firestore subscription will update the state
+      } catch (error) {
+        console.error("[v0] Error updating location project:", error)
+      }
+    } else {
+      // Demo mode
+      setProjects((prev) => prev.map((p) => (p.id === project.id ? project : p)))
+      if (currentProject?.id === project.id) {
+        setCurrentProject(project)
+      }
+    }
+  }
+
+  const deleteProject = async (projectId: string) => {
+    const project = projects.find((p) => p.id === projectId)
+    if (!project) return
+
+    if (user && !project.isDemo) {
+      try {
+        await deleteLocationProjectFromFirestore(user.uid, projectId)
+        // Firestore subscription will update the state
+      } catch (error) {
+        console.error("[v0] Error deleting location project:", error)
+      }
+    } else {
+      // Demo mode
+      setProjects((prev) => prev.filter((p) => p.id !== projectId))
+    }
+
     if (currentProject?.id === projectId) {
       setCurrentProject(null)
       setView("projects")
     }
   }
 
-  const addLocation = (projectId: string, location: Location) => {
-    setProjects((prev) =>
-      prev.map((p) =>
-        p.id === projectId
-          ? { ...p, locations: [...p.locations, location], updatedAt: new Date() }
-          : p
-      )
-    )
-    if (currentProject?.id === projectId) {
-      setCurrentProject({
-        ...currentProject,
-        locations: [...currentProject.locations, location],
-        updatedAt: new Date(),
-      })
+  const addLocation = async (projectId: string, location: Location) => {
+    const project = projects.find((p) => p.id === projectId)
+    if (!project) return
+
+    const updatedLocations = [...project.locations, location]
+    const updatedProject = { ...project, locations: updatedLocations, updatedAt: new Date() }
+
+    if (user && !project.isDemo) {
+      try {
+        await updateLocationProjectInFirestore(user.uid, projectId, {
+          locations: updatedLocations,
+        })
+        // Firestore subscription will update the state
+      } catch (error) {
+        console.error("[v0] Error adding location:", error)
+      }
+    } else {
+      // Demo mode
+      setProjects((prev) => prev.map((p) => (p.id === projectId ? updatedProject : p)))
+      if (currentProject?.id === projectId) {
+        setCurrentProject(updatedProject)
+      }
     }
   }
 
-  const updateLocation = (projectId: string, location: Location) => {
-    setProjects((prev) =>
-      prev.map((p) =>
-        p.id === projectId
-          ? {
-              ...p,
-              locations: p.locations.map((l) =>
-                l.id === location.id ? location : l
-              ),
-              updatedAt: new Date(),
-            }
-          : p
-      )
+  const updateLocation = async (projectId: string, location: Location) => {
+    const project = projects.find((p) => p.id === projectId)
+    if (!project) return
+
+    const updatedLocations = project.locations.map((l) =>
+      l.id === location.id ? location : l
     )
-    if (currentProject?.id === projectId) {
-      setCurrentProject({
-        ...currentProject,
-        locations: currentProject.locations.map((l) =>
-          l.id === location.id ? location : l
-        ),
-        updatedAt: new Date(),
-      })
+    const updatedProject = { ...project, locations: updatedLocations, updatedAt: new Date() }
+
+    if (user && !project.isDemo) {
+      try {
+        await updateLocationProjectInFirestore(user.uid, projectId, {
+          locations: updatedLocations,
+        })
+        // Firestore subscription will update the state
+      } catch (error) {
+        console.error("[v0] Error updating location:", error)
+      }
+    } else {
+      // Demo mode
+      setProjects((prev) => prev.map((p) => (p.id === projectId ? updatedProject : p)))
+      if (currentProject?.id === projectId) {
+        setCurrentProject(updatedProject)
+      }
     }
   }
 
-  const deleteLocation = (projectId: string, locationId: string) => {
-    setProjects((prev) =>
-      prev.map((p) =>
-        p.id === projectId
-          ? {
-              ...p,
-              locations: p.locations.filter((l) => l.id !== locationId),
-              updatedAt: new Date(),
-            }
-          : p
-      )
-    )
-    if (currentProject?.id === projectId) {
-      setCurrentProject({
-        ...currentProject,
-        locations: currentProject.locations.filter((l) => l.id !== locationId),
-        updatedAt: new Date(),
-      })
+  const deleteLocation = async (projectId: string, locationId: string) => {
+    const project = projects.find((p) => p.id === projectId)
+    if (!project) return
+
+    const updatedLocations = project.locations.filter((l) => l.id !== locationId)
+    const updatedProject = { ...project, locations: updatedLocations, updatedAt: new Date() }
+
+    if (user && !project.isDemo) {
+      try {
+        await updateLocationProjectInFirestore(user.uid, projectId, {
+          locations: updatedLocations,
+        })
+        // Firestore subscription will update the state
+      } catch (error) {
+        console.error("[v0] Error deleting location:", error)
+      }
+    } else {
+      // Demo mode
+      setProjects((prev) => prev.map((p) => (p.id === projectId ? updatedProject : p)))
+      if (currentProject?.id === projectId) {
+        setCurrentProject(updatedProject)
+      }
     }
   }
 
@@ -176,6 +285,7 @@ export function LocationScoutingProvider({ children }: { children: ReactNode }) 
         projects,
         currentProject,
         view,
+        isLoading,
         setView,
         setCurrentProject,
         addProject,

@@ -79,6 +79,7 @@ export interface CharacterBible {
   createdAt: Date
   updatedAt: Date
   thumbnailUrl?: string
+  isDemo?: boolean
 }
 
 export type CharacterBibleView = "list" | "upload" | "results"

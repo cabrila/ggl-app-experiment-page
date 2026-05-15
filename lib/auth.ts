@@ -9,7 +9,7 @@ import {
   signInWithPhoneNumber,
   ConfirmationResult,
 } from "firebase/auth"
-import { auth } from "./firebase"
+import { auth, waitForAuth } from "./firebase"
 
 // Store the confirmation result for phone auth verification
 let confirmationResult: ConfirmationResult | null = null
@@ -176,6 +176,26 @@ export function initRecaptchaVerifier(buttonId: string): RecaptchaVerifier | nul
     console.warn("Failed to initialize reCAPTCHA:", error)
     return null
   }
+}
+
+/**
+ * Initialize reCAPTCHA verifier with retry logic, waiting for auth to be ready
+ */
+export async function initRecaptchaVerifierAsync(buttonId: string, maxRetries = 5): Promise<RecaptchaVerifier | null> {
+  // Wait for auth to be ready
+  await waitForAuth()
+  
+  for (let i = 0; i < maxRetries; i++) {
+    const verifier = initRecaptchaVerifier(buttonId)
+    if (verifier) {
+      return verifier
+    }
+    // Wait a bit before retrying
+    await new Promise(resolve => setTimeout(resolve, 200 * (i + 1)))
+  }
+  
+  console.warn("Failed to initialize reCAPTCHA after retries")
+  return null
 }
 
 /**

@@ -42,5 +42,20 @@ if (typeof window !== "undefined" && isConfigValid) {
   db = {} as Firestore
 }
 
+// Promise that resolves when auth is ready
+let authReadyResolve: () => void
+const authReadyPromise = new Promise<void>((resolve) => {
+  authReadyResolve = resolve
+})
+
+// Check if auth is initialized and resolve the promise
+if (typeof window !== "undefined" && isConfigValid && auth && typeof auth.onIdTokenChanged === "function") {
+  authReadyResolve!()
+}
+
+export function waitForAuth(): Promise<void> {
+  return authReadyPromise
+}
+
 export { auth, db }
 export default app

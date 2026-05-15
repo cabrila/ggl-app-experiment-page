@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { Mail, Loader2, CheckCircle, Phone, ArrowLeft } from "lucide-react"
 import {
   sendMagicLink,
-  initRecaptchaVerifier,
+  initRecaptchaVerifierAsync,
   sendPhoneVerificationCode,
   verifyPhoneCode,
   clearPhoneAuthState,
@@ -42,15 +42,25 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
 
   // Initialize reCAPTCHA when switching to phone auth
   useEffect(() => {
+    let cancelled = false
+    
     if (authMethod === "phone" && !recaptchaInitialized.current && typeof window !== "undefined") {
-      // Small delay to ensure DOM is ready
-      const timer = setTimeout(() => {
-        const verifier = initRecaptchaVerifier("phone-sign-in-button")
-        if (verifier) {
+      // Use async version that waits for auth to be ready
+      const initAsync = async () => {
+        // Small delay to ensure DOM is ready
+        await new Promise(resolve => setTimeout(resolve, 100))
+        if (cancelled) return
+        
+        const verifier = await initRecaptchaVerifierAsync("phone-sign-in-button")
+        if (verifier && !cancelled) {
           recaptchaInitialized.current = true
         }
-      }, 100)
-      return () => clearTimeout(timer)
+      }
+      initAsync()
+    }
+    
+    return () => {
+      cancelled = true
     }
   }, [authMethod])
 
@@ -119,7 +129,7 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
 
     // Ensure reCAPTCHA is initialized before attempting to send code
     if (!recaptchaInitialized.current) {
-      const verifier = initRecaptchaVerifier("phone-sign-in-button")
+      const verifier = await initRecaptchaVerifierAsync("phone-sign-in-button")
       if (verifier) {
         recaptchaInitialized.current = true
       } else {

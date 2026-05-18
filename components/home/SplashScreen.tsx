@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone, ArrowRight } from "lucide-react"
+import { LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone, ArrowRight, Package, Film } from "lucide-react"
 import { useCasting } from "@/components/casting/CastingContext"
 import FeedbackModal from "@/components/modals/FeedbackModal"
 import { trackFeatureClick, type FeatureName } from "@/lib/analytics"
@@ -38,6 +38,22 @@ const featureButtons = [
     icon: Megaphone,
     iconBg: "bg-violet-500/20",
     iconColor: "text-violet-400",
+  },
+  {
+    id: "prop-list",
+    title: "Prop List",
+    description: "Extract every prop and set dressing item from your script with scene-by-scene appearances.",
+    icon: Package,
+    iconBg: "bg-rose-500/20",
+    iconColor: "text-rose-400",
+  },
+  {
+    id: "scene-list",
+    title: "Scene List",
+    description: "Generate a structured scene-by-scene breakdown of your script for production planning.",
+    icon: Film,
+    iconBg: "bg-teal-500/20",
+    iconColor: "text-teal-400",
   },
 ]
 
@@ -185,6 +201,8 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
                     "location-overview": "location-overview",
                     "actor-database": "actor-list",
                     "public-casting": "public-casting",
+                    "prop-list": "prop-list",
+                    "scene-list": "scene-list",
                   }
                   const featureName = featureNameMap[feature.id]
                   if (featureName) {

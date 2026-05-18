@@ -1,12 +1,12 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Home, LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone } from "lucide-react"
+import { Home, LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone, Package, Film } from "lucide-react"
 import { useCasting } from "@/components/casting/CastingContext"
 import FeedbackModal from "@/components/modals/FeedbackModal"
 import { trackFeatureClick, type FeatureName } from "@/lib/analytics"
 
-type ActiveView = "character-bible" | "location-overview" | "actor-database" | "public-casting"
+type ActiveView = "character-bible" | "location-overview" | "actor-database" | "public-casting" | "prop-list" | "scene-list"
 
 const sidebarItems = [
   {
@@ -44,6 +44,24 @@ const sidebarItems = [
     iconColor: "text-violet-400",
     activeBg: "bg-violet-500/30",
     activeBorder: "border-violet-400",
+  },
+  {
+    id: "prop-list" as ActiveView,
+    title: "Prop List",
+    icon: Package,
+    iconBg: "bg-rose-500/20",
+    iconColor: "text-rose-400",
+    activeBg: "bg-rose-500/30",
+    activeBorder: "border-rose-400",
+  },
+  {
+    id: "scene-list" as ActiveView,
+    title: "Scene List",
+    icon: Film,
+    iconBg: "bg-teal-500/20",
+    iconColor: "text-teal-400",
+    activeBg: "bg-teal-500/30",
+    activeBorder: "border-teal-400",
   },
 ]
 
@@ -209,7 +227,7 @@ export default function FeatureLayout({ children, onBack, onSignOut, activeView,
                 >
                   <IconComponent className={`w-5 h-5 ${item.iconColor}`} />
                   {isActive && (
-                    <span className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-[1px] w-1 h-6 bg-current rounded-r-full" style={{ color: item.iconColor.includes('emerald') ? '#34d399' : item.iconColor.includes('amber') ? '#fbbf24' : item.iconColor.includes('sky') ? '#38bdf8' : '#a78bfa' }} />
+                    <span className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-[1px] w-1 h-6 bg-current rounded-r-full" style={{ color: item.iconColor.includes('emerald') ? '#34d399' : item.iconColor.includes('amber') ? '#fbbf24' : item.iconColor.includes('sky') ? '#38bdf8' : item.iconColor.includes('violet') ? '#a78bfa' : item.iconColor.includes('rose') ? '#fb7185' : '#2dd4bf' }} />
                   )}
                 </button>
               )

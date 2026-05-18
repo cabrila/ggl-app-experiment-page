@@ -36,11 +36,16 @@ export default function SceneUploadView() {
     if (dropped && isValidFile(dropped)) setFile(dropped)
   }
 
-  const isValidFile = (f: File) =>
-    [
+  const isValidFile = (f: File) => {
+    const okTypes = [
       "application/pdf",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    ].includes(f.type)
+    ]
+    if (okTypes.includes(f.type)) return true
+    // Some browsers (esp. on Windows/Linux) report empty string or
+    // "application/octet-stream" for .docx — fall back to extension.
+    return /\.(pdf|docx)$/i.test(f.name)
+  }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0]
@@ -204,7 +209,7 @@ export default function SceneUploadView() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="application/pdf,.docx"
+                accept=".pdf,.docx"
                 onChange={handleFileSelect}
                 className="hidden"
               />

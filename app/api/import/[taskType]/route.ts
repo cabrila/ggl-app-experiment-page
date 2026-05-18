@@ -38,7 +38,9 @@ export async function POST(
       return NextResponse.json({ error: "No file provided" }, { status: 400 })
     }
 
-    // Validate file type
+    // Validate file type — accept either by MIME or by extension, since
+    // some browsers (esp. Windows/Linux) report "" or "application/octet-stream"
+    // for .docx uploads. This must behave identically for every skill.
     const allowedTypes = [
       "application/pdf",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
@@ -46,11 +48,14 @@ export async function POST(
       "text/csv",
       "text/plain",
     ]
+    const allowedExtensions = /\.(pdf|docx|xlsx|csv|txt)$/i
+    const mimeOk = allowedTypes.includes(file.type)
+    const extOk = allowedExtensions.test(file.name)
 
-    if (!allowedTypes.includes(file.type)) {
+    if (!mimeOk && !extOk) {
       return NextResponse.json(
         {
-          error: `Unsupported file type: ${file.type}. Supported types: PDF, DOCX, XLSX, CSV, TXT`,
+          error: `Unsupported file type: ${file.type || "unknown"}. Supported types: PDF, DOCX, XLSX, CSV, TXT`,
         },
         { status: 400 }
       )

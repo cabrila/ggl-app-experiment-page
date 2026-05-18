@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Upload, ArrowLeft, FileText, Loader2, X, AlertCircle, RefreshCw } from "lucide-react"
 import { usePropList } from "./PropListContext"
 import { Prop, PropCategory, PropProject } from "@/types/prop-list"
+import { useImportJob } from "@/hooks/useImportJob"
+import type { PropExtractResult } from "@/types/ai"
 import { trackFileUpload, trackExtractClick, trackExtractComplete } from "@/lib/analytics"
-
-type Status = "idle" | "uploading" | "complete" | "failed"
 
 const VALID_CATEGORIES: PropCategory[] = [
   "weapon",
@@ -34,10 +34,13 @@ export default function PropUploadView() {
   const [isDragging, setIsDragging] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [status, setStatus] = useState<Status>("idle")
-  const [error, setError] = useState<string | null>(null)
 
-  const isProcessing = status === "uploading"
+  // Same upstream AI service as Character Bible — see `useImportJob` and
+  // `app/api/import/[taskType]/route.ts`. No direct Gemini call.
+  const { status, message, result, error, run, reset } =
+    useImportJob<PropExtractResult>("prop-extract")
+
+  const isProcessing = status === "uploading" || status === "running"
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -54,11 +57,16 @@ export default function PropUploadView() {
     if (dropped && isValidFile(dropped)) setFile(dropped)
   }
 
-  const isValidFile = (f: File) =>
-    [
+  const isValidFile = (f: File) => {
+    const okTypes = [
       "application/pdf",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    ].includes(f.type)
+    ]
+    if (okTypes.includes(f.type)) return true
+    // Some browsers (esp. on Windows/Linux) report empty string or
+    // "application/octet-stream" for .docx — fall back to extension.
+    return /\.(pdf|docx)$/i.test(f.name)
+  }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0]
@@ -69,73 +77,48 @@ export default function PropUploadView() {
     }
   }
 
-  const reset = () => {
-    setStatus("idle")
-    setError(null)
-  }
-
   const handleProcess = async () => {
     if (!file) return
     const ext = file.name.split(".").pop()?.toLowerCase() || "unknown"
     trackExtractClick("prop-list", ext)
-    setStatus("uploading")
-    setError(null)
-
-    try {
-      const formData = new FormData()
-      formData.append("file", file)
-
-      const response = await fetch("/api/analyze-props", {
-        method: "POST",
-        body: formData,
-      })
-
-      const data = await response.json()
-      if (!response.ok) {
-        throw new Error(data.error || `Request failed (${response.status})`)
-      }
-
-      const incoming = Array.isArray(data.props) ? data.props : []
-      const props: Prop[] = incoming.map(
-        (p: Record<string, unknown>, i: number) => {
-          const appearancesRaw = Array.isArray(p.sceneAppearances)
-            ? (p.sceneAppearances as Record<string, unknown>[])
-            : []
-          return {
-            id: typeof p.id === "string" ? p.id : `${Date.now()}-${i}`,
-            name: typeof p.name === "string" ? p.name : "",
-            category: normalizeCategory(
-              typeof p.category === "string" ? p.category : undefined
-            ),
-            description: typeof p.description === "string" ? p.description : "",
-            sceneAppearances: appearancesRaw.map((a, j) => ({
-              id: `${Date.now()}-${i}-${j}`,
-              sceneHeading: typeof a.sceneHeading === "string" ? a.sceneHeading : "",
-              handledBy: typeof a.handledBy === "string" ? a.handledBy : "unknown",
-              citation: typeof a.citation === "string" ? a.citation : "",
-            })),
-          }
-        }
-      )
-
-      const newProject: PropProject = {
-        id: crypto.randomUUID(),
-        name: file.name.replace(/\.(pdf|docx)$/i, "").toUpperCase() || "Imported Props",
-        props,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }
-      addProject(newProject)
-      setCurrentProject(newProject)
-      trackExtractComplete("prop-list", props.length)
-      setStatus("complete")
-      setView("results")
-    } catch (e) {
-      console.error("[v0] prop extraction failed:", e)
-      setError(e instanceof Error ? e.message : "Unknown error")
-      setStatus("failed")
-    }
+    const sourceTitle = file.name.replace(/\.(pdf|docx)$/i, "")
+    await run(file, sourceTitle)
   }
+
+  // Map upstream result -> Prop[] -> new project (same pattern as Character Bible)
+  useEffect(() => {
+    if (status !== "complete" || !result || !file) return
+
+    const incoming = Array.isArray(result.props) ? result.props : []
+    const props: Prop[] = incoming.map((p, i) => {
+      const appearances = Array.isArray(p.scene_appearances) ? p.scene_appearances : []
+      return {
+        id: `${Date.now()}-${i}`,
+        name: typeof p.name === "string" ? p.name : "",
+        category: normalizeCategory(p.category),
+        description: typeof p.description === "string" ? p.description : "",
+        sceneAppearances: appearances.map((a, j) => ({
+          id: `${Date.now()}-${i}-${j}`,
+          sceneHeading: typeof a.scene_heading === "string" ? a.scene_heading : "",
+          handledBy: typeof a.handled_by === "string" ? a.handled_by : "unknown",
+          citation: typeof a.citation === "string" ? a.citation : "",
+        })),
+      }
+    })
+
+    const scriptName = file.name.replace(/\.(pdf|docx)$/i, "").toUpperCase() || "Imported Props"
+    const newProject: PropProject = {
+      id: crypto.randomUUID(),
+      name: scriptName,
+      props,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+    addProject(newProject)
+    setCurrentProject(newProject)
+    trackExtractComplete("prop-list", props.length)
+    setView("results")
+  }, [status, result, file, addProject, setCurrentProject, setView])
 
   const handleRetry = () => {
     reset()
@@ -192,12 +175,17 @@ export default function PropUploadView() {
           {isProcessing ? (
             <div className="flex flex-col items-center justify-center py-16 rounded-2xl border border-white/10 bg-white/[0.02]">
               <Loader2 className="w-12 h-12 text-rose-400 animate-spin mb-4" />
-              <p className="text-white font-sans mb-2">Analyzing script for props...</p>
+              <p className="text-white font-sans mb-2">
+                {status === "uploading" ? "Uploading file..." : "Analyzing script for props..."}
+              </p>
               <p className="text-white/50 text-sm mb-4 font-sans">
-                This can take 30s+ on a feature-length script.
+                {message || "This can take 30s+ on a feature-length script."}
               </p>
               <div className="w-64 h-2 bg-white/10 rounded-full overflow-hidden">
-                <div className="h-full bg-rose-500 transition-all duration-500 animate-pulse" style={{ width: "70%" }} />
+                <div
+                  className="h-full bg-rose-500 transition-all duration-500 animate-pulse"
+                  style={{ width: status === "uploading" ? "30%" : "70%" }}
+                />
               </div>
             </div>
           ) : file && status !== "failed" ? (
@@ -245,7 +233,7 @@ export default function PropUploadView() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="application/pdf,.docx"
+                accept=".pdf,.docx"
                 onChange={handleFileSelect}
                 className="hidden"
               />

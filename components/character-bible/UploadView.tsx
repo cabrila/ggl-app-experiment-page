@@ -52,7 +52,10 @@ export default function UploadView() {
       "application/pdf",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
     ]
-    return validTypes.includes(file.type)
+    if (validTypes.includes(file.type)) return true
+    // Some browsers (esp. on Windows/Linux) report empty string or
+    // "application/octet-stream" for .docx — fall back to extension.
+    return /\.(pdf|docx)$/i.test(file.name)
   }
 
   const handleProcess = async () => {

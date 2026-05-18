@@ -26,7 +26,9 @@ export async function POST(request: NextRequest) {
     const mimeType = file.type || "application/pdf"
 
     const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" })
+    const model = genAI.getGenerativeModel({
+      model: process.env.GEMINI_MODEL ?? "gemini-2.5-flash",
+    })
 
     const prompt = `You are a script parsing engine. Your task is to segment the provided screenplay into individual scenes.
 

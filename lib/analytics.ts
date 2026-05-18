@@ -160,7 +160,7 @@ export function trackAIExtraction(skill: string, itemCount: number) {
 // Feature-specific tracking events
 // ============================================
 
-export type FeatureName = "character-bible" | "location-overview" | "actor-list" | "public-casting"
+export type FeatureName = "character-bible" | "location-overview" | "actor-list" | "public-casting" | "prop-list" | "scene-list"
 
 /**
  * Track when user clicks on a feature in the sidebar

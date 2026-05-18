@@ -86,6 +86,32 @@ export interface ActorExtractResult {
   }[]
 }
 
+// prop-extract result
+export interface PropExtractResult {
+  props: {
+    name: string
+    category?: string
+    description?: string
+    notes?: string
+    scene_appearances?: {
+      scene_heading?: string
+      handled_by?: string
+      citation?: string
+    }[]
+  }[]
+}
+
+// scene-extract result
+export interface SceneExtractResult {
+  scenes: {
+    scene_number?: number
+    scene_heading?: string
+    location?: string
+    time_of_day?: string
+    raw_text?: string
+  }[]
+}
+
 // location-overview result
 export interface LocationOverviewResult {
   locations: {

@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef } from "react"
 import { Upload, ArrowLeft, FileText, Loader2, X, AlertCircle, RefreshCw } from "lucide-react"
 import { usePropList } from "./PropListContext"
 import { Prop, PropCategory, PropProject } from "@/types/prop-list"
-import { useImportJob } from "@/hooks/useImportJob"
-import type { PropExtractResult } from "@/types/ai"
 import { trackFileUpload, trackExtractClick, trackExtractComplete } from "@/lib/analytics"
+
+type Status = "idle" | "uploading" | "complete" | "failed"
 
 const VALID_CATEGORIES: PropCategory[] = [
   "weapon",
@@ -34,10 +34,10 @@ export default function PropUploadView() {
   const [isDragging, setIsDragging] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [status, setStatus] = useState<Status>("idle")
+  const [error, setError] = useState<string | null>(null)
 
-  const { status, message, result, error, run, reset } = useImportJob<PropExtractResult>("prop-extract")
-
-  const isProcessing = status === "uploading" || status === "running"
+  const isProcessing = status === "uploading"
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -69,30 +69,54 @@ export default function PropUploadView() {
     }
   }
 
+  const reset = () => {
+    setStatus("idle")
+    setError(null)
+  }
+
   const handleProcess = async () => {
     if (!file) return
     const ext = file.name.split(".").pop()?.toLowerCase() || "unknown"
     trackExtractClick("prop-list", ext)
-    const sourceTitle = file.name.replace(/\.(pdf|docx)$/i, "")
-    await run(file, sourceTitle)
-  }
+    setStatus("uploading")
+    setError(null)
 
-  useEffect(() => {
-    if (status === "complete" && result && file) {
-      const props: Prop[] = result.props.map((p, i) => ({
-        id: `${Date.now()}-${i}`,
-        name: p.name,
-        category: normalizeCategory(p.category),
-        description: p.description || "",
-        notes: p.notes,
-        sceneAppearances:
-          p.scene_appearances?.map((sa, j) => ({
-            id: `${Date.now()}-${i}-${j}`,
-            sceneHeading: sa.scene_heading || "",
-            handledBy: sa.handled_by || "",
-            citation: sa.citation || "",
-          })) || [],
-      }))
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+
+      const response = await fetch("/api/analyze-props", {
+        method: "POST",
+        body: formData,
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || `Request failed (${response.status})`)
+      }
+
+      const incoming = Array.isArray(data.props) ? data.props : []
+      const props: Prop[] = incoming.map(
+        (p: Record<string, unknown>, i: number) => {
+          const appearancesRaw = Array.isArray(p.sceneAppearances)
+            ? (p.sceneAppearances as Record<string, unknown>[])
+            : []
+          return {
+            id: typeof p.id === "string" ? p.id : `${Date.now()}-${i}`,
+            name: typeof p.name === "string" ? p.name : "",
+            category: normalizeCategory(
+              typeof p.category === "string" ? p.category : undefined
+            ),
+            description: typeof p.description === "string" ? p.description : "",
+            sceneAppearances: appearancesRaw.map((a, j) => ({
+              id: `${Date.now()}-${i}-${j}`,
+              sceneHeading: typeof a.sceneHeading === "string" ? a.sceneHeading : "",
+              handledBy: typeof a.handledBy === "string" ? a.handledBy : "unknown",
+              citation: typeof a.citation === "string" ? a.citation : "",
+            })),
+          }
+        }
+      )
 
       const newProject: PropProject = {
         id: crypto.randomUUID(),
@@ -104,9 +128,14 @@ export default function PropUploadView() {
       addProject(newProject)
       setCurrentProject(newProject)
       trackExtractComplete("prop-list", props.length)
+      setStatus("complete")
       setView("results")
+    } catch (e) {
+      console.error("[v0] prop extraction failed:", e)
+      setError(e instanceof Error ? e.message : "Unknown error")
+      setStatus("failed")
     }
-  }, [status, result, file, addProject, setCurrentProject, setView])
+  }
 
   const handleRetry = () => {
     reset()
@@ -163,17 +192,12 @@ export default function PropUploadView() {
           {isProcessing ? (
             <div className="flex flex-col items-center justify-center py-16 rounded-2xl border border-white/10 bg-white/[0.02]">
               <Loader2 className="w-12 h-12 text-rose-400 animate-spin mb-4" />
-              <p className="text-white font-sans mb-2">
-                {status === "uploading" ? "Uploading file..." : "Analyzing script for props..."}
-              </p>
+              <p className="text-white font-sans mb-2">Analyzing script for props...</p>
               <p className="text-white/50 text-sm mb-4 font-sans">
-                {message || "Extracting props from your script"}
+                This can take 30s+ on a feature-length script.
               </p>
               <div className="w-64 h-2 bg-white/10 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-rose-500 transition-all duration-500 animate-pulse"
-                  style={{ width: status === "uploading" ? "30%" : "70%" }}
-                />
+                <div className="h-full bg-rose-500 transition-all duration-500 animate-pulse" style={{ width: "70%" }} />
               </div>
             </div>
           ) : file && status !== "failed" ? (

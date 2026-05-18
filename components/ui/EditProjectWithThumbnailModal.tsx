@@ -11,7 +11,7 @@ interface EditProjectWithThumbnailModalProps {
   currentThumbnail?: string
   title: string
   label?: string
-  accentColor?: "emerald" | "sky" | "amber" | "violet"
+  accentColor?: "emerald" | "sky" | "amber" | "violet" | "rose" | "teal"
 }
 
 export default function EditProjectWithThumbnailModal({
@@ -64,6 +64,22 @@ export default function EditProjectWithThumbnailModal({
       button: "bg-violet-500 hover:bg-violet-600",
       buttonDisabled: "bg-violet-500/30",
       focusRing: "focus:border-violet-500/50 focus:ring-violet-500/50",
+    },
+    rose: {
+      border: "border-rose-500/50",
+      bg: "bg-rose-500/10",
+      text: "text-rose-400",
+      button: "bg-rose-500 hover:bg-rose-600",
+      buttonDisabled: "bg-rose-500/30",
+      focusRing: "focus:border-rose-500/50 focus:ring-rose-500/50",
+    },
+    teal: {
+      border: "border-teal-500/50",
+      bg: "bg-teal-500/10",
+      text: "text-teal-400",
+      button: "bg-teal-500 hover:bg-teal-600",
+      buttonDisabled: "bg-teal-500/30",
+      focusRing: "focus:border-teal-500/50 focus:ring-teal-500/50",
     },
   }
 

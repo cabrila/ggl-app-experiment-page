@@ -14,6 +14,8 @@ import { db } from "./firebase"
 import { CharacterBible } from "@/types/character-bible"
 import { ActorListProject } from "@/types/actor-list"
 import { LocationProject } from "@/types/location-scouting"
+import { PropProject } from "@/types/prop-list"
+import { SceneProject } from "@/types/scene-list"
 
 // Helper to check if Firestore is properly initialized
 function isFirestoreInitialized(): boolean {
@@ -315,5 +317,143 @@ export async function deleteLocationProject(
   }
 
   const projectRef = doc(db, `users/${userId}/locationProjects/${projectId}`)
+  await deleteDoc(projectRef)
+}
+
+// ==================== PROP PROJECTS ====================
+
+export function subscribeToPropProjects(
+  userId: string,
+  onData: (projects: PropProject[]) => void,
+  onError: (error: Error) => void
+): Unsubscribe {
+  if (!isFirestoreInitialized()) {
+    onError(new Error("Firestore not initialized"))
+    return () => {}
+  }
+
+  const projectsRef = collection(db, `users/${userId}/propProjects`)
+  const q = query(projectsRef, orderBy("updatedAt", "desc"))
+
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const projects = snapshot.docs.map((doc) =>
+        convertFromFirestore<PropProject>(doc.data(), doc.id)
+      )
+      onData(projects)
+    },
+    onError
+  )
+}
+
+export async function addPropProject(
+  userId: string,
+  project: Omit<PropProject, "id" | "isDemo">
+): Promise<string> {
+  if (!isFirestoreInitialized()) throw new Error("Firestore not initialized")
+  const projectsRef = collection(db, `users/${userId}/propProjects`)
+  const docRef = await addDoc(
+    projectsRef,
+    stripUndefined({
+      ...project,
+      isDemo: false,
+      createdAt: Timestamp.fromDate(project.createdAt),
+      updatedAt: Timestamp.fromDate(project.updatedAt),
+    })
+  )
+  return docRef.id
+}
+
+export async function updatePropProject(
+  userId: string,
+  projectId: string,
+  updates: Partial<PropProject>
+): Promise<void> {
+  if (!isFirestoreInitialized()) throw new Error("Firestore not initialized")
+  const projectRef = doc(db, `users/${userId}/propProjects/${projectId}`)
+  const updateData: Record<string, unknown> = { ...updates, updatedAt: Timestamp.now() }
+  if (updates.createdAt) {
+    updateData.createdAt = Timestamp.fromDate(updates.createdAt)
+  }
+  delete updateData.id
+  await updateDoc(projectRef, stripUndefined(updateData))
+}
+
+export async function deletePropProject(
+  userId: string,
+  projectId: string
+): Promise<void> {
+  if (!isFirestoreInitialized()) throw new Error("Firestore not initialized")
+  const projectRef = doc(db, `users/${userId}/propProjects/${projectId}`)
+  await deleteDoc(projectRef)
+}
+
+// ==================== SCENE PROJECTS ====================
+
+export function subscribeToSceneProjects(
+  userId: string,
+  onData: (projects: SceneProject[]) => void,
+  onError: (error: Error) => void
+): Unsubscribe {
+  if (!isFirestoreInitialized()) {
+    onError(new Error("Firestore not initialized"))
+    return () => {}
+  }
+
+  const projectsRef = collection(db, `users/${userId}/sceneProjects`)
+  const q = query(projectsRef, orderBy("updatedAt", "desc"))
+
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const projects = snapshot.docs.map((doc) =>
+        convertFromFirestore<SceneProject>(doc.data(), doc.id)
+      )
+      onData(projects)
+    },
+    onError
+  )
+}
+
+export async function addSceneProject(
+  userId: string,
+  project: Omit<SceneProject, "id" | "isDemo">
+): Promise<string> {
+  if (!isFirestoreInitialized()) throw new Error("Firestore not initialized")
+  const projectsRef = collection(db, `users/${userId}/sceneProjects`)
+  const docRef = await addDoc(
+    projectsRef,
+    stripUndefined({
+      ...project,
+      isDemo: false,
+      createdAt: Timestamp.fromDate(project.createdAt),
+      updatedAt: Timestamp.fromDate(project.updatedAt),
+    })
+  )
+  return docRef.id
+}
+
+export async function updateSceneProject(
+  userId: string,
+  projectId: string,
+  updates: Partial<SceneProject>
+): Promise<void> {
+  if (!isFirestoreInitialized()) throw new Error("Firestore not initialized")
+  const projectRef = doc(db, `users/${userId}/sceneProjects/${projectId}`)
+  const updateData: Record<string, unknown> = { ...updates, updatedAt: Timestamp.now() }
+  if (updates.createdAt) {
+    updateData.createdAt = Timestamp.fromDate(updates.createdAt)
+  }
+  delete updateData.id
+  await updateDoc(projectRef, stripUndefined(updateData))
+}
+
+export async function deleteSceneProject(
+  userId: string,
+  projectId: string
+): Promise<void> {
+  if (!isFirestoreInitialized()) throw new Error("Firestore not initialized")
+  const projectRef = doc(db, `users/${userId}/sceneProjects/${projectId}`)
   await deleteDoc(projectRef)
 }

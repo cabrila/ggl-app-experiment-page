@@ -9,10 +9,12 @@ import CharacterBibleScreen from "@/components/character-bible/CharacterBibleScr
 import LocationScoutingScreen from "@/components/location-scouting/LocationScoutingScreen"
 import ActorListScreen from "@/components/actor-list/ActorListScreen"
 import PublicCastingScreen from "@/components/public-casting/PublicCastingScreen"
+import PropListScreen from "@/components/prop-list/PropListScreen"
+import SceneListScreen from "@/components/scene-list/SceneListScreen"
 import { CastingProvider } from "@/components/casting/CastingContext"
 
 export default function App() {
-  const [view, setView] = useState<"login" | "splash" | "character-bible" | "location-overview" | "actor-database" | "public-casting">("login")
+  const [view, setView] = useState<"login" | "splash" | "character-bible" | "location-overview" | "actor-database" | "public-casting" | "prop-list" | "scene-list">("login")
   const [user, setUser] = useState<User | null>(null)
   const [error, setError] = useState<string | null>(null)
   // Dev-only bypass: when true, the auth reconcile effect is disabled so the
@@ -85,7 +87,14 @@ export default function App() {
   }
 
   const handleNavigate = (feature: string) => {
-    if (feature === "character-bible" || feature === "location-overview" || feature === "actor-database" || feature === "public-casting") {
+    if (
+      feature === "character-bible" ||
+      feature === "location-overview" ||
+      feature === "actor-database" ||
+      feature === "public-casting" ||
+      feature === "prop-list" ||
+      feature === "scene-list"
+    ) {
       setView(feature)
     }
   }
@@ -122,6 +131,18 @@ export default function App() {
         return (
           <CastingProvider>
             <PublicCastingScreen onBack={() => setView("splash")} onSignOut={handleSignOut} activeView="public-casting" onNavigate={handleNavigate} />
+          </CastingProvider>
+        )
+      case "prop-list":
+        return (
+          <CastingProvider>
+            <PropListScreen onBack={() => setView("splash")} onSignOut={handleSignOut} activeView="prop-list" onNavigate={handleNavigate} />
+          </CastingProvider>
+        )
+      case "scene-list":
+        return (
+          <CastingProvider>
+            <SceneListScreen onBack={() => setView("splash")} onSignOut={handleSignOut} activeView="scene-list" onNavigate={handleNavigate} />
           </CastingProvider>
         )
       default:

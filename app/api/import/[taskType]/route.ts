@@ -5,7 +5,13 @@ const AI_SERVICE_URL =
   "https://gl-ai-service-dev-1021127710054.europe-west4.run.app"
 
 // Supported skills
-const SUPPORTED_SKILLS = ["character-extract", "actor-extract", "location-overview"]
+const SUPPORTED_SKILLS = [
+  "character-extract",
+  "actor-extract",
+  "location-overview",
+  "prop-extract",
+  "scene-extract",
+]
 
 export async function POST(
   request: NextRequest,

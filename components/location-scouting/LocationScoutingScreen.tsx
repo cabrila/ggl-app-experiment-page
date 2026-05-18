@@ -6,7 +6,7 @@ import LocationUploadView from "./LocationUploadView"
 import LocationResultsView from "./LocationResultsView"
 import FeatureLayout from "@/components/layout/FeatureLayout"
 
-type ActiveView = "character-bible" | "location-overview" | "actor-database" | "public-casting"
+type ActiveView = "character-bible" | "location-overview" | "actor-database" | "public-casting" | "prop-list" | "scene-list"
 
 interface LocationScoutingScreenProps {
   onBack: () => void

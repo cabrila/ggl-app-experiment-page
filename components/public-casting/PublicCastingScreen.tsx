@@ -9,7 +9,7 @@ import FeatureLayout from "@/components/layout/FeatureLayout"
 import { CastingCall, PublicCastingProject } from "@/types/public-casting"
 
 type View = "list" | "setup" | "submissions"
-type ActiveView = "character-bible" | "location-overview" | "actor-database" | "public-casting"
+type ActiveView = "character-bible" | "location-overview" | "actor-database" | "public-casting" | "prop-list" | "scene-list"
 
 interface PublicCastingScreenProps {
   onBack: () => void

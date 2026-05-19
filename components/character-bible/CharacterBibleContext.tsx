@@ -35,18 +35,12 @@ const demoBibles: CharacterBible[] = [
     name: "Bluff Final",
     characters: Array.from({ length: 21 }, (_, i) => ({
       id: `char-${i + 1}`,
-      entityType: "omc:Character" as const,
-      identifier: {
-        identifierScope: "gogreenlightai",
-        identifierValue: `demo-char-${i + 1}`,
-      },
       name: `Character ${i + 1}`,
-      profile: {
-        gender: { gender: i % 2 === 0 ? "Male" : "Female" },
-        castingProfile: { ageRange: { playingAge: "30s" } },
-      },
-      citations: [],
-      fieldCitations: [],
+      aliases: [],
+      gender: i % 2 === 0 ? "Male" : "Female",
+      ageRange: "30s",
+      description: "",
+      sceneAppearances: [],
     })),
     createdAt: new Date("2026-04-28"),
     updatedAt: new Date("2026-04-28"),

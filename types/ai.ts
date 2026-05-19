@@ -20,56 +20,29 @@ export interface TaskDocument {
   updatedAt: string
 }
 
-// Citation types matching new shape
-export interface AICitationEntry {
-  id: string
-  text: string
+// Raw scene appearance as returned by the character-extract skill (snake_case)
+export interface AISceneAppearance {
+  scene_heading: string
+  citation: string
 }
 
-export interface AIFieldCitation {
-  field: string
-  citationId: string
-}
-
-// character-extract result from AI service (new array-based citation shape)
-export interface CharacterExtractResult {
-  characters: AICharacter[]
-}
-
-// Single character from AI service with new citation shape
-export interface AICharacter {
-  entityType: "omc:Character"
-  identifier: {
-    identifierScope: string
-    identifierValue: string
-  }
+// Single character as returned by the character-extract skill.
+// The skill returns snake_case field names; we normalise to camelCase
+// at the call site (UploadView) when mapping to our Character type.
+export interface AIExtractedCharacter {
   name: string
-  alternateNames?: string[]
+  aliases: string[]
+  gender: string
+  age_range: string
+  description: string
+  scene_appearances: AISceneAppearance[]
+  // The proxy may add an id (UUID) per the skill contract
+  id?: string
+}
 
-  profile?: {
-    gender?: {
-      gender?: string
-      genderPronoun?: string
-    }
-    physicalCharacteristics?: {
-      species?: string
-      hairColor?: string
-      hairLength?: string
-      eyeColor?: string
-      weight?: string
-      height?: string
-    }
-    background?: string
-    castingProfile?: {
-      ageRange?: { playingAge?: string }
-    }
-    ethnicity?: string
-    castingNotes?: string
-  }
-
-  // NEW citation shape (arrays, not maps)
-  citations: AICitationEntry[]
-  fieldCitations: AIFieldCitation[]
+// character-extract result from AI service
+export interface CharacterExtractResult {
+  characters: AIExtractedCharacter[]
 }
 
 // actor-extract result

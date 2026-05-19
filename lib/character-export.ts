@@ -37,17 +37,17 @@ export function exportCharactersAsPDF(characters: Character[], projectName: stri
   // Table data - map new shape to export format
   const tableData = characters.map((char) => [
     char.name,
-    char.profile?.castingProfile?.ageRange?.playingAge || "N/A",
-    char.profile?.gender?.gender || "N/A",
-    char.profile?.ethnicity || "N/A",
-    char.alternateNames?.join(", ") || "-",
-    char.profile?.castingNotes || char.profile?.background || "-",
+    char.ageRange || "-",
+    char.gender || "-",
+    char.aliases?.join(", ") || "-",
+    String(char.sceneAppearances?.length ?? 0),
+    char.description || "-",
   ])
-  
+
   // Create table
   autoTable(doc, {
     startY: 42,
-    head: [["Name", "Age", "Gender", "Ethnicity", "Aliases", "Notes"]],
+    head: [["Name", "Age", "Gender", "Aliases", "Scenes", "Description"]],
     body: tableData,
     styles: {
       fontSize: 9,
@@ -63,10 +63,10 @@ export function exportCharactersAsPDF(characters: Character[], projectName: stri
     },
     columnStyles: {
       0: { cellWidth: 30 },
-      1: { cellWidth: 15 },
-      2: { cellWidth: 20 },
-      3: { cellWidth: 25 },
-      4: { cellWidth: 25 },
+      1: { cellWidth: 18 },
+      2: { cellWidth: 22 },
+      3: { cellWidth: 30 },
+      4: { cellWidth: 15 },
       5: { cellWidth: "auto" },
     },
   })
@@ -95,39 +95,29 @@ export function exportCharactersAsExcel(characters: Character[], projectName: st
   // Prepare data for Excel - map new shape to export format
   const excelData = characters.map((char) => ({
     "Name": char.name,
-    "Aliases": char.alternateNames?.join(", ") || "",
-    "Age": char.profile?.castingProfile?.ageRange?.playingAge || "",
-    "Gender": char.profile?.gender?.gender || "",
-    "Pronouns": char.profile?.gender?.genderPronoun || "",
-    "Ethnicity": char.profile?.ethnicity || "",
-    "Background": char.profile?.background || "",
-    "Casting Notes": char.profile?.castingNotes || "",
-    "Species": char.profile?.physicalCharacteristics?.species || "",
-    "Hair Color": char.profile?.physicalCharacteristics?.hairColor || "",
-    "Eye Color": char.profile?.physicalCharacteristics?.eyeColor || "",
-    "Height": char.profile?.physicalCharacteristics?.height || "",
-    "Identifier": char.identifier?.identifierValue || "",
+    "Aliases": char.aliases?.join(", ") || "",
+    "Age Range": char.ageRange || "",
+    "Gender": char.gender || "",
+    "Description": char.description || "",
+    "Scene Count": char.sceneAppearances?.length ?? 0,
+    "Scene Appearances": (char.sceneAppearances || [])
+      .map((sa) => `${sa.sceneHeading} — ${sa.citation}`)
+      .join("\n"),
   }))
-  
+
   // Create workbook and worksheet
   const wb = XLSX.utils.book_new()
   const ws = XLSX.utils.json_to_sheet(excelData)
-  
+
   // Set column widths
   ws["!cols"] = [
     { wch: 25 }, // Name
-    { wch: 20 }, // Aliases
-    { wch: 10 }, // Age
+    { wch: 25 }, // Aliases
+    { wch: 12 }, // Age Range
     { wch: 12 }, // Gender
-    { wch: 12 }, // Pronouns
-    { wch: 15 }, // Ethnicity
-    { wch: 40 }, // Background
-    { wch: 40 }, // Casting Notes
-    { wch: 12 }, // Species
-    { wch: 12 }, // Hair Color
-    { wch: 12 }, // Eye Color
-    { wch: 10 }, // Height
-    { wch: 20 }, // Identifier
+    { wch: 50 }, // Description
+    { wch: 10 }, // Scene Count
+    { wch: 60 }, // Scene Appearances
   ]
   
   // Add worksheet to workbook

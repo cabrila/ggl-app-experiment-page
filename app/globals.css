@@ -553,3 +553,21 @@
     box-shadow: 0 0 0 12px transparent;
   }
 }
+
+/* Indeterminate progress bar sweep — used in SceneUploadView while the
+   backend hasn't reported a numeric percentage yet. */
+@keyframes indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-\[indeterminate_1\.4s_ease-in-out_infinite\] {
+    animation: none;
+    transform: translateX(0);
+  }
+}

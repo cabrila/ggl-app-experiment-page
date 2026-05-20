@@ -16,7 +16,7 @@ export default function SceneUploadView() {
 
   // Same upstream AI service as Character Bible — see `useImportJob` and
   // `app/api/import/[taskType]/route.ts`. No direct Gemini call.
-  const { status, message, result, error, run, reset } =
+  const { status, message, progress, result, error, run, reset } =
     useImportJob<SceneExtractResult>("scene-extract")
 
   const isProcessing = status === "uploading" || status === "running"
@@ -157,12 +157,52 @@ export default function SceneUploadView() {
               <p className="text-white/50 text-sm mb-4 font-sans">
                 {message || "This can take 30s+ on a feature-length script."}
               </p>
-              <div className="w-64 h-2 bg-white/10 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-teal-500 transition-all duration-500 animate-pulse"
-                  style={{ width: status === "uploading" ? "30%" : "70%" }}
-                />
-              </div>
+              {(() => {
+                // Real progress comes from the backend SSE stream (parsed in
+                // useImportJob). While we don't have a number yet, render an
+                // indeterminate sweep instead of a fake 30/70 jump.
+                const hasNumeric = progress !== null
+                // During upload we haven't opened the SSE stream yet, so always
+                // show indeterminate then.
+                const indeterminate = status === "uploading" || !hasNumeric
+                const pct = hasNumeric ? Math.round(progress!) : null
+
+                return (
+                  <>
+                    <div
+                      className="w-64 h-2 bg-white/10 rounded-full overflow-hidden"
+                      role="progressbar"
+                      aria-label="Scene extraction progress"
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={pct ?? undefined}
+                    >
+                      {indeterminate ? (
+                        <div
+                          className="h-full w-1/3 bg-teal-500 rounded-full animate-[indeterminate_1.4s_ease-in-out_infinite]"
+                          style={{
+                            // Inline keyframes via CSS variable fallback —
+                            // Tailwind v4 will pick up the named keyframes
+                            // below; this style is just a left/translate hint
+                            // for browsers that ignore the animation.
+                            transform: "translateX(-100%)",
+                          }}
+                        />
+                      ) : (
+                        <div
+                          className="h-full bg-teal-500 transition-all duration-500"
+                          style={{ width: `${pct}%` }}
+                        />
+                      )}
+                    </div>
+                    {hasNumeric && !indeterminate && (
+                      <p className="mt-2 text-white/40 text-xs font-sans tabular-nums">
+                        {pct}%
+                      </p>
+                    )}
+                  </>
+                )
+              })()}
             </div>
           ) : file && status !== "failed" ? (
             <div className="flex flex-col items-center">

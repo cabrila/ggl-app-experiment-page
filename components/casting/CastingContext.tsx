@@ -23,9 +23,9 @@ function getInitialState(): CastingState {
     users: [
       {
         id: "1",
-        name: "John Doe",
-        initials: "JD",
-        email: "john@example.com",
+        name: "John GoGreenlight",
+        initials: "JG",
+        email: "john@gogreenlight.ai",
         role: "Casting Director",
         bgColor: "#3B82F6",
         color: "#FFFFFF",

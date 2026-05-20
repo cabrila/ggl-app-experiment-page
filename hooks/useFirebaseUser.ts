@@ -46,6 +46,12 @@ function deriveInitials(name: string, email: string): string {
 /**
  * Subscribes to the Firebase auth state and exposes display fields used by
  * the app header (avatar / dropdown) and gating for internal-only UI.
+ *
+ * Dev-only fallback: when running in development AND no Firebase user is
+ * signed in, we pretend `john@gogreenlight.ai` is the current user so the
+ * internal-only Usage button is reachable for local testing without going
+ * through the magic-link flow. This branch is unreachable in production
+ * (`process.env.NODE_ENV !== "development"`).
  */
 export function useFirebaseUser(): FirebaseUserInfo {
   const [user, setUser] = useState<User | null>(null)
@@ -54,6 +60,16 @@ export function useFirebaseUser(): FirebaseUserInfo {
     const unsub = subscribeToAuthStateChanges((u) => setUser(u))
     return () => unsub()
   }, [])
+
+  if (!user && process.env.NODE_ENV === "development") {
+    return {
+      user: null,
+      isInternal: true,
+      displayName: "John GoGreenlight",
+      email: "john@gogreenlight.ai",
+      initials: "JG",
+    }
+  }
 
   const email = user?.email ?? ""
   const displayName = deriveDisplayName(user)

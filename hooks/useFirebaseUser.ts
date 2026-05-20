@@ -40,7 +40,7 @@ function deriveInitials(name: string, email: string): string {
   if (parts.length === 1 && parts[0].length > 0) {
     return parts[0].slice(0, 2).toUpperCase()
   }
-  return "??"
+  return ":)"
 }
 
 /**

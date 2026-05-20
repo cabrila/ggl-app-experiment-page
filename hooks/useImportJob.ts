@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useCallback } from "react"
+import { auth, waitForAuth } from "@/lib/firebase"
 
 export type ImportJobStatus = "idle" | "uploading" | "running" | "complete" | "failed"
 
@@ -47,7 +48,15 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
     setResult(null)
 
     try {
-      // 1. Submit task
+      // 1. Submit task — proxy now requires a Firebase ID token so the
+      //    AI service can attribute usage to the signed-in user.
+      await waitForAuth()
+      const current = auth.currentUser
+      if (!current) {
+        throw new Error("You need to be signed in to run AI extractions.")
+      }
+      const idToken = await current.getIdToken()
+
       const form = new FormData()
       form.append("file", file)
       if (sourceTitle) {
@@ -56,6 +65,7 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
 
       const res = await fetch(`/api/import/${taskType}`, {
         method: "POST",
+        headers: { Authorization: `Bearer ${idToken}` },
         body: form,
       })
 

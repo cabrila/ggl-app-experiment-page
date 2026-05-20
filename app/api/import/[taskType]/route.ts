@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { verifyIdTokenFromRequest } from "@/lib/firebase-admin"
 
 const AI_SERVICE_URL =
   process.env.AI_SERVICE_URL ||
@@ -27,6 +28,17 @@ export async function POST(
           error: `Unsupported task type: ${taskType}. Supported types: ${SUPPORTED_SKILLS.join(", ")}`,
         },
         { status: 400 }
+      )
+    }
+
+    // Verify Firebase ID token. Per spec, do NOT fall back to sending the
+    // request without attribution — return 401 instead. The /api/usage
+    // route uses the same pattern.
+    const verified = await verifyIdTokenFromRequest(request)
+    if (!verified) {
+      return NextResponse.json(
+        { error: "Unauthorized — sign in required" },
+        { status: 401 }
       )
     }
 
@@ -61,12 +73,18 @@ export async function POST(
       )
     }
 
-    // Forward file directly to AI service as multipart/form-data
+    // Forward file directly to AI service as multipart/form-data, plus
+    // server-derived attribution fields (NEVER trust client-supplied user
+    // info — these come from the verified Firebase token).
     const upstream = new FormData()
     upstream.append("file", file, file.name) // third arg = filename
     upstream.append("skill", taskType)
     if (sourceTitle) {
       upstream.append("input", JSON.stringify({ source_title: sourceTitle }))
+    }
+    upstream.append("userId", verified.uid)
+    if (verified.email) {
+      upstream.append("userEmail", verified.email)
     }
 
     const aiResponse = await fetch(`${AI_SERVICE_URL}/tasks/upload`, {

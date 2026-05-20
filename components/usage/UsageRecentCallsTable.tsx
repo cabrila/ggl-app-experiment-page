@@ -21,10 +21,19 @@ export default function UsageRecentCallsTable({ calls, loading }: UsageRecentCal
 
   return (
     <div className="rounded-lg border border-white/10 overflow-x-auto">
-      <table className="w-full text-sm font-sans min-w-[900px]">
+      <table className="w-full text-sm font-sans min-w-[1100px]">
         <thead className="bg-white/5 text-white/60 text-xs uppercase tracking-wide">
           <tr>
             <th className="px-4 py-2 text-left font-medium">Time</th>
+            {/* New: user attribution. Rendered before existing columns so
+                it's the first thing the eye lands on. */}
+            <th className="px-4 py-2 text-left font-medium min-w-[220px]">User</th>
+            <th
+              className="px-4 py-2 text-right font-medium"
+              title="Underlying AI calls for this extract. Usually 1; higher (e.g. 4–6) for chunked scene-extract on long screenplays."
+            >
+              AI calls
+            </th>
             <th className="px-4 py-2 text-left font-medium">Skill</th>
             <th className="px-4 py-2 text-left font-medium">Model</th>
             <th className="px-4 py-2 text-left font-medium">Phase</th>
@@ -38,7 +47,7 @@ export default function UsageRecentCallsTable({ calls, loading }: UsageRecentCal
           {loading
             ? Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i} className="border-t border-white/5">
-                  {Array.from({ length: 8 }).map((_, j) => (
+                  {Array.from({ length: 10 }).map((_, j) => (
                     <td key={j} className="px-4 py-3">
                       <span className="block h-4 w-full max-w-[140px] rounded bg-white/10 animate-pulse" />
                     </td>
@@ -47,6 +56,9 @@ export default function UsageRecentCallsTable({ calls, loading }: UsageRecentCal
               ))
             : rows.map((call, idx) => {
                 const isRepair = call.phase === "repair_call"
+                // Older records may not have aiCallCount — treat as 1.
+                const aiCalls = call.aiCallCount ?? 1
+                const isChunked = aiCalls > 1
                 return (
                   <tr
                     key={`${call.taskId}-${call.timestamp}-${idx}`}
@@ -54,6 +66,27 @@ export default function UsageRecentCallsTable({ calls, loading }: UsageRecentCal
                   >
                     <td className="px-4 py-3 whitespace-nowrap" title={call.timestamp}>
                       {formatRelativeTime(call.timestamp)}
+                    </td>
+                    <td
+                      className="px-4 py-3 max-w-[260px] truncate"
+                      title={call.userEmail || "Unattributed (older record)"}
+                    >
+                      {call.userEmail ? (
+                        call.userEmail
+                      ) : (
+                        <span className="text-white/40">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right tabular-nums whitespace-nowrap">
+                      {formatNumber(aiCalls)}
+                      {isChunked && (
+                        <span
+                          className="ml-1.5 text-[10px] text-white/40 font-sans"
+                          title="Multiple AI calls under the hood — normal for long screenplays in scene-extract."
+                        >
+                          (chunked)
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 font-mono text-xs">{call.skillId}</td>
                     <td className="px-4 py-3 font-mono text-xs">{call.model}</td>

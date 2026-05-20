@@ -73,24 +73,21 @@ export default function UploadView() {
     if (status === "complete" && result) {
       const scriptName = file?.name.replace(/\.(pdf|docx)$/i, "").toUpperCase() || "SCRIPT"
 
-      // Map AI service result to our Character type (new array-based citation shape)
+      // Map AI service result to our Character type. The skill returns
+      // snake_case fields; we normalise to camelCase here so the rest of
+      // the app only sees one convention.
       const characters: Character[] = result.characters.map((char) => ({
-        // Server-managed fields
-        id: crypto.randomUUID(),
+        id: char.id || crypto.randomUUID(),
         source: "ai" as const,
-
-        // GGO/OMC payload - pass through directly from AI
-        entityType: char.entityType,
-        identifier: char.identifier,
         name: char.name,
-        alternateNames: char.alternateNames,
-
-        // Profile - pass through directly
-        profile: char.profile,
-
-        // NEW citation shape (arrays)
-        citations: char.citations || [],
-        fieldCitations: char.fieldCitations || [],
+        aliases: char.aliases || [],
+        gender: char.gender || "unknown",
+        ageRange: char.age_range || "unknown",
+        description: char.description || "",
+        sceneAppearances: (char.scene_appearances || []).map((sa) => ({
+          sceneHeading: sa.scene_heading,
+          citation: sa.citation,
+        })),
       }))
 
       const newBible: CharacterBible = {

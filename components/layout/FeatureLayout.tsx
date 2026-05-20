@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Home, LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone, Package, Film } from "lucide-react"
+import { Home, LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone, Package, Film, DollarSign } from "lucide-react"
 import { useCasting } from "@/components/casting/CastingContext"
 import FeedbackModal from "@/components/modals/FeedbackModal"
 import { trackFeatureClick, type FeatureName } from "@/lib/analytics"
+import { subscribeToAuthStateChanges } from "@/lib/auth"
 
 type ActiveView = "character-bible" | "location-overview" | "actor-database" | "public-casting" | "prop-list" | "scene-list"
 
@@ -76,9 +77,21 @@ interface FeatureLayoutProps {
 export default function FeatureLayout({ children, onBack, onSignOut, activeView, onNavigate }: FeatureLayoutProps) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false)
+  const [isInternalUser, setIsInternalUser] = useState(false)
   const userButtonRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const { state } = useCasting()
+
+  // Watch the Firebase auth state so we know whether to render the
+  // internal-only Usage button. Visibility is convenience; the
+  // /api/usage handler is the actual access control.
+  useEffect(() => {
+    const unsub = subscribeToAuthStateChanges((u) => {
+      const email = u?.email?.toLowerCase() ?? ""
+      setIsInternalUser(email.endsWith("@gogreenlight.ai"))
+    })
+    return () => unsub()
+  }, [])
 
   const handleUserMenu = () => setIsUserMenuOpen(!isUserMenuOpen)
 
@@ -132,6 +145,16 @@ export default function FeatureLayout({ children, onBack, onSignOut, activeView,
           >
             <Home className="w-5 h-5" />
           </button>
+          {isInternalUser && (
+            <a
+              href="/usage"
+              className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all"
+              title="AI usage and cost"
+              aria-label="Usage and cost"
+            >
+              <DollarSign className="w-5 h-5" />
+            </a>
+          )}
         </div>
 
         {/* Right side - Feedback and User Avatar */}

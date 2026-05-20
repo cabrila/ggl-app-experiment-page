@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { Trash2, X, Save, Pencil, ChevronDown, ChevronUp } from "lucide-react"
 import { Character } from "@/types/character-bible"
-import { CitedValue } from "@/components/ui/CitationTooltip"
 
 interface CharacterCardProps {
   character: Character
@@ -11,39 +10,32 @@ interface CharacterCardProps {
   onDelete: () => void
 }
 
+// Treat unknown / empty as "no value" for display purposes.
+function isMeaningful(value: string | undefined | null): boolean {
+  if (!value) return false
+  return value.trim().toLowerCase() !== "unknown"
+}
+
 export default function CharacterCard({ character, onUpdate, onDelete }: CharacterCardProps) {
   const [isEditing, setIsEditing] = useState(false)
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [isAppearancesOpen, setIsAppearancesOpen] = useState(false)
   const [editState, setEditState] = useState({
     name: character.name,
-    alternateNames: character.alternateNames?.join(", ") || "",
-    gender: character.profile?.gender?.gender || "",
-    genderPronoun: character.profile?.gender?.genderPronoun || "",
-    playingAge: character.profile?.castingProfile?.ageRange?.playingAge || "",
-    ethnicity: character.profile?.ethnicity || "",
-    background: character.profile?.background || "",
-    castingNotes: character.profile?.castingNotes || "",
+    aliases: (character.aliases || []).join(", "),
+    gender: character.gender || "",
+    ageRange: character.ageRange || "",
+    description: character.description || "",
   })
 
   const handleSave = () => {
     const updates: Partial<Character> = {
       name: editState.name,
-      alternateNames: editState.alternateNames ? editState.alternateNames.split(",").map(s => s.trim()).filter(Boolean) : undefined,
-      profile: {
-        ...character.profile,
-        gender: {
-          ...character.profile?.gender,
-          gender: editState.gender || undefined,
-          genderPronoun: editState.genderPronoun || undefined,
-        },
-        castingProfile: {
-          ...character.profile?.castingProfile,
-          ageRange: editState.playingAge ? { playingAge: editState.playingAge } : undefined,
-        },
-        ethnicity: editState.ethnicity || undefined,
-        background: editState.background || undefined,
-        castingNotes: editState.castingNotes || undefined,
-      },
+      aliases: editState.aliases
+        ? editState.aliases.split(",").map((s) => s.trim()).filter(Boolean)
+        : [],
+      gender: editState.gender || "unknown",
+      ageRange: editState.ageRange || "unknown",
+      description: editState.description || "",
     }
     onUpdate(updates)
     setIsEditing(false)
@@ -52,21 +44,13 @@ export default function CharacterCard({ character, onUpdate, onDelete }: Charact
   const handleCancel = () => {
     setEditState({
       name: character.name,
-      alternateNames: character.alternateNames?.join(", ") || "",
-      gender: character.profile?.gender?.gender || "",
-      genderPronoun: character.profile?.gender?.genderPronoun || "",
-      playingAge: character.profile?.castingProfile?.ageRange?.playingAge || "",
-      ethnicity: character.profile?.ethnicity || "",
-      background: character.profile?.background || "",
-      castingNotes: character.profile?.castingNotes || "",
+      aliases: (character.aliases || []).join(", "),
+      gender: character.gender || "",
+      ageRange: character.ageRange || "",
+      description: character.description || "",
     })
     setIsEditing(false)
   }
-
-  // Helper to get physical characteristics that are populated
-  const physicalChars = character.profile?.physicalCharacteristics
-  const hasPhysicalChars = physicalChars && Object.entries(physicalChars)
-    .some(([, value]) => value)
 
   if (isEditing) {
     return (
@@ -84,30 +68,30 @@ export default function CharacterCard({ character, onUpdate, onDelete }: Charact
           />
         </div>
 
-        {/* Alternate Names */}
+        {/* Aliases */}
         <div className="mb-4">
           <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-2">
-            Alternate Names (comma-separated)
+            Aliases (comma-separated)
           </label>
           <input
             type="text"
-            value={editState.alternateNames}
-            onChange={(e) => setEditState({ ...editState, alternateNames: e.target.value })}
+            value={editState.aliases}
+            onChange={(e) => setEditState({ ...editState, aliases: e.target.value })}
             placeholder="e.g. BOB, ROBERTO"
             className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans focus:outline-none focus:border-emerald-500/50"
           />
         </div>
 
-        {/* Age & Gender Row */}
+        {/* Age Range & Gender Row */}
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
             <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-2">
-              Playing Age
+              Age Range
             </label>
             <input
               type="text"
-              value={editState.playingAge}
-              onChange={(e) => setEditState({ ...editState, playingAge: e.target.value })}
+              value={editState.ageRange}
+              onChange={(e) => setEditState({ ...editState, ageRange: e.target.value })}
               placeholder="e.g. 30s, 25-35"
               className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans focus:outline-none focus:border-emerald-500/50"
             />
@@ -125,55 +109,15 @@ export default function CharacterCard({ character, onUpdate, onDelete }: Charact
           </div>
         </div>
 
-        {/* Pronoun & Ethnicity Row */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div>
-            <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-2">
-              Pronouns
-            </label>
-            <input
-              type="text"
-              value={editState.genderPronoun}
-              onChange={(e) => setEditState({ ...editState, genderPronoun: e.target.value })}
-              placeholder="e.g. she/her, he/him"
-              className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans focus:outline-none focus:border-emerald-500/50"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-2">
-              Ethnicity
-            </label>
-            <input
-              type="text"
-              value={editState.ethnicity}
-              onChange={(e) => setEditState({ ...editState, ethnicity: e.target.value })}
-              className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans focus:outline-none focus:border-emerald-500/50"
-            />
-          </div>
-        </div>
-
-        {/* Background */}
-        <div className="mb-4">
-          <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-2">
-            Background
-          </label>
-          <textarea
-            value={editState.background}
-            onChange={(e) => setEditState({ ...editState, background: e.target.value })}
-            rows={3}
-            className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans resize-none focus:outline-none focus:border-emerald-500/50"
-          />
-        </div>
-
-        {/* Casting Notes */}
+        {/* Description */}
         <div className="mb-5">
           <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-2">
-            Casting Notes
+            Description
           </label>
           <textarea
-            value={editState.castingNotes}
-            onChange={(e) => setEditState({ ...editState, castingNotes: e.target.value })}
-            rows={3}
+            value={editState.description}
+            onChange={(e) => setEditState({ ...editState, description: e.target.value })}
+            rows={4}
             className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans resize-none focus:outline-none focus:border-emerald-500/50"
           />
         </div>
@@ -209,6 +153,12 @@ export default function CharacterCard({ character, onUpdate, onDelete }: Charact
   }
 
   // View Mode
+  const hasAliases = character.aliases && character.aliases.length > 0
+  const hasAppearances = character.sceneAppearances && character.sceneAppearances.length > 0
+  const showAge = isMeaningful(character.ageRange)
+  const showGender = isMeaningful(character.gender)
+  const appearanceCount = character.sceneAppearances?.length || 0
+
   return (
     <div className="group relative p-5 rounded-xl border border-white/10 bg-[#1a2e23] hover:border-white/20 transition-colors">
       {/* Hover Actions */}
@@ -229,188 +179,100 @@ export default function CharacterCard({ character, onUpdate, onDelete }: Charact
         </button>
       </div>
 
-      {/* Character Name with Citation */}
+      {/* Character Name */}
       <div className="mb-2 pr-20">
-        <h3 className="text-xl font-bold text-white font-sans uppercase tracking-wide inline-flex items-center">
-          <CitedValue 
-            value={character.name} 
-            character={character}
-            fieldPath="name"
-          />
+        <h3 className="text-xl font-bold text-white font-sans uppercase tracking-wide">
+          {character.name}
         </h3>
       </div>
 
-      {/* Alternate Names */}
-      {character.alternateNames && character.alternateNames.length > 0 && (
+      {/* Aliases */}
+      {hasAliases && (
         <p className="text-sm text-white/50 mb-3 font-sans">
-          also: {character.alternateNames.join(", ")}
+          also: {character.aliases.join(", ")}
         </p>
       )}
 
       {/* Attributes Grid */}
-      <div className="grid grid-cols-3 gap-2 mb-4 p-3 bg-[#0f1f17] rounded-lg">
-        {/* Age/Playing Age */}
-        {character.profile?.castingProfile?.ageRange?.playingAge && (
-          <div>
-            <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1">
-              Age
-            </p>
-            <p className="text-sm text-white font-sans truncate">
-              <CitedValue
-                value={character.profile.castingProfile.ageRange.playingAge}
-                character={character}
-                fieldPath="profile.castingProfile.ageRange.playingAge"
-              />
-            </p>
-          </div>
-        )}
+      {(showAge || showGender || hasAppearances) && (
+        <div className="grid grid-cols-3 gap-2 mb-4 p-3 bg-[#0f1f17] rounded-lg">
+          {showAge && (
+            <div>
+              <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1">
+                Age
+              </p>
+              <p className="text-sm text-white font-sans truncate">
+                {character.ageRange}
+              </p>
+            </div>
+          )}
 
-        {/* Gender with Pronoun */}
-        {character.profile?.gender?.gender && (
-          <div>
-            <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1">
-              Gender
-            </p>
-            <p className="text-sm text-white font-sans truncate">
-              <CitedValue
-                value={character.profile.gender.gender}
-                character={character}
-                fieldPath="profile.gender.gender"
-              />
-              {character.profile.gender.genderPronoun && (
-                <span className="text-white/50">
-                  {" "}· <CitedValue
-                    value={character.profile.gender.genderPronoun}
-                    character={character}
-                    fieldPath="profile.gender.genderPronoun"
-                  />
-                </span>
-              )}
-            </p>
-          </div>
-        )}
+          {showGender && (
+            <div>
+              <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1">
+                Gender
+              </p>
+              <p className="text-sm text-white font-sans truncate">
+                {character.gender}
+              </p>
+            </div>
+          )}
 
-        {/* Ethnicity */}
-        {character.profile?.ethnicity && (
-          <div>
-            <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1">
-              Ethnicity
-            </p>
-            <p className="text-sm text-white font-sans truncate">
-              <CitedValue
-                value={character.profile.ethnicity}
-                character={character}
-                fieldPath="profile.ethnicity"
-              />
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Background (replaces old description) */}
-      {character.profile?.background && (
-        <div className="p-3 bg-[#0f1f17] rounded-lg mb-3">
-          <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-2">
-            Background
-          </p>
-          <p className="text-sm text-white/80 font-sans leading-relaxed">
-            <CitedValue
-              value={character.profile.background}
-              character={character}
-              fieldPath="profile.background"
-            />
-          </p>
-        </div>
-      )}
-
-      {/* Casting Notes */}
-      {character.profile?.castingNotes && (
-        <div className="p-3 bg-[#0f1f17] rounded-lg mb-3">
-          <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-2">
-            Casting Notes
-          </p>
-          <p className="text-sm text-white/80 font-sans leading-relaxed">
-            <CitedValue
-              value={character.profile.castingNotes}
-              character={character}
-              fieldPath="profile.castingNotes"
-            />
-          </p>
-        </div>
-      )}
-
-      {/* Expandable Physical Characteristics */}
-      {hasPhysicalChars && (
-        <div className="mt-3">
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="flex items-center gap-2 text-sm text-white/50 hover:text-white/70 transition-colors w-full"
-          >
-            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            <span className="font-sans">Physical Characteristics</span>
-          </button>
-
-          {isExpanded && (
-            <div className="mt-3 p-3 bg-[#0f1f17] rounded-lg space-y-2">
-              {physicalChars?.species && (
-                <div className="flex justify-between">
-                  <span className="text-xs text-white/50 uppercase">Species</span>
-                  <span className="text-sm text-white">
-                    <CitedValue value={physicalChars.species} character={character} fieldPath="profile.physicalCharacteristics.species" />
-                  </span>
-                </div>
-              )}
-              {physicalChars?.hairColor && (
-                <div className="flex justify-between">
-                  <span className="text-xs text-white/50 uppercase">Hair Color</span>
-                  <span className="text-sm text-white">
-                    <CitedValue value={physicalChars.hairColor} character={character} fieldPath="profile.physicalCharacteristics.hairColor" />
-                  </span>
-                </div>
-              )}
-              {physicalChars?.hairLength && (
-                <div className="flex justify-between">
-                  <span className="text-xs text-white/50 uppercase">Hair Length</span>
-                  <span className="text-sm text-white">
-                    <CitedValue value={physicalChars.hairLength} character={character} fieldPath="profile.physicalCharacteristics.hairLength" />
-                  </span>
-                </div>
-              )}
-              {physicalChars?.eyeColor && (
-                <div className="flex justify-between">
-                  <span className="text-xs text-white/50 uppercase">Eye Color</span>
-                  <span className="text-sm text-white">
-                    <CitedValue value={physicalChars.eyeColor} character={character} fieldPath="profile.physicalCharacteristics.eyeColor" />
-                  </span>
-                </div>
-              )}
-              {physicalChars?.height && (
-                <div className="flex justify-between">
-                  <span className="text-xs text-white/50 uppercase">Height</span>
-                  <span className="text-sm text-white">
-                    <CitedValue value={physicalChars.height} character={character} fieldPath="profile.physicalCharacteristics.height" />
-                  </span>
-                </div>
-              )}
-              {physicalChars?.weight && (
-                <div className="flex justify-between">
-                  <span className="text-xs text-white/50 uppercase">Weight</span>
-                  <span className="text-sm text-white">
-                    <CitedValue value={physicalChars.weight} character={character} fieldPath="profile.physicalCharacteristics.weight" />
-                  </span>
-                </div>
-              )}
+          {hasAppearances && (
+            <div>
+              <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1">
+                Scenes
+              </p>
+              <p className="text-sm text-white font-sans truncate">
+                {appearanceCount}
+              </p>
             </div>
           )}
         </div>
       )}
 
-      {/* Identifier (footer caption) */}
-      {character.identifier?.identifierValue && (
-        <div className="mt-4 pt-3 border-t border-white/5">
-          <p className="text-xs text-white/30 font-mono truncate">
-            {character.identifier.identifierValue}
+      {/* Description */}
+      {character.description && (
+        <div className="p-3 bg-[#0f1f17] rounded-lg mb-3">
+          <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-2">
+            Description
           </p>
+          <p className="text-sm text-white/80 font-sans leading-relaxed">
+            {character.description}
+          </p>
+        </div>
+      )}
+
+      {/* Scene Appearances (collapsible) */}
+      {hasAppearances && (
+        <div className="mt-3">
+          <button
+            onClick={() => setIsAppearancesOpen(!isAppearancesOpen)}
+            className="flex items-center gap-2 text-sm text-white/50 hover:text-white/70 transition-colors w-full"
+          >
+            {isAppearancesOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            <span className="font-sans">
+              Scene Appearances ({appearanceCount})
+            </span>
+          </button>
+
+          {isAppearancesOpen && (
+            <div className="mt-3 space-y-3">
+              {character.sceneAppearances.map((sa, idx) => (
+                <div
+                  key={`${sa.sceneHeading}-${idx}`}
+                  className="p-3 bg-[#0f1f17] rounded-lg border border-white/5"
+                >
+                  <p className="text-xs font-semibold text-emerald-400/80 uppercase tracking-wider mb-1.5 font-sans">
+                    {sa.sceneHeading}
+                  </p>
+                  <p className="text-xs text-white/70 font-mono whitespace-pre-wrap leading-relaxed">
+                    {sa.citation}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

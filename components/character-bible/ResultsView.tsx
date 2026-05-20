@@ -44,10 +44,10 @@ export default function ResultsView() {
     const query = searchQuery.toLowerCase()
     return (
       character.name.toLowerCase().includes(query) ||
-      (character.profile?.castingNotes?.toLowerCase().includes(query)) ||
-      (character.profile?.ethnicity?.toLowerCase().includes(query)) ||
-      (character.profile?.background?.toLowerCase().includes(query)) ||
-      (character.alternateNames?.some(name => name.toLowerCase().includes(query)))
+      character.description?.toLowerCase().includes(query) ||
+      character.gender?.toLowerCase().includes(query) ||
+      character.ageRange?.toLowerCase().includes(query) ||
+      (character.aliases?.some((alias) => alias.toLowerCase().includes(query)))
     )
   })
 
@@ -56,21 +56,12 @@ export default function ResultsView() {
     const newCharacter: Character = {
       id,
       source: "manual",
-      entityType: "omc:Character",
-      identifier: {
-        identifierScope: "local",
-        identifierValue: `char-${id.slice(0, 8)}`,
-      },
       name: "New Character",
-      // NEW citation shape (arrays)
-      citations: [
-        { id: "c0", text: "Manually created character" },
-      ],
-      fieldCitations: [
-        { field: "entity", citationId: "c0" },
-        { field: "identifier", citationId: "c0" },
-        { field: "name", citationId: "c0" },
-      ],
+      aliases: [],
+      gender: "unknown",
+      ageRange: "unknown",
+      description: "",
+      sceneAppearances: [],
     }
     addCharacter(currentBible.id, newCharacter)
     trackAddItem("character-bible", "character")

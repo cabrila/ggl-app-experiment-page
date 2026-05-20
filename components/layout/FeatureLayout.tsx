@@ -143,7 +143,7 @@ export default function FeatureLayout({ children, onBack, onSignOut, activeView,
             <a
               href="/usage"
               className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all"
-              title="AI usage and cost"
+              title="This button is only visible for users who have logged in with a @gogreenlight.ai email address"
               aria-label="Usage and cost"
             >
               <DollarSign className="w-5 h-5" />

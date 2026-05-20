@@ -5,7 +5,7 @@ import { Home, LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone, Pa
 import { useCasting } from "@/components/casting/CastingContext"
 import FeedbackModal from "@/components/modals/FeedbackModal"
 import { trackFeatureClick, type FeatureName } from "@/lib/analytics"
-import { subscribeToAuthStateChanges } from "@/lib/auth"
+import { useFirebaseUser } from "@/hooks/useFirebaseUser"
 
 type ActiveView = "character-bible" | "location-overview" | "actor-database" | "public-casting" | "prop-list" | "scene-list"
 
@@ -77,21 +77,14 @@ interface FeatureLayoutProps {
 export default function FeatureLayout({ children, onBack, onSignOut, activeView, onNavigate }: FeatureLayoutProps) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false)
-  const [isInternalUser, setIsInternalUser] = useState(false)
   const userButtonRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const { state } = useCasting()
 
-  // Watch the Firebase auth state so we know whether to render the
-  // internal-only Usage button. Visibility is convenience; the
-  // /api/usage handler is the actual access control.
-  useEffect(() => {
-    const unsub = subscribeToAuthStateChanges((u) => {
-      const email = u?.email?.toLowerCase() ?? ""
-      setIsInternalUser(email.endsWith("@gogreenlight.ai"))
-    })
-    return () => unsub()
-  }, [])
+  // Real Firebase user — drives the avatar/menu and gates the Usage button.
+  // Visibility-only gate; the /api/usage handler is the real access control.
+  const fbUser = useFirebaseUser()
+  void state // legacy CastingContext still imported for other features below
 
   const handleUserMenu = () => setIsUserMenuOpen(!isUserMenuOpen)
 
@@ -145,7 +138,7 @@ export default function FeatureLayout({ children, onBack, onSignOut, activeView,
           >
             <Home className="w-5 h-5" />
           </button>
-          {isInternalUser && (
+          {fbUser.isInternal && (
             <a
               href="/usage"
               className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all"
@@ -175,19 +168,15 @@ export default function FeatureLayout({ children, onBack, onSignOut, activeView,
             <button
               onClick={handleUserMenu}
               className="relative p-1 rounded-lg hover:bg-white/10 transition-all duration-200"
-              title={state.currentUser?.name || "User"}
+              title={fbUser.displayName}
               aria-label="User menu"
               aria-expanded={isUserMenuOpen}
               aria-haspopup="true"
             >
               <div
-                className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold"
-                style={{
-                  backgroundColor: state.currentUser?.bgColor || "#6B7280",
-                  color: state.currentUser?.color || "#FFFFFF",
-                }}
+                className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold bg-emerald-600 text-white"
               >
-                {state.currentUser?.initials || "??"}
+                {fbUser.initials}
               </div>
             </button>
 
@@ -200,10 +189,10 @@ export default function FeatureLayout({ children, onBack, onSignOut, activeView,
                 {/* User Info */}
                 <div className="px-4 py-3 border-b border-white/10">
                   <p className="text-sm font-medium text-white truncate">
-                    {state.currentUser?.name || "User"}
+                    {fbUser.displayName}
                   </p>
                   <p className="text-xs text-white/50 truncate">
-                    {state.currentUser?.email || ""}
+                    {fbUser.email}
                   </p>
                 </div>
 

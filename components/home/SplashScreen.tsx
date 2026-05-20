@@ -6,6 +6,7 @@ import { useCasting } from "@/components/casting/CastingContext"
 import FeedbackModal from "@/components/modals/FeedbackModal"
 import { trackFeatureClick, type FeatureName } from "@/lib/analytics"
 import { useFirebaseUser } from "@/hooks/useFirebaseUser"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 const featureButtons = [
   {
@@ -120,14 +121,22 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
           {/* Internal-only Usage & Cost button. Visibility-only gate; the
               /api/usage handler enforces the real access control. */}
           {fbUser.isInternal && (
-            <a
-              href="/usage"
-              className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all duration-200"
-              title="This button is only visible for users who have logged in with a @gogreenlight.ai email address"
-              aria-label="Usage and cost"
-            >
-              <DollarSign className="w-5 h-5" />
-            </a>
+            <TooltipProvider delayDuration={150}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <a
+                    href="/usage"
+                    className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all duration-200"
+                    aria-label="Usage and cost"
+                  >
+                    <DollarSign className="w-5 h-5" />
+                  </a>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs">
+                  This button is only visible for users who have logged in with a @gogreenlight.ai email address
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
 
           {/* Feedback & Requests Button */}

@@ -135,11 +135,14 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
           form.append("sourceTitle", sourceTitle)
         }
 
+        console.log("[v0] import: POST start", { taskType, file: file.name, size: file.size })
+        const postStart = performance.now()
         const res = await fetch(`/api/import/${taskType}`, {
           method: "POST",
           headers: { Authorization: `Bearer ${idToken}` },
           body: form,
         })
+        console.log("[v0] import: POST returned", res.status, `${Math.round(performance.now() - postStart)}ms`)
 
         if (!res.ok) {
           const errorData = await res.json().catch(() => ({ error: "Upload failed" }))
@@ -147,6 +150,7 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
         }
 
         const { taskId: newTaskId } = await res.json()
+        console.log("[v0] import: taskId", newTaskId)
         setTaskId(newTaskId)
 
         // 2. Open SSE stream
@@ -159,6 +163,7 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
         es.addEventListener("progress", (e) => {
           try {
             const data = JSON.parse(e.data)
+            console.log("[v0] sse progress event", data)
             if (typeof data.message === "string") setMessage(data.message)
             updateChunkInfo(data)
             const pct = parseProgress(data)
@@ -167,14 +172,15 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
               // re-emit earlier-stage events.
               setProgress((prev) => (prev === null ? pct : Math.max(prev, pct)))
             }
-          } catch {
-            // Ignore parse errors — a malformed event shouldn't crash the run.
+          } catch (err) {
+            console.log("[v0] sse progress parse error", err)
           }
         })
 
         es.addEventListener("state_change", (e) => {
           try {
             const data = JSON.parse(e.data)
+            console.log("[v0] sse state_change event", data)
             if (data.status === "running") {
               setStatus("running")
             }
@@ -183,19 +189,21 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
             if (pct !== null) {
               setProgress((prev) => (prev === null ? pct : Math.max(prev, pct)))
             }
-          } catch {
-            // Ignore parse errors
+          } catch (err) {
+            console.log("[v0] sse state_change parse error", err)
           }
         })
 
         es.addEventListener("complete", (e) => {
           try {
             const data = JSON.parse(e.data)
+            console.log("[v0] sse complete event", data)
             setResult(data.result as T)
             setStatus("complete")
             setMessage("Complete")
             setProgress(100)
-          } catch {
+          } catch (err) {
+            console.log("[v0] sse complete parse error", err)
             setError("Failed to parse result")
             setStatus("failed")
           }

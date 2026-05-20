@@ -21,6 +21,23 @@ export default function SceneUploadView() {
 
   const isProcessing = status === "uploading" || status === "running"
 
+  // Time-based ramp for phases where the backend doesn't (yet) emit numeric
+  // progress. Each phase ticks an opacity-free counter that the renderer
+  // turns into a small, capped percentage so the bar visibly moves instead
+  // of being stuck at a single value.
+  //   - "uploading": ramps within 2..8 over ~6s
+  //   - "running" before any chunk info: ramps within 12..20 over ~10s
+  // Stops as soon as we have a real numeric progress or chunk info.
+  const [tick, setTick] = useState(0)
+  useEffect(() => {
+    if (!isProcessing) {
+      setTick(0)
+      return
+    }
+    const id = window.setInterval(() => setTick((t) => t + 1), 200)
+    return () => window.clearInterval(id)
+  }, [isProcessing])
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
     setIsDragging(true)
@@ -169,9 +186,10 @@ export default function SceneUploadView() {
                 let stageDetail: string
 
                 if (status === "uploading") {
-                  // Linear ease through the setup band — gives a small visible
-                  // ramp instead of sitting at 0 while the upload posts.
-                  displayPct = 5
+                  // Smooth ramp 2 -> 8 over ~6s (30 ticks @ 200ms). Caps at 8
+                  // so the chunk band has clear room to take over.
+                  const t = Math.min(tick / 30, 1)
+                  displayPct = 2 + 6 * t
                   stageLabel = "Uploading file"
                   stageDetail =
                     message || "Sending the script to the AI service…"
@@ -202,9 +220,11 @@ export default function SceneUploadView() {
                     message ||
                     "This can take 30s+ on a feature-length script."
                 } else {
-                  // No numeric progress yet but the run has started — show the
-                  // top of the setup band so the user knows things moved.
-                  displayPct = SETUP_END
+                  // No numeric progress yet but the run has started — gently
+                  // ramp 12 -> 20 over ~10s (50 ticks @ 200ms) so the user
+                  // sees that the model is actively working.
+                  const t = Math.min(tick / 50, 1)
+                  displayPct = 12 + 8 * t
                   stageLabel = "Warming up the model"
                   stageDetail =
                     message || "Waiting for the first chunk to come back…"

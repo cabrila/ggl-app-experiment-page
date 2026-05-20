@@ -179,13 +179,9 @@ export default function SceneUploadView() {
                     >
                       {indeterminate ? (
                         <div
-                          className="h-full w-1/3 bg-teal-500 rounded-full animate-[indeterminate_1.4s_ease-in-out_infinite]"
+                          className="h-full w-1/3 bg-teal-500 rounded-full"
                           style={{
-                            // Inline keyframes via CSS variable fallback —
-                            // Tailwind v4 will pick up the named keyframes
-                            // below; this style is just a left/translate hint
-                            // for browsers that ignore the animation.
-                            transform: "translateX(-100%)",
+                            animation: "indeterminate 1.4s ease-in-out infinite",
                           }}
                         />
                       ) : (

@@ -18,6 +18,26 @@ export function formatLatency(ms: number | undefined | null): string {
   return `${Math.round(ms)}ms`
 }
 
+/**
+ * Humanised duration for the usage dashboard.
+ * - >= 60_000ms → "Xm Ys" (drops trailing " 0s")
+ * - >= 1000ms   → "X.Ys" (one decimal)
+ * - otherwise   → "Xms" (rounded)
+ * Returns "—" for null/undefined/NaN — used to distinguish older records
+ * that lack wallTimeMs from records where the value happened to be 0.
+ */
+export function formatDuration(ms: number | undefined | null): string {
+  if (ms == null || Number.isNaN(ms)) return "—"
+  if (ms >= 60_000) {
+    const totalSec = Math.round(ms / 1000)
+    const minutes = Math.floor(totalSec / 60)
+    const seconds = totalSec % 60
+    return seconds === 0 ? `${minutes}m` : `${minutes}m ${seconds}s`
+  }
+  if (ms >= 1000) return `${(ms / 1000).toFixed(1)}s`
+  return `${Math.round(ms)}ms`
+}
+
 const RTF =
   typeof Intl !== "undefined" && typeof Intl.RelativeTimeFormat !== "undefined"
     ? new Intl.RelativeTimeFormat("en", { numeric: "auto" })

@@ -1,7 +1,7 @@
 "use client"
 
 import type { UsageBucket } from "@/types/usage"
-import { formatCostUsd, formatNumber } from "./format"
+import { formatCostUsd, formatDuration, formatNumber } from "./format"
 
 interface UsageBucketTableProps {
   keyHeader: string
@@ -50,6 +50,12 @@ export default function UsageBucketTable({
             </th>
             <th className="px-4 py-2 text-right font-medium">Tokens in</th>
             <th className="px-4 py-2 text-right font-medium">Tokens out</th>
+            <th
+              className="px-4 py-2 text-right font-medium"
+              title="Total user-perceived wait across all extracts in this bucket. Hover a cell to see summed AI compute time."
+            >
+              Wait time
+            </th>
             <th className="px-4 py-2 text-right font-medium">Cost</th>
           </tr>
         </thead>
@@ -57,7 +63,7 @@ export default function UsageBucketTable({
           {loading
             ? Array.from({ length: 3 }).map((_, i) => (
                 <tr key={i} className="border-t border-white/5">
-                  {Array.from({ length: 6 }).map((_, j) => (
+                  {Array.from({ length: 7 }).map((_, j) => (
                     <td key={j} className="px-4 py-3">
                       <span className="block h-4 w-full max-w-[120px] rounded bg-white/10 animate-pulse" />
                     </td>
@@ -89,6 +95,37 @@ export default function UsageBucketTable({
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums">
                       {formatNumber(bucket.tokensOut)}
+                    </td>
+                    <td className="px-4 py-3 text-right tabular-nums">
+                      {/* Bucket totals: summed wallTimeMs (user-perceived
+                          wait). Tooltip surfaces summed AI compute when it
+                          differs (parallel chunked extracts). Older buckets
+                          without wallTimeMs render "—". */}
+                      {(() => {
+                        const wall = bucket.wallTimeMs
+                        const compute = bucket.latencyMs
+                        if (wall == null) {
+                          return <span className="text-white/40">—</span>
+                        }
+                        const showTooltip =
+                          typeof compute === "number" && compute !== wall
+                        return (
+                          <span
+                            title={
+                              showTooltip
+                                ? `AI compute: ${formatDuration(compute)}`
+                                : undefined
+                            }
+                            className={
+                              showTooltip
+                                ? "underline decoration-dotted decoration-white/30 underline-offset-2 cursor-help"
+                                : undefined
+                            }
+                          >
+                            {formatDuration(wall)}
+                          </span>
+                        )
+                      })()}
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums font-medium">
                       {formatCostUsd(bucket.costUsd)}

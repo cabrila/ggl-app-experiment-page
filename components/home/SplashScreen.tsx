@@ -196,7 +196,7 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
             <span className="text-emerald-300">One platform.</span>
           </h1>
           <p className="text-white/50 text-base md:text-lg leading-relaxed text-pretty max-w-xl mx-auto">
-            Organize characters, actors, locations etc. in one streamlined and efficient workflow.
+            Organize characters, actors, locations and more in one streamlined workflow.
           </p>
         </div>
 

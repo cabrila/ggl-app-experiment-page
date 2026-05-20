@@ -26,22 +26,42 @@ export async function GET(request: NextRequest) {
   const qs = params.toString()
   const upstreamUrl = `${AI_SERVICE_URL}/usage${qs ? `?${qs}` : ""}`
 
-  // 3. Forward to AI service.
+  // 3. Forward to AI service (with a hard timeout so a hung upstream
+  //    surfaces as a 504 instead of pulsing forever in the UI).
+  const controller = new AbortController()
+  const timeoutMs = 30_000
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  console.log("[usage] forwarding to", upstreamUrl)
   try {
     const upstream = await fetch(upstreamUrl, {
       method: "GET",
       headers: { Accept: "application/json" },
       cache: "no-store",
+      signal: controller.signal,
     })
 
     const text = await upstream.text()
+    const ct = upstream.headers.get("content-type") || ""
 
     if (!upstream.ok) {
       // Bubble upstream error verbatim (per spec — don't swallow it).
+      console.error("[usage] upstream", upstream.status, text.slice(0, 300))
       return new NextResponse(text || `AI service error: ${upstream.status}`, {
         status: upstream.status,
-        headers: { "Content-Type": upstream.headers.get("content-type") || "text/plain" },
+        headers: { "Content-Type": ct || "text/plain" },
       })
+    }
+
+    // Some misconfigured upstreams return 200 with HTML; reject early so
+    // the client sees a clear error rather than a JSON parse later.
+    if (!ct.includes("application/json")) {
+      console.error("[usage] non-JSON 200 from upstream:", ct, text.slice(0, 300))
+      return NextResponse.json(
+        {
+          error: `Upstream returned ${ct || "no content-type"} instead of JSON. First 300 chars: ${text.slice(0, 300)}`,
+        },
+        { status: 502 }
+      )
     }
 
     return new NextResponse(text, {
@@ -49,8 +69,15 @@ export async function GET(request: NextRequest) {
       headers: { "Content-Type": "application/json" },
     })
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error"
+    const aborted = (err as Error)?.name === "AbortError"
+    const message = aborted
+      ? `Upstream timed out after ${timeoutMs / 1000}s (${upstreamUrl})`
+      : err instanceof Error
+        ? err.message
+        : "Unknown error"
     console.error("[usage] proxy failed:", message)
-    return NextResponse.json({ error: message }, { status: 502 })
+    return NextResponse.json({ error: message }, { status: aborted ? 504 : 502 })
+  } finally {
+    clearTimeout(timer)
   }
 }

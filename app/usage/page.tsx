@@ -172,6 +172,17 @@ export default function UsagePage() {
         </section>
 
         <section className="flex flex-col gap-3">
+          <h2 className="text-lg font-semibold font-sans">By user</h2>
+          <UsageBucketTable
+            keyHeader="User"
+            buckets={data?.byUser}
+            loading={loading && !data}
+            keyAsText
+            emptyMessage="(no attributed extracts in this range)"
+          />
+        </section>
+
+        <section className="flex flex-col gap-3">
           <h2 className="text-lg font-semibold font-sans">Recent calls</h2>
           <UsageRecentCallsTable calls={data?.recentCalls} loading={loading && !data} />
         </section>

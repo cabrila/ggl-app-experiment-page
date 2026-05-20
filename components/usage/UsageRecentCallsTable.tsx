@@ -1,7 +1,7 @@
 "use client"
 
 import type { RecentCall } from "@/types/usage"
-import { formatCostUsd, formatLatency, formatNumber, formatRelativeTime } from "./format"
+import { formatCostUsd, formatDuration, formatNumber, formatRelativeTime } from "./format"
 
 interface UsageRecentCallsTableProps {
   calls?: RecentCall[]
@@ -40,7 +40,12 @@ export default function UsageRecentCallsTable({ calls, loading }: UsageRecentCal
             <th className="px-4 py-2 text-left font-medium">Input size</th>
             <th className="px-4 py-2 text-right font-medium">Tokens</th>
             <th className="px-4 py-2 text-right font-medium">Cost</th>
-            <th className="px-4 py-2 text-right font-medium">Latency</th>
+            <th
+              className="px-4 py-2 text-right font-medium"
+              title="User-perceived wait time from start of extract to result delivered. Hover a cell to see total AI compute time."
+            >
+              Wait time
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -116,7 +121,38 @@ export default function UsageRecentCallsTable({ calls, loading }: UsageRecentCal
                       {formatCostUsd(call.costUsd)}
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums">
-                      {formatLatency(call.latencyMs)}
+                      {/* "Wait time" = wallTimeMs (user-perceived). Older
+                          records lack the field entirely — render "—" so
+                          they're visually distinct from real 0-second rows.
+                          The tooltip surfaces summed AI compute time, which
+                          can be much higher when chunks ran in parallel.
+                          Skipped when the two values are equal (no
+                          parallelization benefit to show). */}
+                      {(() => {
+                        const wall = call.wallTimeMs
+                        const compute = call.latencyMs
+                        if (wall == null) {
+                          return <span className="text-white/40">—</span>
+                        }
+                        const showTooltip =
+                          typeof compute === "number" && compute !== wall
+                        return (
+                          <span
+                            title={
+                              showTooltip
+                                ? `AI compute: ${formatDuration(compute)}`
+                                : undefined
+                            }
+                            className={
+                              showTooltip
+                                ? "underline decoration-dotted decoration-white/30 underline-offset-2 cursor-help"
+                                : undefined
+                            }
+                          >
+                            {formatDuration(wall)}
+                          </span>
+                        )
+                      })()}
                     </td>
                   </tr>
                 )

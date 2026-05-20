@@ -14,6 +14,13 @@ export interface UsageBucket {
   inputLetters: number
   inputWords: number
   inputPagesEstimate: number
+  // NEW: summed wall-clock wait time across this bucket. This is the
+  // "total time users actually waited" for extracts in the bucket — the
+  // human-meaningful value. Optional for backwards compat.
+  wallTimeMs?: number
+  // NEW: summed AI compute time. Can be much larger than wallTimeMs when
+  // chunked extracts ran in parallel. Useful for debugging only.
+  latencyMs?: number
 }
 
 export interface RecentCall {
@@ -31,6 +38,11 @@ export interface RecentCall {
   inputPagesEstimate: number
   inputLettersEstimated: boolean
   latencyMs: number
+  // NEW: user-perceived wait time (start of extract → result delivered).
+  // For chunked scene-extract this is much smaller than latencyMs because
+  // the chunks ran in parallel. Optional — older records lack it and the
+  // UI should render "—" in that case (not 0).
+  wallTimeMs?: number
   // NEW: usage attribution. Older records won't have these — render "—".
   userId?: string
   userEmail?: string

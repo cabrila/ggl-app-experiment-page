@@ -61,6 +61,14 @@ export default function UsagePage() {
       await waitForAuth()
       const current = auth.currentUser
       if (!current) {
+        // In dev, useFirebaseUser fakes an internal user so the button is
+        // visible — but /api/usage still requires a real ID token. Fail
+        // loudly instead of redirecting so the developer knows why.
+        if (process.env.NODE_ENV === "development") {
+          throw new Error(
+            "No Firebase user signed in. /api/usage requires a real ID token; sign in with a @gogreenlight.ai account to see live data."
+          )
+        }
         router.replace("/")
         return
       }
@@ -76,16 +84,26 @@ export default function UsagePage() {
       })
 
       if (res.status === 401 || res.status === 403) {
-        router.replace("/")
-        return
+        const body = await res.text()
+        throw new Error(`Auth rejected (${res.status}): ${body}`)
       }
       if (!res.ok) {
         const text = await res.text()
         throw new Error(text || `Request failed: ${res.status}`)
       }
+
+      const ct = res.headers.get("content-type") || ""
+      if (!ct.includes("application/json")) {
+        const text = await res.text()
+        throw new Error(
+          `Expected JSON but got ${ct || "unknown"}. First 200 chars: ${text.slice(0, 200)}`
+        )
+      }
+
       const json = (await res.json()) as UsageResponse
       setData(json)
     } catch (err) {
+      console.error("[v0] /usage fetch failed:", err)
       setError(err instanceof Error ? err.message : "Failed to load usage")
     } finally {
       setLoading(false)
@@ -95,7 +113,7 @@ export default function UsagePage() {
   // Fetch on mount and on range change.
   useEffect(() => {
     if (!authReady) return
-    if (!user) {
+    if (!user && process.env.NODE_ENV !== "development") {
       router.replace("/")
       return
     }

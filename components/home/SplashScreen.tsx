@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone, ArrowRight, Package, Film } from "lucide-react"
+import { LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone, ArrowRight, Package, Film, DollarSign } from "lucide-react"
 import { useCasting } from "@/components/casting/CastingContext"
 import FeedbackModal from "@/components/modals/FeedbackModal"
 import { trackFeatureClick, type FeatureName } from "@/lib/analytics"
+import { useFirebaseUser } from "@/hooks/useFirebaseUser"
 
 const featureButtons = [
   {
@@ -31,14 +32,15 @@ const featureButtons = [
     iconBg: "bg-sky-500/20",
     iconColor: "text-sky-400",
   },
-  {
-    id: "public-casting",
-    title: "Public Casting",
-    description: "Share a simple casting form for actors to submit themselves for roles in your project.",
-    icon: Megaphone,
-    iconBg: "bg-violet-500/20",
-    iconColor: "text-violet-400",
-  },
+  // Hidden for now — restore by uncommenting when Public Casting is ready.
+  // {
+  //   id: "public-casting",
+  //   title: "Public Casting",
+  //   description: "Share a simple casting form for actors to submit themselves for roles in your project.",
+  //   icon: Megaphone,
+  //   iconBg: "bg-violet-500/20",
+  //   iconColor: "text-violet-400",
+  // },
   {
     id: "prop-list",
     title: "Prop List",
@@ -68,6 +70,8 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
   const userButtonRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const { state } = useCasting()
+  const fbUser = useFirebaseUser()
+  void state // legacy CastingContext kept for other home features
 
   const handleUserMenu = () => setIsUserMenuOpen(!isUserMenuOpen)
 
@@ -113,6 +117,19 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
           />
         </div>
         <div className="flex items-center gap-2">
+          {/* Internal-only Usage & Cost button. Visibility-only gate; the
+              /api/usage handler enforces the real access control. */}
+          {fbUser.isInternal && (
+            <a
+              href="/usage"
+              className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all duration-200"
+              title="AI usage and cost"
+              aria-label="Usage and cost"
+            >
+              <DollarSign className="w-5 h-5" />
+            </a>
+          )}
+
           {/* Feedback & Requests Button */}
           <button
             onClick={() => setIsFeedbackModalOpen(true)}
@@ -129,19 +146,15 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
             <button
               onClick={handleUserMenu}
               className="relative p-1 rounded-lg hover:bg-white/10 transition-all duration-200"
-              title={state.currentUser?.name || "User"}
+              title={fbUser.displayName}
               aria-label="User menu"
               aria-expanded={isUserMenuOpen}
               aria-haspopup="true"
             >
               <div
-                className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold"
-                style={{
-                  backgroundColor: state.currentUser?.bgColor || "#6B7280",
-                  color: state.currentUser?.color || "#FFFFFF",
-                }}
+                className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold bg-emerald-600 text-white"
               >
-                {state.currentUser?.initials || "??"}
+                {fbUser.initials}
               </div>
             </button>
 
@@ -154,10 +167,10 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
                 {/* User Info */}
                 <div className="px-4 py-3 border-b border-white/10">
                   <p className="text-sm font-medium text-white truncate">
-                    {state.currentUser?.name || "User"}
+                    {fbUser.displayName}
                   </p>
                   <p className="text-xs text-white/50 truncate">
-                    {state.currentUser?.email || ""}
+                    {fbUser.email}
                   </p>
                 </div>
 

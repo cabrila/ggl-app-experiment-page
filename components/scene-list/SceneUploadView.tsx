@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Upload, ArrowLeft, FileText, Loader2, X, AlertCircle, RefreshCw } from "lucide-react"
+import { Upload, ArrowLeft, FileText, X, AlertCircle, RefreshCw } from "lucide-react"
 import { useSceneList } from "./SceneListContext"
 import { Scene, SceneProject } from "@/types/scene-list"
 import { useImportJob } from "@/hooks/useImportJob"
@@ -16,7 +16,7 @@ export default function SceneUploadView() {
 
   // Same upstream AI service as Character Bible — see `useImportJob` and
   // `app/api/import/[taskType]/route.ts`. No direct Gemini call.
-  const { status, message, progress, result, error, run, reset } =
+  const { status, message, progress, currentChunk, totalChunks, result, error, run, reset } =
     useImportJob<SceneExtractResult>("scene-extract")
 
   const isProcessing = status === "uploading" || status === "running"
@@ -149,58 +149,106 @@ export default function SceneUploadView() {
           )}
 
           {isProcessing ? (
-            <div className="flex flex-col items-center justify-center py-16 rounded-2xl border border-white/10 bg-white/[0.02]">
-              <Loader2 className="w-12 h-12 text-teal-400 animate-spin mb-4" />
-              <p className="text-white font-sans mb-2">
-                {status === "uploading" ? "Uploading file..." : "Parsing script into scenes..."}
-              </p>
-              <p className="text-white/50 text-sm mb-4 font-sans">
-                {message || "This can take 30s+ on a feature-length script."}
-              </p>
+            <div className="flex flex-col items-center justify-center py-16 px-6 rounded-2xl border border-white/10 bg-white/[0.02]">
               {(() => {
-                // Real progress comes from the backend SSE stream (parsed in
-                // useImportJob). While we don't have a number yet, render an
-                // indeterminate sweep instead of a fake 30/70 jump.
-                const hasNumeric = progress !== null
-                // During upload we haven't opened the SSE stream yet, so always
-                // show indeterminate then.
-                const indeterminate = status === "uploading" || !hasNumeric
-                const pct = hasNumeric ? Math.round(progress!) : null
+                // Three-band display progress so the user always sees motion:
+                //   0–10%  setup (uploading + warming up)
+                //   10–90% per-chunk analysis (mapped from currentChunk/totalChunks)
+                //   90–100% combining + summarising
+                //
+                // We intentionally derive the displayed percentage from the
+                // backend's `currentChunk/totalChunks` when available, because
+                // the raw `progress` field is sometimes only emitted at coarse
+                // milestones. The raw `progress` is still the floor so we
+                // never display less than what the backend reports.
+                const SETUP_END = 10
+                const CHUNK_END = 90
+
+                let displayPct: number
+                let stageLabel: string
+                let stageDetail: string
+
+                if (status === "uploading") {
+                  // Linear ease through the setup band — gives a small visible
+                  // ramp instead of sitting at 0 while the upload posts.
+                  displayPct = 5
+                  stageLabel = "Uploading file"
+                  stageDetail =
+                    message || "Sending the script to the AI service…"
+                } else if (totalChunks && totalChunks > 0 && currentChunk && currentChunk > 0) {
+                  // Per-chunk band: each chunk advances the bar by an equal
+                  // slice of (CHUNK_END - SETUP_END).
+                  const chunkSpan = CHUNK_END - SETUP_END
+                  const perChunk = chunkSpan / totalChunks
+                  // currentChunk is 1-based; treat it as "this chunk in
+                  // progress", so completed work is (currentChunk - 1).
+                  displayPct = SETUP_END + (currentChunk - 1) * perChunk + perChunk * 0.5
+                  stageLabel = `Analyzing chunk ${currentChunk} of ${totalChunks}`
+                  stageDetail =
+                    message ||
+                    "Each chunk is sent to the model for scene parsing."
+                } else if (progress !== null && progress >= CHUNK_END) {
+                  // Backend signalled we're past the per-chunk phase.
+                  displayPct = Math.max(progress, CHUNK_END + 2)
+                  stageLabel = "Combining and summarising"
+                  stageDetail =
+                    message || "Merging chunk results and finalising scenes…"
+                } else if (progress !== null) {
+                  // No chunk info yet but we do have a number — sit it inside
+                  // the chunk band so the bar moves.
+                  displayPct = Math.max(progress, SETUP_END + 1)
+                  stageLabel = "Parsing script into scenes"
+                  stageDetail =
+                    message ||
+                    "This can take 30s+ on a feature-length script."
+                } else {
+                  // No numeric progress yet but the run has started — show the
+                  // top of the setup band so the user knows things moved.
+                  displayPct = SETUP_END
+                  stageLabel = "Warming up the model"
+                  stageDetail =
+                    message || "Waiting for the first chunk to come back…"
+                }
+
+                // Floor: never display less than the backend explicitly reports.
+                if (progress !== null && progress > displayPct) {
+                  displayPct = progress
+                }
+                // While the run is in progress (this branch only renders for
+                // "uploading"|"running") never visually hit 100 — that's
+                // reserved for the `complete` state which exits this branch.
+                if (displayPct > 99) {
+                  displayPct = 99
+                }
+                const roundedPct = Math.round(displayPct)
 
                 return (
-                  <>
+                  <div className="w-full max-w-md flex flex-col">
+                    <div className="flex items-baseline justify-between mb-2">
+                      <p className="text-white font-medium font-sans">
+                        {stageLabel}
+                      </p>
+                      <p className="text-white/60 text-sm font-sans tabular-nums">
+                        {roundedPct}%
+                      </p>
+                    </div>
                     <div
-                      className="w-64 h-2 bg-white/10 rounded-full overflow-hidden"
+                      className="w-full h-2 bg-white/10 rounded-full overflow-hidden"
                       role="progressbar"
                       aria-label="Scene extraction progress"
                       aria-valuemin={0}
                       aria-valuemax={100}
-                      aria-valuenow={pct ?? undefined}
+                      aria-valuenow={roundedPct}
                     >
-                      {indeterminate ? (
-                        <div
-                          className="h-full w-1/3 bg-teal-500 rounded-full animate-[indeterminate_1.4s_ease-in-out_infinite]"
-                          style={{
-                            // Inline keyframes via CSS variable fallback —
-                            // Tailwind v4 will pick up the named keyframes
-                            // below; this style is just a left/translate hint
-                            // for browsers that ignore the animation.
-                            transform: "translateX(-100%)",
-                          }}
-                        />
-                      ) : (
-                        <div
-                          className="h-full bg-teal-500 transition-all duration-500"
-                          style={{ width: `${pct}%` }}
-                        />
-                      )}
+                      <div
+                        className="h-full bg-teal-500 transition-[width] duration-500 ease-out"
+                        style={{ width: `${displayPct}%` }}
+                      />
                     </div>
-                    {hasNumeric && !indeterminate && (
-                      <p className="mt-2 text-white/40 text-xs font-sans tabular-nums">
-                        {pct}%
-                      </p>
-                    )}
-                  </>
+                    <p className="mt-3 text-white/50 text-sm font-sans text-center text-pretty">
+                      {stageDetail}
+                    </p>
+                  </div>
                 )
               })()}
             </div>

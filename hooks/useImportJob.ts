@@ -14,6 +14,14 @@ interface ImportJobState<T> {
    * indeterminate. Stays at 100 once the job completes.
    */
   progress: number | null
+  /**
+   * When the backend reports chunked progress, the index of the chunk
+   * currently being processed (or just finished). 1-based. `null` when the
+   * backend hasn't reported chunk info yet.
+   */
+  currentChunk: number | null
+  /** Total number of chunks the script was split into (from backend). */
+  totalChunks: number | null
   result: T | null
   error: string | null
   taskId: string | null
@@ -64,6 +72,8 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
   const [status, setStatus] = useState<ImportJobStatus>("idle")
   const [message, setMessage] = useState("")
   const [progress, setProgress] = useState<number | null>(null)
+  const [currentChunk, setCurrentChunk] = useState<number | null>(null)
+  const [totalChunks, setTotalChunks] = useState<number | null>(null)
   const [result, setResult] = useState<T | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [taskId, setTaskId] = useState<string | null>(null)
@@ -77,9 +87,20 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
     setStatus("idle")
     setMessage("")
     setProgress(null)
+    setCurrentChunk(null)
+    setTotalChunks(null)
     setResult(null)
     setError(null)
     setTaskId(null)
+  }, [])
+
+  // Read chunk indicators out of an SSE payload. Same field-name tolerance as
+  // parseProgress — keep the two in sync.
+  const updateChunkInfo = useCallback((d: Record<string, unknown>) => {
+    const cur = numberOrNull(d.current ?? d.chunk ?? d.completed)
+    const tot = numberOrNull(d.total ?? d.total_chunks ?? d.totalChunks)
+    if (cur !== null) setCurrentChunk((prev) => (prev === null ? cur : Math.max(prev, cur)))
+    if (tot !== null) setTotalChunks(tot)
   }, [])
 
   const run = useCallback(
@@ -93,6 +114,8 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
       setStatus("uploading")
       setMessage("Uploading file...")
       setProgress(null)
+      setCurrentChunk(null)
+      setTotalChunks(null)
       setError(null)
       setResult(null)
 
@@ -137,6 +160,7 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
           try {
             const data = JSON.parse(e.data)
             if (typeof data.message === "string") setMessage(data.message)
+            updateChunkInfo(data)
             const pct = parseProgress(data)
             if (pct !== null) {
               // Never let progress go backwards mid-run — backends sometimes
@@ -154,6 +178,7 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
             if (data.status === "running") {
               setStatus("running")
             }
+            updateChunkInfo(data)
             const pct = parseProgress(data)
             if (pct !== null) {
               setProgress((prev) => (prev === null ? pct : Math.max(prev, pct)))
@@ -204,5 +229,5 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
     [taskType],
   )
 
-  return { status, message, progress, result, error, taskId, run, reset }
+  return { status, message, progress, currentChunk, totalChunks, result, error, taskId, run, reset }
 }

@@ -110,12 +110,13 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
     >
       {/* Top Navigation Bar - Only Logo and User Avatar */}
       <header className="relative flex justify-between items-center px-6 py-3 border-b border-white/10 shrink-0 z-20">
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
           <img
             src="/images/gogreenlight-logo.png"
             alt="GoGreenlight"
             className="h-9 w-auto"
           />
+          <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-white text-xs font-semibold uppercase tracking-wide">Beta</span>
         </div>
         <div className="flex items-center gap-2">
           {/* Internal-only Usage & Cost button. Visibility-only gate; the
@@ -200,68 +201,107 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
       {/* Main Content - Hero and Feature Buttons */}
       <main className="flex-1 relative z-10 overflow-y-auto">
         <div className="min-h-full flex flex-col items-center justify-center py-8">
-        <div className="text-center px-6 max-w-2xl mb-10">
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 text-balance leading-tight">
-            Every creative asset.{" "}
-            <span className="text-emerald-300">One platform.</span>
-          </h1>
-          <p className="text-white/50 text-base md:text-lg leading-relaxed text-pretty max-w-xl mx-auto">
-            Organize characters, actors, locations and more in one streamlined workflow.
-          </p>
-        </div>
+          <div className="text-center px-6 max-w-2xl mb-10">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 text-balance leading-tight">
+              Every creative asset.{" "}
+              <span className="text-emerald-300">One platform.</span>
+            </h1>
+            <p className="text-base md:text-lg text-white/60 max-w-2xl mx-auto text-pretty">
+              Upload your script. Get detailed breakdowns, cast actors, and manage
+              your production — all in one place.
+            </p>
+          </div>
 
-        {/* Feature Buttons Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-6 w-full max-w-3xl">
-          {featureButtons.map((feature) => {
-            const IconComponent = feature.icon
-            return (
-              <button
-                key={feature.id}
-                onClick={() => {
-                  // Map feature.id to FeatureName (actor-database -> actor-list)
-                  const featureNameMap: Record<string, FeatureName> = {
-                    "character-bible": "character-bible",
-                    "location-overview": "location-overview",
-                    "actor-database": "actor-list",
-                    "public-casting": "public-casting",
-                    "prop-list": "prop-list",
-                    "scene-list": "scene-list",
-                  }
-                  const featureName = featureNameMap[feature.id]
-                  if (featureName) {
-                    trackFeatureClick(featureName)
-                  }
-                  onNavigate?.(feature.id)
-                }}
-                className="group flex items-start gap-4 p-5 bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 hover:border-white/20 rounded-xl text-left transition-all duration-200"
-              >
-                {/* Icon */}
-                <div className={`shrink-0 w-12 h-12 rounded-lg ${feature.iconBg} flex items-center justify-center`}>
-                  <IconComponent className={`w-6 h-6 ${feature.iconColor}`} />
-                </div>
-
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-base font-semibold text-white font-sans">
-                      {feature.title}
-                    </h3>
-                    <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-white/70 group-hover:translate-x-0.5 transition-all duration-200" />
+          {/* Feature Buttons Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl w-full px-4">
+            {featureButtons.map((feature) => {
+              const IconComponent = feature.icon
+              return (
+                <button
+                  key={feature.id}
+                  onClick={() => {
+                    trackFeatureClick(feature.id as FeatureName)
+                    onNavigate?.(feature.id)
+                  }}
+                  className="group relative flex flex-col items-start p-5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-emerald-500/30 transition-all duration-300 text-left"
+                >
+                  <div
+                    className={`w-10 h-10 rounded-lg ${feature.iconBg} flex items-center justify-center mb-3`}
+                  >
+                    <IconComponent className={`w-5 h-5 ${feature.iconColor}`} />
                   </div>
-                  <p className="text-sm text-white/50 leading-relaxed font-sans">
+                  <h3 className="text-base font-semibold text-white mb-1 flex items-center gap-2">
+                    {feature.title}
+                    <ArrowRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-emerald-400" />
+                  </h3>
+                  <p className="text-sm text-white/50 leading-relaxed">
                     {feature.description}
                   </p>
-                </div>
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Feedback callout */}
+          <div className="mt-10 px-6 text-center max-w-2xl">
+            <p className="text-base md:text-lg font-medium text-white/70 leading-relaxed">
+              We&apos;re offering these tools for free because your feedback helps us build something great. 
+              Found a bug or have an idea? Hit the{" "}
+              <button
+                onClick={() => setIsFeedbackModalOpen(true)}
+                className="font-semibold text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition-colors"
+              >
+                Feedback
               </button>
-            )
-          })}
-        </div>
+              {" "}button in the top right corner.
+            </p>
+          </div>
         </div>
       </main>
 
       {/* Bottom tagline */}
-      <footer className="text-center py-6 shrink-0">
-        <p className="text-[11px] text-white/20 tracking-wide">
+      <footer className="py-8 px-6 shrink-0 border-t border-white/10">
+        <div className="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-start gap-8">
+          {/* Left side - CTA */}
+          <div className="text-center md:text-left">
+            <a 
+              href="https://www.gogreenlight.ai/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-white font-semibold rounded-lg transition-colors"
+            >
+              Try GoGreenlight Casting Platform
+              <ArrowRight className="w-4 h-4" />
+            </a>
+            <p className="text-sm text-white/50 mt-3">
+              No credit card needed — your feedback is welcome in this Beta.
+            </p>
+          </div>
+
+          {/* Right side - Legal Links */}
+          <div>
+            <h4 className="text-sm font-semibold text-white mb-2">Legal</h4>
+            <ul className="space-y-1">
+              <li>
+                <a href="https://www.gogreenlight.ai/legalstack" target="_blank" rel="noopener noreferrer" className="text-sm text-white/50 hover:text-white/80 transition-colors">
+                  Legal Stack
+                </a>
+              </li>
+              <li>
+                <a href="https://www.gogreenlight.ai/privacypolicy" target="_blank" rel="noopener noreferrer" className="text-sm text-white/50 hover:text-white/80 transition-colors">
+                  Privacy Policy
+                </a>
+              </li>
+              <li>
+                <a href="https://www.gogreenlight.ai/terms" target="_blank" rel="noopener noreferrer" className="text-sm text-white/50 hover:text-white/80 transition-colors">
+                  Terms
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <p className="text-[11px] text-white/20 tracking-wide mt-8 text-center">
           © 2026 GoGreenlight. All rights reserved.
         </p>
       </footer>

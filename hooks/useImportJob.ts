@@ -84,6 +84,12 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
   const [error, setError] = useState<string | null>(null)
   const [taskId, setTaskId] = useState<string | null>(null)
   const sourceRef = useRef<EventSource | null>(null)
+  // Tracks whether we've already reached a terminal state (`complete` or
+  // an AI-emitted `error` frame). After `complete`, the server closes the
+  // SSE stream cleanly, which causes EventSource to fire its native
+  // `error` event — without this guard we'd flip a successful run to
+  // "failed" milliseconds after showing 100%.
+  const terminalRef = useRef(false)
 
   const reset = useCallback(() => {
     if (sourceRef.current) {
@@ -96,6 +102,7 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
     setResult(null)
     setError(null)
     setTaskId(null)
+    terminalRef.current = false
   }, [])
 
   const run = useCallback(
@@ -111,6 +118,7 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
       setProgress(null)
       setError(null)
       setResult(null)
+      terminalRef.current = false
 
       try {
         // 1. Submit task — proxy now requires a Firebase ID token so the
@@ -190,25 +198,38 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
             setError("Failed to parse result")
             setStatus("failed")
           }
+          // Mark terminal BEFORE closing — closing triggers EventSource's
+          // native onerror, which would otherwise flip status back to failed.
+          terminalRef.current = true
           es.close()
           sourceRef.current = null
         })
 
         es.addEventListener("error", (e) => {
-          // EventSource also fires this for connection errors (no e.data)
+          // The AI service emits a named `error` event with JSON payload
+          // when a skill genuinely fails. EventSource also reuses the same
+          // event type for transport-level errors (no `data`). After a
+          // clean `complete`, the server closes the stream and the native
+          // error fires — that path must NOT mark the run as failed.
+          if (terminalRef.current) {
+            es.close()
+            sourceRef.current = null
+            return
+          }
           try {
             const messageEvent = e as MessageEvent
             if (messageEvent.data) {
               const data = JSON.parse(messageEvent.data)
               setError(data.message || "Task failed")
             } else {
-              // Connection error - try to recover by polling
+              // Transport error before a terminal frame arrived.
               setError("Connection lost. The task may still be processing.")
             }
           } catch {
             setError("Connection lost")
           }
           setStatus("failed")
+          terminalRef.current = true
           es.close()
           sourceRef.current = null
         })

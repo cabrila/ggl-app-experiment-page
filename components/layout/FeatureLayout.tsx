@@ -126,7 +126,7 @@ export default function FeatureLayout({ children, onBack, onSignOut, activeView,
       <header className="relative flex justify-between items-center px-6 py-3 border-b border-white/10 shrink-0 z-20">
         {/* Left side - Logo and Home Button */}
         <div className="flex items-center gap-3">
-          <a href="https://www.gogreenlight.ai/" className="flex items-center gap-2">
+          <a href="/" className="flex items-center gap-2">
             <img
               src="/images/gogreenlight-logo.png"
               alt="GoGreenlight"

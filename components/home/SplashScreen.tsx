@@ -258,53 +258,56 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
       </main>
 
       {/* Bottom tagline */}
-      <footer className="py-8 px-4 shrink-0 border-t border-white/10">
-        <div className="text-center">
-          <a 
-            href="https://www.gogreenlight.ai/" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-white font-semibold rounded-lg transition-colors"
-          >
-            Try GoGreenlight Casting Platform
-            <ArrowRight className="w-4 h-4" />
-          </a>
-          <p className="text-sm text-white/50 mt-4">
-            No credit card needed — your feedback is welcome in this Beta.
-          </p>
-        </div>
-
-        {/* Footer Links */}
-        <div className="flex justify-center gap-16 mt-8">
-          <div>
-            <h4 className="text-sm font-semibold text-white mb-3">Legal</h4>
-            <ul className="space-y-2">
-              <li>
-                <a href="https://www.gogreenlight.ai/legalstack" target="_blank" rel="noopener noreferrer" className="text-sm text-white/50 hover:text-white/80 transition-colors">
-                  Legal Stack
-                </a>
-              </li>
-              <li>
-                <a href="https://www.gogreenlight.ai/privacypolicy" target="_blank" rel="noopener noreferrer" className="text-sm text-white/50 hover:text-white/80 transition-colors">
-                  Privacy Policy
-                </a>
-              </li>
-              <li>
-                <a href="https://www.gogreenlight.ai/terms" target="_blank" rel="noopener noreferrer" className="text-sm text-white/50 hover:text-white/80 transition-colors">
-                  Terms
-                </a>
-              </li>
-            </ul>
+      <footer className="py-8 px-6 shrink-0 border-t border-white/10">
+        <div className="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-start gap-8">
+          {/* Left side - Footer Links */}
+          <div className="flex gap-12">
+            <div>
+              <h4 className="text-sm font-semibold text-white mb-2">Legal</h4>
+              <ul className="space-y-1">
+                <li>
+                  <a href="https://www.gogreenlight.ai/legalstack" target="_blank" rel="noopener noreferrer" className="text-sm text-white/50 hover:text-white/80 transition-colors">
+                    Legal Stack
+                  </a>
+                </li>
+                <li>
+                  <a href="https://www.gogreenlight.ai/privacypolicy" target="_blank" rel="noopener noreferrer" className="text-sm text-white/50 hover:text-white/80 transition-colors">
+                    Privacy Policy
+                  </a>
+                </li>
+                <li>
+                  <a href="https://www.gogreenlight.ai/terms" target="_blank" rel="noopener noreferrer" className="text-sm text-white/50 hover:text-white/80 transition-colors">
+                    Terms
+                  </a>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold text-white mb-2">Support</h4>
+              <ul className="space-y-1">
+                <li>
+                  <a href="https://www.gogreenlight.ai/#contact" target="_blank" rel="noopener noreferrer" className="text-sm text-white/50 hover:text-white/80 transition-colors">
+                    Contact Us
+                  </a>
+                </li>
+              </ul>
+            </div>
           </div>
-          <div>
-            <h4 className="text-sm font-semibold text-white mb-3">Support</h4>
-            <ul className="space-y-2">
-              <li>
-                <a href="https://www.gogreenlight.ai/#contact" target="_blank" rel="noopener noreferrer" className="text-sm text-white/50 hover:text-white/80 transition-colors">
-                  Contact Us
-                </a>
-              </li>
-            </ul>
+
+          {/* Right side - CTA */}
+          <div className="text-center md:text-right">
+            <a 
+              href="https://www.gogreenlight.ai/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-white font-semibold rounded-lg transition-colors"
+            >
+              Try GoGreenlight Casting Platform
+              <ArrowRight className="w-4 h-4" />
+            </a>
+            <p className="text-sm text-white/50 mt-3">
+              No credit card needed — your feedback is welcome in this Beta.
+            </p>
           </div>
         </div>
 

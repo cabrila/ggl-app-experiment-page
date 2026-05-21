@@ -258,16 +258,20 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
       </main>
 
       {/* Bottom tagline */}
-      <footer className="text-center py-6 shrink-0">
+      <footer className="text-center py-8 px-4 shrink-0 border-t border-white/10">
         <a 
           href="https://www.gogreenlight.ai/" 
           target="_blank" 
           rel="noopener noreferrer"
-          className="text-sm text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition-colors"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-white font-semibold rounded-lg transition-colors"
         >
-          www.gogreenlight.ai
+          Go to the landing page
+          <ArrowRight className="w-4 h-4" />
         </a>
-        <p className="text-[11px] text-white/20 tracking-wide mt-2">
+        <p className="text-sm text-white/50 mt-4">
+          No credit card needed — your feedback is welcome in this Beta.
+        </p>
+        <p className="text-[11px] text-white/20 tracking-wide mt-4">
           © 2026 GoGreenlight. All rights reserved.
         </p>
       </footer>

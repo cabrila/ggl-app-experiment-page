@@ -221,7 +221,8 @@ export default function FeatureLayout({ children, onBack, onSignOut, activeView,
       </header>
 
       {/* Main Content Area with Sidebar */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex overflow-hidden">
         {/* Left Sidebar - Hidden on mobile */}
         <aside className="hidden md:flex flex-col w-16 border-r border-white/10 py-4 shrink-0">
           <nav className="flex flex-col items-center gap-2">
@@ -261,6 +262,22 @@ export default function FeatureLayout({ children, onBack, onSignOut, activeView,
         <main className="flex-1 overflow-hidden">
           {children}
         </main>
+        </div>
+
+        {/* Feedback callout */}
+        <div className="px-6 py-4 text-center border-t border-white/10">
+          <p className="text-base font-medium text-white/70 leading-relaxed">
+            We&apos;re offering these tools for free because your feedback helps us build something great. 
+            Found a bug or have an idea? Hit the{" "}
+            <button
+              onClick={() => setIsFeedbackModalOpen(true)}
+              className="font-semibold text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition-colors"
+            >
+              Feedback
+            </button>
+            {" "}button in the top right corner.
+          </p>
+        </div>
       </div>
 
       {/* Feedback Modal */}

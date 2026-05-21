@@ -19,8 +19,9 @@ export default function TopMenuBar() {
       <div className="px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <a href="https://www.gogreenlight.ai/" className="flex items-center">
+          <a href="https://www.gogreenlight.ai/" className="flex items-center gap-2">
             <img src="/images/gogreenlight-logo.png" alt="GoGreenlight" className="h-9 w-auto" />
+            <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-white text-xs font-semibold uppercase tracking-wide">Beta</span>
           </a>
 
           {/* Center Menu */}

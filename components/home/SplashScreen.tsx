@@ -259,7 +259,15 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
 
       {/* Bottom tagline */}
       <footer className="text-center py-6 shrink-0">
-        <p className="text-[11px] text-white/20 tracking-wide">
+        <a 
+          href="https://www.gogreenlight.ai/" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="text-sm text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition-colors"
+        >
+          www.gogreenlight.ai
+        </a>
+        <p className="text-[11px] text-white/20 tracking-wide mt-2">
           © 2026 GoGreenlight. All rights reserved.
         </p>
       </footer>

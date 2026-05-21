@@ -148,36 +148,60 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
 
         const es = new EventSource(`/api/import/${taskType}/${newTaskId}/progress`)
         sourceRef.current = es
+        console.log("[v0] SSE EventSource opened for task:", newTaskId)
+
+        es.onopen = () => {
+          console.log("[v0] SSE connection established (readyState=OPEN)")
+        }
 
         es.addEventListener("progress", (e) => {
+          console.log("[v0] SSE progress event raw:", e.data)
           try {
             const data = JSON.parse(e.data)
+            console.log("[v0] SSE progress parsed:", data)
             if (typeof data.message === "string") setMessage(data.message)
             const pct = parseProgress(data)
+            console.log("[v0] SSE progress -> percent:", pct)
             if (pct !== null) {
               // Never let progress go backwards mid-run — backends sometimes
               // re-emit earlier-stage events.
-              setProgress((prev) => (prev === null ? pct : Math.max(prev, pct)))
+              setProgress((prev) => {
+                const next = prev === null ? pct : Math.max(prev, pct)
+                console.log("[v0] progress state:", prev, "->", next)
+                return next
+              })
             }
-          } catch {
+          } catch (err) {
+            console.log("[v0] SSE progress parse error:", err)
             // Ignore parse errors — a malformed event shouldn't crash the run.
           }
         })
 
         es.addEventListener("state_change", (e) => {
+          console.log("[v0] SSE state_change raw:", e.data)
           try {
             const data = JSON.parse(e.data)
+            console.log("[v0] SSE state_change parsed:", data)
             if (data.status === "running") {
               setStatus("running")
             }
             const pct = parseProgress(data)
+            console.log("[v0] SSE state_change -> percent:", pct)
             if (pct !== null) {
               setProgress((prev) => (prev === null ? pct : Math.max(prev, pct)))
             }
-          } catch {
+          } catch (err) {
+            console.log("[v0] SSE state_change parse error:", err)
             // Ignore parse errors
           }
         })
+
+        // Catch-all generic message handler so we can see ANY event whose
+        // `event:` line is missing or has an unexpected name. EventSource
+        // delivers these via `onmessage` (event type "message").
+        es.onmessage = (e) => {
+          console.log("[v0] SSE generic message:", e.data)
+        }
 
         es.addEventListener("complete", (e) => {
           try {

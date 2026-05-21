@@ -50,8 +50,21 @@ export async function GET(
         while (true) {
           const { done, value } = await reader.read()
           if (done) {
+            console.log("[v0] SSE upstream closed for task:", taskId)
             controller.close()
             break
+          }
+          // Log raw upstream chunks so we can see exactly what the AI
+          // service emits (event names, field names, etc.). Truncated to
+          // keep server logs readable.
+          try {
+            const text = decoder.decode(value, { stream: true })
+            console.log(
+              "[v0] SSE upstream chunk:",
+              text.length > 500 ? text.slice(0, 500) + "...[truncated]" : text,
+            )
+          } catch {
+            // Ignore decode errors — still forward the bytes.
           }
           controller.enqueue(value)
         }

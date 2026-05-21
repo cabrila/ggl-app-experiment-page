@@ -84,6 +84,12 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
   const [error, setError] = useState<string | null>(null)
   const [taskId, setTaskId] = useState<string | null>(null)
   const sourceRef = useRef<EventSource | null>(null)
+  // Tracks whether we've already reached a terminal state (`complete` or
+  // an AI-emitted `error` frame). After `complete`, the server closes the
+  // SSE stream cleanly, which causes EventSource to fire its native
+  // `error` event — without this guard we'd flip a successful run to
+  // "failed" milliseconds after showing 100%.
+  const terminalRef = useRef(false)
 
   const reset = useCallback(() => {
     if (sourceRef.current) {
@@ -96,6 +102,7 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
     setResult(null)
     setError(null)
     setTaskId(null)
+    terminalRef.current = false
   }, [])
 
   const run = useCallback(
@@ -111,6 +118,7 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
       setProgress(null)
       setError(null)
       setResult(null)
+      terminalRef.current = false
 
       try {
         // 1. Submit task — proxy now requires a Firebase ID token so the
@@ -148,60 +156,36 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
 
         const es = new EventSource(`/api/import/${taskType}/${newTaskId}/progress`)
         sourceRef.current = es
-        console.log("[v0] SSE EventSource opened for task:", newTaskId)
-
-        es.onopen = () => {
-          console.log("[v0] SSE connection established (readyState=OPEN)")
-        }
 
         es.addEventListener("progress", (e) => {
-          console.log("[v0] SSE progress event raw:", e.data)
           try {
             const data = JSON.parse(e.data)
-            console.log("[v0] SSE progress parsed:", data)
             if (typeof data.message === "string") setMessage(data.message)
             const pct = parseProgress(data)
-            console.log("[v0] SSE progress -> percent:", pct)
             if (pct !== null) {
               // Never let progress go backwards mid-run — backends sometimes
               // re-emit earlier-stage events.
-              setProgress((prev) => {
-                const next = prev === null ? pct : Math.max(prev, pct)
-                console.log("[v0] progress state:", prev, "->", next)
-                return next
-              })
+              setProgress((prev) => (prev === null ? pct : Math.max(prev, pct)))
             }
-          } catch (err) {
-            console.log("[v0] SSE progress parse error:", err)
+          } catch {
             // Ignore parse errors — a malformed event shouldn't crash the run.
           }
         })
 
         es.addEventListener("state_change", (e) => {
-          console.log("[v0] SSE state_change raw:", e.data)
           try {
             const data = JSON.parse(e.data)
-            console.log("[v0] SSE state_change parsed:", data)
             if (data.status === "running") {
               setStatus("running")
             }
             const pct = parseProgress(data)
-            console.log("[v0] SSE state_change -> percent:", pct)
             if (pct !== null) {
               setProgress((prev) => (prev === null ? pct : Math.max(prev, pct)))
             }
-          } catch (err) {
-            console.log("[v0] SSE state_change parse error:", err)
+          } catch {
             // Ignore parse errors
           }
         })
-
-        // Catch-all generic message handler so we can see ANY event whose
-        // `event:` line is missing or has an unexpected name. EventSource
-        // delivers these via `onmessage` (event type "message").
-        es.onmessage = (e) => {
-          console.log("[v0] SSE generic message:", e.data)
-        }
 
         es.addEventListener("complete", (e) => {
           try {
@@ -214,25 +198,38 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
             setError("Failed to parse result")
             setStatus("failed")
           }
+          // Mark terminal BEFORE closing — closing triggers EventSource's
+          // native onerror, which would otherwise flip status back to failed.
+          terminalRef.current = true
           es.close()
           sourceRef.current = null
         })
 
         es.addEventListener("error", (e) => {
-          // EventSource also fires this for connection errors (no e.data)
+          // The AI service emits a named `error` event with JSON payload
+          // when a skill genuinely fails. EventSource also reuses the same
+          // event type for transport-level errors (no `data`). After a
+          // clean `complete`, the server closes the stream and the native
+          // error fires — that path must NOT mark the run as failed.
+          if (terminalRef.current) {
+            es.close()
+            sourceRef.current = null
+            return
+          }
           try {
             const messageEvent = e as MessageEvent
             if (messageEvent.data) {
               const data = JSON.parse(messageEvent.data)
               setError(data.message || "Task failed")
             } else {
-              // Connection error - try to recover by polling
+              // Transport error before a terminal frame arrived.
               setError("Connection lost. The task may still be processing.")
             }
           } catch {
             setError("Connection lost")
           }
           setStatus("failed")
+          terminalRef.current = true
           es.close()
           sourceRef.current = null
         })

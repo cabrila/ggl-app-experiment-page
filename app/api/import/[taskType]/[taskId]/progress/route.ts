@@ -38,33 +38,19 @@ export async function GET(
         clearInterval(keepAliveInterval)
 
         if (!upstream.ok || !upstream.body) {
-          const errorEvent = `event: error\ndata: ${JSON.stringify({ message: "Upstream stream unavailable" })}\n\n`
+          const errorEvent = `event: error\ndata: ${JSON.stringify({ message: "Upstream stream unavailable", status: upstream.status })}\n\n`
           controller.enqueue(encoder.encode(errorEvent))
           controller.close()
           return
         }
 
         const reader = upstream.body.getReader()
-        const decoder = new TextDecoder()
 
         while (true) {
           const { done, value } = await reader.read()
           if (done) {
-            console.log("[v0] SSE upstream closed for task:", taskId)
             controller.close()
             break
-          }
-          // Log raw upstream chunks so we can see exactly what the AI
-          // service emits (event names, field names, etc.). Truncated to
-          // keep server logs readable.
-          try {
-            const text = decoder.decode(value, { stream: true })
-            console.log(
-              "[v0] SSE upstream chunk:",
-              text.length > 500 ? text.slice(0, 500) + "...[truncated]" : text,
-            )
-          } catch {
-            // Ignore decode errors — still forward the bytes.
           }
           controller.enqueue(value)
         }

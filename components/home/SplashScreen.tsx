@@ -244,13 +244,13 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
         </div>
 
         {/* Feedback callout */}
-        <div className="mt-8 px-6 text-center max-w-xl">
-          <p className="text-sm text-white/40 leading-relaxed">
+        <div className="mt-10 px-6 text-center max-w-2xl">
+          <p className="text-base md:text-lg font-medium text-white/70 leading-relaxed">
             We&apos;re offering these tools for free because your feedback helps us build something great. 
             Found a bug or have an idea? Hit the{" "}
             <button
               onClick={() => setIsFeedbackModalOpen(true)}
-              className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition-colors"
+              className="font-semibold text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition-colors"
             >
               Feedback
             </button>

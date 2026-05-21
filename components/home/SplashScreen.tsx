@@ -265,7 +265,7 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-white font-semibold rounded-lg transition-colors"
         >
-          Go to the landing page
+          Try GoGreenlight Casting Platform
           <ArrowRight className="w-4 h-4" />
         </a>
         <p className="text-sm text-white/50 mt-4">

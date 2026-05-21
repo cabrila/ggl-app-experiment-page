@@ -191,69 +191,24 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
                   <LogOut className="w-4 h-4" />
                   <span>Sign Out</span>
                 </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content - Hero and Feature Buttons */}
-      <main className="flex-1 flex flex-col items-center justify-center relative z-10 overflow-y-auto py-8">
-        <div className="text-center px-6 max-w-2xl mb-10">
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 text-balance leading-tight">
-            Every creative asset.{" "}
-            <span className="text-emerald-300">One platform.</span>
-          </h1>
-          <p className="text-white/50 text-base md:text-lg leading-relaxed text-pretty max-w-xl mx-auto">
-            Organize characters, actors, locations and more in one streamlined workflow.
-          </p>
-        </div>
-
-        {/* Feature Buttons Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-6 w-full max-w-3xl">
-          {featureButtons.map((feature) => {
-            const IconComponent = feature.icon
-            return (
-              <button
-                key={feature.id}
-                onClick={() => {
-                  // Map feature.id to FeatureName (actor-database -> actor-list)
-                  const featureNameMap: Record<string, FeatureName> = {
-                    "character-bible": "character-bible",
-                    "location-overview": "location-overview",
-                    "actor-database": "actor-list",
-                    "public-casting": "public-casting",
-                    "prop-list": "prop-list",
-                    "scene-list": "scene-list",
-                  }
-                  const featureName = featureNameMap[feature.id]
-                  if (featureName) {
-                    trackFeatureClick(featureName)
-                  }
-                  onNavigate?.(feature.id)
-                }}
-                className="group flex items-start gap-4 p-5 bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 hover:border-white/20 rounded-xl text-left transition-all duration-200"
-              >
-                {/* Icon */}
-                <div className={`shrink-0 w-12 h-12 rounded-lg ${feature.iconBg} flex items-center justify-center`}>
-                  <IconComponent className={`w-6 h-6 ${feature.iconColor}`} />
-                </div>
-
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-base font-semibold text-white font-sans">
-                      {feature.title}
-                    </h3>
-                    <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-white/70 group-hover:translate-x-0.5 transition-all duration-200" />
-                  </div>
-                  <p className="text-sm text-white/50 leading-relaxed font-sans">
-                    {feature.description}
-                  </p>
-                </div>
-              </button>
+</div>
             )
           })}
+        </div>
+
+        {/* Feedback callout */}
+        <div className="mt-8 px-6 text-center max-w-xl">
+          <p className="text-sm text-white/40 leading-relaxed">
+            We&apos;re offering these tools for free because your feedback helps us build something great. 
+            Found a bug or have an idea? Hit the{" "}
+            <button
+              onClick={() => setIsFeedbackModalOpen(true)}
+              className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition-colors"
+            >
+              Feedback
+            </button>
+            {" "}button in the top right corner.
+          </p>
         </div>
       </main>
 

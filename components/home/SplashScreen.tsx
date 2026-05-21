@@ -260,42 +260,8 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
       {/* Bottom tagline */}
       <footer className="py-8 px-6 shrink-0 border-t border-white/10">
         <div className="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-start gap-8">
-          {/* Left side - Footer Links */}
-          <div className="flex gap-12">
-            <div>
-              <h4 className="text-sm font-semibold text-white mb-2">Legal</h4>
-              <ul className="space-y-1">
-                <li>
-                  <a href="https://www.gogreenlight.ai/legalstack" target="_blank" rel="noopener noreferrer" className="text-sm text-white/50 hover:text-white/80 transition-colors">
-                    Legal Stack
-                  </a>
-                </li>
-                <li>
-                  <a href="https://www.gogreenlight.ai/privacypolicy" target="_blank" rel="noopener noreferrer" className="text-sm text-white/50 hover:text-white/80 transition-colors">
-                    Privacy Policy
-                  </a>
-                </li>
-                <li>
-                  <a href="https://www.gogreenlight.ai/terms" target="_blank" rel="noopener noreferrer" className="text-sm text-white/50 hover:text-white/80 transition-colors">
-                    Terms
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-white mb-2">Support</h4>
-              <ul className="space-y-1">
-                <li>
-                  <a href="https://www.gogreenlight.ai/#contact" target="_blank" rel="noopener noreferrer" className="text-sm text-white/50 hover:text-white/80 transition-colors">
-                    Contact Us
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Right side - CTA */}
-          <div className="text-center md:text-right">
+          {/* Left side - CTA */}
+          <div className="text-center md:text-left">
             <a 
               href="https://www.gogreenlight.ai/" 
               target="_blank" 
@@ -308,6 +274,28 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
             <p className="text-sm text-white/50 mt-3">
               No credit card needed — your feedback is welcome in this Beta.
             </p>
+          </div>
+
+          {/* Right side - Legal Links */}
+          <div>
+            <h4 className="text-sm font-semibold text-white mb-2">Legal</h4>
+            <ul className="space-y-1">
+              <li>
+                <a href="https://www.gogreenlight.ai/legalstack" target="_blank" rel="noopener noreferrer" className="text-sm text-white/50 hover:text-white/80 transition-colors">
+                  Legal Stack
+                </a>
+              </li>
+              <li>
+                <a href="https://www.gogreenlight.ai/privacypolicy" target="_blank" rel="noopener noreferrer" className="text-sm text-white/50 hover:text-white/80 transition-colors">
+                  Privacy Policy
+                </a>
+              </li>
+              <li>
+                <a href="https://www.gogreenlight.ai/terms" target="_blank" rel="noopener noreferrer" className="text-sm text-white/50 hover:text-white/80 transition-colors">
+                  Terms
+                </a>
+              </li>
+            </ul>
           </div>
         </div>
 

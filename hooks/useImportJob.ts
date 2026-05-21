@@ -22,32 +22,48 @@ interface ImportJobState<T> {
 }
 
 /**
- * Try to extract a 0..100 progress number from a backend SSE event payload.
+ * Map a backend SSE `progress`/`state_change` event payload to a 0..100
+ * percent according to the AI service's documented contract.
  *
- * The AI service hasn't standardised a single field name, so we accept the
- * shapes we've seen: explicit `progress`/`percent`, fractional `progress`
- * in 0..1, or pairs like `current/total` or `chunk/total_chunks`. Returns
- * `null` when nothing usable is present so callers can keep their previous
- * value instead of snapping to zero.
+ * Spec (see docs/ai-progress-events.md):
+ *   step                | percent
+ *   --------------------|--------
+ *   start               | 5
+ *   chunking_start      | 10
+ *   parallel_start      | 15
+ *   chunk_processing    | 15 + (current/total) * 75   (90 when all done)
+ *   merging             | 95
+ *   (complete event)    | 100  — handled by the caller, not here
+ *
+ * Returns `null` for unknown / missing steps so the caller can keep the
+ * previous percent rather than snapping the bar backwards on early
+ * "Running skill..." events that have no `step`.
  */
 function parseProgress(data: unknown): number | null {
   if (!data || typeof data !== "object") return null
   const d = data as Record<string, unknown>
 
-  const direct = d.progress ?? d.percent ?? d.percentage
-  if (typeof direct === "number" && Number.isFinite(direct)) {
-    // Accept either 0..1 or 0..100 — if it's clearly a fraction, scale it.
-    const v = direct <= 1 ? direct * 100 : direct
-    return clampPercent(v)
+  const step = typeof d.step === "string" ? d.step : null
+  switch (step) {
+    case "start":
+      return 5
+    case "chunking_start":
+      return 10
+    case "parallel_start":
+      return 15
+    case "chunk_processing": {
+      const current = numberOrNull(d.current)
+      const total = numberOrNull(d.total)
+      if (current !== null && total !== null && total > 0) {
+        return clampPercent(15 + (current / total) * 75)
+      }
+      return null
+    }
+    case "merging":
+      return 95
+    default:
+      return null
   }
-
-  const current = numberOrNull(d.current ?? d.chunk ?? d.completed)
-  const total = numberOrNull(d.total ?? d.total_chunks ?? d.totalChunks)
-  if (current !== null && total !== null && total > 0) {
-    return clampPercent((current / total) * 100)
-  }
-
-  return null
 }
 
 function numberOrNull(v: unknown): number | null {

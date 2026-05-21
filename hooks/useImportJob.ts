@@ -1,5 +1,11 @@
 "use client"
 
+// Polling-based import job tracker. Replaces the previous SSE implementation
+// (see deleted app/api/import/[taskType]/[taskId]/progress/route.ts) — the
+// upstream AI service never emitted SSE frames over the long-poll endpoint,
+// so we now read task.progress.percent directly from the Firestore-mirrored
+// task document at a 2s cadence.
+
 import { useState, useRef, useCallback, useEffect } from "react"
 import { auth, waitForAuth } from "@/lib/firebase"
 

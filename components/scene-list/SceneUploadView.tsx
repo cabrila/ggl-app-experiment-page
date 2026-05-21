@@ -21,6 +21,28 @@ export default function SceneUploadView() {
 
   const isProcessing = status === "uploading" || status === "running"
 
+  // Track whether the percent has stayed unchanged long enough that we should
+  // switch to an indeterminate pulse. Non-chunked skills (character-extract,
+  // small scenes) emit only `start` (→5%) and then sit silent for 30–90s
+  // before the terminal event. Pulsing reassures the user that work is still
+  // happening without lying about completion. Resumes determinate the moment
+  // a real chunk_processing event arrives.
+  const [progressStale, setProgressStale] = useState(false)
+  const lastProgressRef = useRef<number | null>(null)
+  useEffect(() => {
+    if (status !== "running") {
+      setProgressStale(false)
+      lastProgressRef.current = progress
+      return
+    }
+    if (progress !== lastProgressRef.current) {
+      lastProgressRef.current = progress
+      setProgressStale(false)
+    }
+    const t = setTimeout(() => setProgressStale(true), 3000)
+    return () => clearTimeout(t)
+  }, [progress, status])
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
     setIsDragging(true)
@@ -149,58 +171,53 @@ export default function SceneUploadView() {
           )}
 
           {isProcessing ? (
-            <div className="flex flex-col items-center justify-center py-16 rounded-2xl border border-white/10 bg-white/[0.02]">
-              <Loader2 className="w-12 h-12 text-teal-400 animate-spin mb-4" />
-              <p className="text-white font-sans mb-2">
-                {status === "uploading" ? "Uploading file..." : "Parsing script into scenes..."}
-              </p>
-              <p className="text-white/50 text-sm mb-4 font-sans">
-                {message || "This can take 30s+ on a feature-length script."}
-              </p>
+            <div className="flex flex-col items-center justify-center py-16 px-8 rounded-2xl border border-white/10 bg-white/[0.02]">
+              <Loader2 className="w-12 h-12 text-teal-400 animate-spin mb-6" />
               {(() => {
-                // Real progress comes from the backend SSE stream (parsed in
-                // useImportJob). While we don't have a number yet, render an
-                // indeterminate sweep instead of a fake 30/70 jump.
+                // Per the AI service contract, percent is driven by SSE
+                // `step` events (mapped in useImportJob). Before the first
+                // mapped event arrives we don't have a number — show the
+                // bar at 0 with an indeterminate pulse so the user still
+                // sees motion. Same treatment when the percent has been
+                // stale for >3s (non-chunked skills).
                 const hasNumeric = progress !== null
-                // During upload we haven't opened the SSE stream yet, so always
-                // show indeterminate then.
-                const indeterminate = status === "uploading" || !hasNumeric
-                const pct = hasNumeric ? Math.round(progress!) : null
+                const pct = hasNumeric ? progress! : 0
+                const pulse =
+                  status === "uploading" || !hasNumeric || progressStale
+                const displayPct = Math.round(pct)
 
                 return (
-                  <>
-                    <div
-                      className="w-64 h-2 bg-white/10 rounded-full overflow-hidden"
-                      role="progressbar"
-                      aria-label="Scene extraction progress"
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-valuenow={pct ?? undefined}
-                    >
-                      {indeterminate ? (
+                  <div className="w-full max-w-md">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden relative"
+                        role="progressbar"
+                        aria-label="Scene extraction progress"
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-valuenow={hasNumeric ? displayPct : undefined}
+                      >
                         <div
-                          className="h-full w-1/3 bg-teal-500 rounded-full animate-[indeterminate_1.4s_ease-in-out_infinite]"
-                          style={{
-                            // Inline keyframes via CSS variable fallback —
-                            // Tailwind v4 will pick up the named keyframes
-                            // below; this style is just a left/translate hint
-                            // for browsers that ignore the animation.
-                            transform: "translateX(-100%)",
-                          }}
+                          className={`h-full bg-teal-500 rounded-full transition-[width] duration-500 ease-out ${
+                            pulse ? "animate-pulse" : ""
+                          }`}
+                          style={{ width: `${Math.max(pct, 2)}%` }}
                         />
-                      ) : (
-                        <div
-                          className="h-full bg-teal-500 transition-all duration-500"
-                          style={{ width: `${pct}%` }}
-                        />
-                      )}
+                      </div>
+                      <span className="text-white/70 text-sm font-sans tabular-nums w-10 text-right">
+                        {displayPct}%
+                      </span>
                     </div>
-                    {hasNumeric && !indeterminate && (
-                      <p className="mt-2 text-white/40 text-xs font-sans tabular-nums">
-                        {pct}%
-                      </p>
-                    )}
-                  </>
+                    {/* Render the backend's message verbatim — it already
+                        says things like "4 of 8 parts done". Falls back to
+                        a generic line during upload / before first event. */}
+                    <p className="mt-3 text-white/60 text-sm text-center font-sans">
+                      {message ||
+                        (status === "uploading"
+                          ? "Uploading file..."
+                          : "Starting...")}
+                    </p>
+                  </div>
                 )
               })()}
             </div>

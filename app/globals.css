@@ -566,8 +566,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-\[indeterminate_1\.4s_ease-in-out_infinite\] {
-    animation: none;
+  .animate-\[indeterminate_1\.4s_ease-in-out_infinite\],
+  [style*="indeterminate"] {
+    animation: none !important;
     transform: translateX(0);
   }
 }

@@ -192,68 +192,70 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
                   <LogOut className="w-4 h-4" />
                   <span>Sign Out</span>
                 </button>
-</div>
+              </div>
             )}
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 overflow-auto">
-        <div className="max-w-4xl w-full text-center mb-8">
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 text-balance leading-tight">
-            Every creative asset.{" "}
-            <span className="text-emerald-300">One platform.</span>
-          </h1>
-          <p className="text-base md:text-lg text-white/60 max-w-2xl mx-auto text-pretty">
-            Upload your script. Get detailed breakdowns, cast actors, and manage
-            your production — all in one place.
-          </p>
-        </div>
+      {/* Main Content - Hero and Feature Buttons */}
+      <main className="flex-1 relative z-10 overflow-y-auto">
+        <div className="min-h-full flex flex-col items-center justify-center py-8">
+          <div className="text-center px-6 max-w-2xl mb-10">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 text-balance leading-tight">
+              Every creative asset.{" "}
+              <span className="text-emerald-300">One platform.</span>
+            </h1>
+            <p className="text-base md:text-lg text-white/60 max-w-2xl mx-auto text-pretty">
+              Upload your script. Get detailed breakdowns, cast actors, and manage
+              your production — all in one place.
+            </p>
+          </div>
 
-        {/* Feature Buttons Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl w-full px-4">
-          {featureButtons.map((feature) => {
-            const IconComponent = feature.icon
-            return (
-              <button
-                key={feature.id}
-                onClick={() => {
-                  trackFeatureClick(feature.id as FeatureName)
-                  onNavigate?.(feature.id)
-                }}
-                className="group relative flex flex-col items-start p-5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-emerald-500/30 transition-all duration-300 text-left"
-              >
-                <div
-                  className={`w-10 h-10 rounded-lg ${feature.iconBg} flex items-center justify-center mb-3`}
+          {/* Feature Buttons Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl w-full px-4">
+            {featureButtons.map((feature) => {
+              const IconComponent = feature.icon
+              return (
+                <button
+                  key={feature.id}
+                  onClick={() => {
+                    trackFeatureClick(feature.id as FeatureName)
+                    onNavigate?.(feature.id)
+                  }}
+                  className="group relative flex flex-col items-start p-5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-emerald-500/30 transition-all duration-300 text-left"
                 >
-                  <IconComponent className={`w-5 h-5 ${feature.iconColor}`} />
-                </div>
-                <h3 className="text-base font-semibold text-white mb-1 flex items-center gap-2">
-                  {feature.title}
-                  <ArrowRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-emerald-400" />
-                </h3>
-                <p className="text-sm text-white/50 leading-relaxed">
-                  {feature.description}
-                </p>
-              </button>
-            )
-          })}
-        </div>
+                  <div
+                    className={`w-10 h-10 rounded-lg ${feature.iconBg} flex items-center justify-center mb-3`}
+                  >
+                    <IconComponent className={`w-5 h-5 ${feature.iconColor}`} />
+                  </div>
+                  <h3 className="text-base font-semibold text-white mb-1 flex items-center gap-2">
+                    {feature.title}
+                    <ArrowRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-emerald-400" />
+                  </h3>
+                  <p className="text-sm text-white/50 leading-relaxed">
+                    {feature.description}
+                  </p>
+                </button>
+              )
+            })}
+          </div>
 
-        {/* Feedback callout */}
-        <div className="mt-10 px-6 text-center max-w-2xl">
-          <p className="text-base md:text-lg font-medium text-white/70 leading-relaxed">
-            We&apos;re offering these tools for free because your feedback helps us build something great. 
-            Found a bug or have an idea? Hit the{" "}
-            <button
-              onClick={() => setIsFeedbackModalOpen(true)}
-              className="font-semibold text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition-colors"
-            >
-              Feedback
-            </button>
-            {" "}button in the top right corner.
-          </p>
+          {/* Feedback callout */}
+          <div className="mt-10 px-6 text-center max-w-2xl">
+            <p className="text-base md:text-lg font-medium text-white/70 leading-relaxed">
+              We&apos;re offering these tools for free because your feedback helps us build something great. 
+              Found a bug or have an idea? Hit the{" "}
+              <button
+                onClick={() => setIsFeedbackModalOpen(true)}
+                className="font-semibold text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition-colors"
+              >
+                Feedback
+              </button>
+              {" "}button in the top right corner.
+            </p>
+          </div>
         </div>
       </main>
 

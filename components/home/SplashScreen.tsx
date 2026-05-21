@@ -110,12 +110,13 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
     >
       {/* Top Navigation Bar - Only Logo and User Avatar */}
       <header className="relative flex justify-between items-center px-6 py-3 border-b border-white/10 shrink-0 z-20">
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
           <img
             src="/images/gogreenlight-logo.png"
             alt="GoGreenlight"
             className="h-9 w-auto"
           />
+          <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-white text-xs font-semibold uppercase tracking-wide">Beta</span>
         </div>
         <div className="flex items-center gap-2">
           {/* Internal-only Usage & Cost button. Visibility-only gate; the
@@ -200,9 +201,6 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
       {/* Main Content */}
       <main className="flex-1 flex flex-col items-center justify-center px-4 overflow-auto">
         <div className="max-w-4xl w-full text-center mb-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full bg-emerald-500/20 border border-emerald-500/30">
-            <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Beta</span>
-          </div>
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 text-balance leading-tight">
             Every creative asset.{" "}
             <span className="text-emerald-300">One platform.</span>

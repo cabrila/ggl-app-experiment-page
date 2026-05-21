@@ -1,17 +1,22 @@
 "use client"
 
-import { useState, useRef, useCallback } from "react"
+import { useState, useRef, useCallback, useEffect } from "react"
 import { auth, waitForAuth } from "@/lib/firebase"
 
-export type ImportJobStatus = "idle" | "uploading" | "running" | "complete" | "failed"
+export type ImportJobStatus =
+  | "idle"
+  | "uploading"
+  | "running"
+  | "complete"
+  | "failed"
 
 interface ImportJobState<T> {
   status: ImportJobStatus
   message: string
   /**
-   * Numeric progress 0..100 parsed from backend SSE events.
+   * Numeric progress 0..100 read from the task document's `progress.percent`.
    * `null` while we don't have a real number yet — UI should treat that as
-   * indeterminate. Stays at 100 once the job completes.
+   * indeterminate. Pinned at 100 once the job completes.
    */
   progress: number | null
   result: T | null
@@ -21,60 +26,29 @@ interface ImportJobState<T> {
   reset: () => void
 }
 
-/**
- * Map a backend SSE `progress`/`state_change` event payload to a 0..100
- * percent according to the AI service's documented contract.
- *
- * Spec (see docs/ai-progress-events.md):
- *   step                | percent
- *   --------------------|--------
- *   start               | 5
- *   chunking_start      | 10
- *   parallel_start      | 15
- *   chunk_processing    | 15 + (current/total) * 75   (90 when all done)
- *   merging             | 95
- *   (complete event)    | 100  — handled by the caller, not here
- *
- * Returns `null` for unknown / missing steps so the caller can keep the
- * previous percent rather than snapping the bar backwards on early
- * "Running skill..." events that have no `step`.
- */
-function parseProgress(data: unknown): number | null {
-  if (!data || typeof data !== "object") return null
-  const d = data as Record<string, unknown>
-
-  const step = typeof d.step === "string" ? d.step : null
-  switch (step) {
-    case "start":
-      return 5
-    case "chunking_start":
-      return 10
-    case "parallel_start":
-      return 15
-    case "chunk_processing": {
-      const current = numberOrNull(d.current)
-      const total = numberOrNull(d.total)
-      if (current !== null && total !== null && total > 0) {
-        return clampPercent(15 + (current / total) * 75)
-      }
-      return null
-    }
-    case "merging":
-      return 95
-    default:
-      return null
+/** Shape of `GET /api/import/:taskType/:taskId`, matching the AI service. */
+interface TaskDocument {
+  id: string
+  skill: string
+  status: "received" | "running" | "complete" | "failed"
+  progress?: {
+    percent?: number
+    message?: string
+    step?: string
+    current?: number
+    total?: number
   }
+  result?: unknown
+  error?: string
 }
 
-function numberOrNull(v: unknown): number | null {
-  return typeof v === "number" && Number.isFinite(v) ? v : null
-}
-
-function clampPercent(v: number): number {
-  if (v < 0) return 0
-  if (v > 100) return 100
-  return v
-}
+const POLL_INTERVAL_MS = 2000
+// Bounded retry on consecutive *transport* failures only. Per-call status
+// errors (4xx/5xx returned by our proxy) abort immediately. 10 misses at
+// 2s = 20s of dead air before giving up — long enough to ride out a
+// dropped wifi association, short enough that a truly broken backend
+// doesn't pin a spinner forever.
+const MAX_CONSECUTIVE_NETWORK_FAILURES = 10
 
 export function useImportJob<T>(taskType: string): ImportJobState<T> {
   const [status, setStatus] = useState<ImportJobStatus>("idle")
@@ -83,46 +57,37 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
   const [result, setResult] = useState<T | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [taskId, setTaskId] = useState<string | null>(null)
-  const sourceRef = useRef<EventSource | null>(null)
-  // Tracks whether we've already reached a terminal state (`complete` or
-  // an AI-emitted `error` frame). After `complete`, the server closes the
-  // SSE stream cleanly, which causes EventSource to fire its native
-  // `error` event — without this guard we'd flip a successful run to
-  // "failed" milliseconds after showing 100%.
-  const terminalRef = useRef(false)
+
+  // The polling loop is keyed by taskId via a useEffect below; this ref
+  // lets the run() callback signal "abandon any in-flight loop" when the
+  // user kicks off a new run or calls reset() before the effect cleanup
+  // would naturally fire.
+  const cancelRef = useRef(false)
 
   const reset = useCallback(() => {
-    if (sourceRef.current) {
-      sourceRef.current.close()
-      sourceRef.current = null
-    }
+    cancelRef.current = true
     setStatus("idle")
     setMessage("")
     setProgress(null)
     setResult(null)
     setError(null)
     setTaskId(null)
-    terminalRef.current = false
   }, [])
 
   const run = useCallback(
     async (file: File, sourceTitle?: string) => {
-      // Close any existing EventSource
-      if (sourceRef.current) {
-        sourceRef.current.close()
-        sourceRef.current = null
-      }
+      // Stop any prior polling loop before starting a new one.
+      cancelRef.current = true
 
       setStatus("uploading")
       setMessage("Uploading file...")
       setProgress(null)
       setError(null)
       setResult(null)
-      terminalRef.current = false
 
       try {
-        // 1. Submit task — proxy now requires a Firebase ID token so the
-        //    AI service can attribute usage to the signed-in user.
+        // 1. Submit task — proxy requires a Firebase ID token so the AI
+        //    service can attribute usage to the signed-in user.
         await waitForAuth()
         const current = auth.currentUser
         if (!current) {
@@ -143,103 +108,128 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
         })
 
         if (!res.ok) {
-          const errorData = await res.json().catch(() => ({ error: "Upload failed" }))
+          const errorData = await res
+            .json()
+            .catch(() => ({ error: "Upload failed" }))
           throw new Error(errorData.error || "Failed to submit task")
         }
 
         const { taskId: newTaskId } = await res.json()
-        setTaskId(newTaskId)
 
-        // 2. Open SSE stream
+        // 2. Hand off to the polling loop (driven by the useEffect below).
+        cancelRef.current = false
         setStatus("running")
         setMessage("Processing...")
-
-        const es = new EventSource(`/api/import/${taskType}/${newTaskId}/progress`)
-        sourceRef.current = es
-
-        es.addEventListener("progress", (e) => {
-          try {
-            const data = JSON.parse(e.data)
-            if (typeof data.message === "string") setMessage(data.message)
-            const pct = parseProgress(data)
-            if (pct !== null) {
-              // Never let progress go backwards mid-run — backends sometimes
-              // re-emit earlier-stage events.
-              setProgress((prev) => (prev === null ? pct : Math.max(prev, pct)))
-            }
-          } catch {
-            // Ignore parse errors — a malformed event shouldn't crash the run.
-          }
-        })
-
-        es.addEventListener("state_change", (e) => {
-          try {
-            const data = JSON.parse(e.data)
-            if (data.status === "running") {
-              setStatus("running")
-            }
-            const pct = parseProgress(data)
-            if (pct !== null) {
-              setProgress((prev) => (prev === null ? pct : Math.max(prev, pct)))
-            }
-          } catch {
-            // Ignore parse errors
-          }
-        })
-
-        es.addEventListener("complete", (e) => {
-          try {
-            const data = JSON.parse(e.data)
-            setResult(data.result as T)
-            setStatus("complete")
-            setMessage("Complete")
-            setProgress(100)
-          } catch {
-            setError("Failed to parse result")
-            setStatus("failed")
-          }
-          // Mark terminal BEFORE closing — closing triggers EventSource's
-          // native onerror, which would otherwise flip status back to failed.
-          terminalRef.current = true
-          es.close()
-          sourceRef.current = null
-        })
-
-        es.addEventListener("error", (e) => {
-          // The AI service emits a named `error` event with JSON payload
-          // when a skill genuinely fails. EventSource also reuses the same
-          // event type for transport-level errors (no `data`). After a
-          // clean `complete`, the server closes the stream and the native
-          // error fires — that path must NOT mark the run as failed.
-          if (terminalRef.current) {
-            es.close()
-            sourceRef.current = null
-            return
-          }
-          try {
-            const messageEvent = e as MessageEvent
-            if (messageEvent.data) {
-              const data = JSON.parse(messageEvent.data)
-              setError(data.message || "Task failed")
-            } else {
-              // Transport error before a terminal frame arrived.
-              setError("Connection lost. The task may still be processing.")
-            }
-          } catch {
-            setError("Connection lost")
-          }
-          setStatus("failed")
-          terminalRef.current = true
-          es.close()
-          sourceRef.current = null
-        })
+        setTaskId(newTaskId)
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unknown error occurred")
         setStatus("failed")
       }
     },
-    [taskType],
+    [taskType]
   )
 
+  // Polling effect — runs whenever taskId becomes a string. The auth token
+  // is refreshed for each poll so a 1-hour extract doesn't get killed by
+  // an expired ID token. Returns to idle on cleanup so re-mounting (e.g.
+  // strict mode / fast refresh) doesn't double-poll.
+  useEffect(() => {
+    if (!taskId) return
+
+    let cancelled = false
+    let timer: ReturnType<typeof setTimeout> | null = null
+    let consecutiveFailures = 0
+
+    async function pollOnce(): Promise<void> {
+      if (cancelled || cancelRef.current) return
+
+      try {
+        const user = auth.currentUser
+        const idToken = user ? await user.getIdToken() : null
+        const res = await fetch(`/api/import/${taskType}/${taskId}`, {
+          headers: idToken ? { Authorization: `Bearer ${idToken}` } : undefined,
+          cache: "no-store",
+        })
+
+        if (!res.ok) {
+          // Non-2xx from our proxy is a real, surfaced error — not a
+          // transient transport blip. Stop polling and report.
+          const body = (await res.json().catch(() => ({}))) as {
+            error?: string
+          }
+          if (cancelled || cancelRef.current) return
+          setError(body.error || `Task fetch failed (HTTP ${res.status})`)
+          setStatus("failed")
+          return
+        }
+
+        const task = (await res.json()) as TaskDocument
+        if (cancelled || cancelRef.current) return
+
+        consecutiveFailures = 0
+
+        if (task.progress) {
+          if (typeof task.progress.percent === "number") {
+            const pct = clampPercent(task.progress.percent)
+            // Never let progress go backwards — server may briefly emit
+            // an earlier-stage progress doc on retry.
+            setProgress((prev) => (prev === null ? pct : Math.max(prev, pct)))
+          }
+          if (typeof task.progress.message === "string") {
+            setMessage(task.progress.message)
+          }
+        }
+
+        if (task.status === "complete") {
+          setResult(task.result as T)
+          setProgress(100)
+          setMessage("Complete")
+          setStatus("complete")
+          return
+        }
+
+        if (task.status === "failed") {
+          setError(task.error || "Extraction failed")
+          setStatus("failed")
+          return
+        }
+
+        // status === 'received' or 'running' — keep polling.
+        timer = setTimeout(pollOnce, POLL_INTERVAL_MS)
+      } catch (err) {
+        // Transient network failure (offline, DNS hiccup, mid-flight
+        // abort). Retry up to MAX_CONSECUTIVE_NETWORK_FAILURES before
+        // giving up — but DON'T flip to "failed" while we're retrying.
+        // The point of polling is exactly that brief blips are invisible.
+        consecutiveFailures += 1
+        if (consecutiveFailures >= MAX_CONSECUTIVE_NETWORK_FAILURES) {
+          if (cancelled || cancelRef.current) return
+          setError(
+            err instanceof Error
+              ? `Lost connection to server: ${err.message}`
+              : "Lost connection to server"
+          )
+          setStatus("failed")
+          return
+        }
+        timer = setTimeout(pollOnce, POLL_INTERVAL_MS)
+      }
+    }
+
+    void pollOnce()
+
+    return () => {
+      cancelled = true
+      if (timer) clearTimeout(timer)
+    }
+  }, [taskId, taskType])
+
   return { status, message, progress, result, error, taskId, run, reset }
+}
+
+function clampPercent(v: number): number {
+  if (!Number.isFinite(v)) return 0
+  if (v < 0) return 0
+  if (v > 100) return 100
+  return v
 }

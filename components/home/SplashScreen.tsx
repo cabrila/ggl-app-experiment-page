@@ -230,7 +230,17 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
                   key={feature.id}
                   onClick={() => {
                     trackFeatureClick(feature.id as FeatureName)
-                    onNavigate?.(feature.id)
+                    if (feature.id === "download-screenplay") {
+                      // Trigger download of the screenplay PDF
+                      const link = document.createElement("a")
+                      link.href = "/screenplays/A_Dinner_Party_screenplay.pdf"
+                      link.download = "A_Dinner_Party_screenplay.pdf"
+                      document.body.appendChild(link)
+                      link.click()
+                      document.body.removeChild(link)
+                    } else {
+                      onNavigate?.(feature.id)
+                    }
                   }}
                   className="group relative flex flex-col items-start p-5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-emerald-500/30 transition-all duration-300 text-left"
                 >

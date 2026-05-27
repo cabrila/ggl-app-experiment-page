@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone, ArrowRight, Package, Film, DollarSign } from "lucide-react"
+import { LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone, ArrowRight, Package, Film, DollarSign, Download } from "lucide-react"
 import { useCasting } from "@/components/casting/CastingContext"
 import FeedbackModal from "@/components/modals/FeedbackModal"
 import { trackFeatureClick, type FeatureName } from "@/lib/analytics"
@@ -57,6 +57,14 @@ const featureButtons = [
     icon: Film,
     iconBg: "bg-teal-500/20",
     iconColor: "text-teal-400",
+  },
+  {
+    id: "download-screenplay",
+    title: "Download Screenplay",
+    description: "You can test the tools with this screenplay. The material is not copyrighted and free to use.",
+    icon: Download,
+    iconBg: "bg-indigo-500/20",
+    iconColor: "text-indigo-400",
   },
 ]
 

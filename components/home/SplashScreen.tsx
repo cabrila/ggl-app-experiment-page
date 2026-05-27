@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone, ArrowRight, Package, Film, DollarSign } from "lucide-react"
+import { LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone, ArrowRight, Package, Film, DollarSign, Download } from "lucide-react"
 import { useCasting } from "@/components/casting/CastingContext"
 import FeedbackModal from "@/components/modals/FeedbackModal"
 import { trackFeatureClick, type FeatureName } from "@/lib/analytics"
@@ -58,6 +58,14 @@ const featureButtons = [
     iconBg: "bg-teal-500/20",
     iconColor: "text-teal-400",
   },
+  {
+    id: "download-screenplay",
+    title: "Download Screenplay",
+    description: "You can test the tools with this screenplay. The material is not copyrighted and free to use.",
+    icon: Download,
+    iconBg: "bg-indigo-500/20",
+    iconColor: "text-indigo-400",
+  },
 ]
 
 interface SplashScreenProps {
@@ -110,12 +118,13 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
     >
       {/* Top Navigation Bar - Only Logo and User Avatar */}
       <header className="relative flex justify-between items-center px-6 py-3 border-b border-white/10 shrink-0 z-20">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <img
             src="/images/gogreenlight-logo.png"
             alt="GoGreenlight"
             className="h-9 w-auto"
           />
+          <span className="text-xl font-semibold text-white tracking-tight">Tools</span>
           <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-white text-xs font-semibold uppercase tracking-wide">Beta</span>
         </div>
         <div className="flex items-center gap-2">
@@ -221,7 +230,17 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
                   key={feature.id}
                   onClick={() => {
                     trackFeatureClick(feature.id as FeatureName)
-                    onNavigate?.(feature.id)
+                    if (feature.id === "download-screenplay") {
+                      // Trigger download of the screenplay PDF
+                      const link = document.createElement("a")
+                      link.href = "/screenplays/A_Dinner_Party_screenplay.pdf"
+                      link.download = "A_Dinner_Party_screenplay.pdf"
+                      document.body.appendChild(link)
+                      link.click()
+                      document.body.removeChild(link)
+                    } else {
+                      onNavigate?.(feature.id)
+                    }
                   }}
                   className="group relative flex flex-col items-start p-5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-emerald-500/30 transition-all duration-300 text-left"
                 >

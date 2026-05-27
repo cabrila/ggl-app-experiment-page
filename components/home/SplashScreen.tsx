@@ -118,12 +118,13 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
     >
       {/* Top Navigation Bar - Only Logo and User Avatar */}
       <header className="relative flex justify-between items-center px-6 py-3 border-b border-white/10 shrink-0 z-20">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <img
             src="/images/gogreenlight-logo.png"
             alt="GoGreenlight"
             className="h-9 w-auto"
           />
+          <span className="text-xl font-semibold text-white tracking-tight">Tools</span>
           <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-white text-xs font-semibold uppercase tracking-wide">Beta</span>
         </div>
         <div className="flex items-center gap-2">

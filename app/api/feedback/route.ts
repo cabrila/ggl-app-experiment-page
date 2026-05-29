@@ -29,7 +29,7 @@ ${screenshotUrl ? `<br><br><strong>Screenshot:</strong><br><img src="${screensho
     const msg = {
       to: "contact@gogreenlight.ai",
       from: process.env.SENDGRID_FROM_EMAIL || "noreply@gogreenlight.ai",
-      subject: `GoGreenlight Feedback${heading ? `: ${heading}` : ""}`,
+      subject: `ToolsFeedback: GoGreenlight Feedback${heading ? `: ${heading}` : ""}`,
       html: emailContent,
     }
 

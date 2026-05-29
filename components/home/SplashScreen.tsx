@@ -1,9 +1,10 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone, ArrowRight, Package, Film, DollarSign, Download } from "lucide-react"
+import { LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone, ArrowRight, Package, Film, DollarSign, Download, UserPlus } from "lucide-react"
 import { useCasting } from "@/components/casting/CastingContext"
 import FeedbackModal from "@/components/modals/FeedbackModal"
+import FeedbackUserModal from "@/components/modals/FeedbackUserModal"
 import { trackFeatureClick, type FeatureName } from "@/lib/analytics"
 import { useFirebaseUser } from "@/hooks/useFirebaseUser"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -76,6 +77,7 @@ interface SplashScreenProps {
 export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProps) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false)
+  const [isFeedbackUserModalOpen, setIsFeedbackUserModalOpen] = useState(false)
   const userButtonRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const { state } = useCasting()
@@ -127,6 +129,19 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
           <span className="text-xl font-semibold text-white tracking-tight">Tools</span>
           <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-white text-xs font-semibold uppercase tracking-wide">Beta</span>
         </div>
+
+        {/* Center - Join Feedback Community Button */}
+        <button
+          onClick={() => setIsFeedbackUserModalOpen(true)}
+          className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white hover:bg-white/20 hover:border-emerald-500/40 transition-all duration-200"
+          title="Join our feedback community"
+          aria-label="Sign up as feedback user"
+        >
+          <UserPlus className="w-4 h-4 text-emerald-400" />
+          <span className="text-sm font-medium font-sans hidden sm:inline">Join Feedback Community</span>
+          <span className="text-sm font-medium font-sans sm:hidden">Join</span>
+        </button>
+
         <div className="flex items-center gap-2">
           {/* Internal-only Usage & Cost button. Visibility-only gate; the
               /api/usage handler enforces the real access control. */}
@@ -327,7 +342,18 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
 
       {/* Feedback Modal */}
       {isFeedbackModalOpen && (
-        <FeedbackModal onClose={() => setIsFeedbackModalOpen(false)} />
+        <FeedbackModal 
+          onClose={() => setIsFeedbackModalOpen(false)} 
+          onShowFeedbackUserSignup={() => {
+            setIsFeedbackModalOpen(false)
+            setIsFeedbackUserModalOpen(true)
+          }}
+        />
+      )}
+
+      {/* Feedback User Sign-up Modal */}
+      {isFeedbackUserModalOpen && (
+        <FeedbackUserModal onClose={() => setIsFeedbackUserModalOpen(false)} />
       )}
     </div>
   )

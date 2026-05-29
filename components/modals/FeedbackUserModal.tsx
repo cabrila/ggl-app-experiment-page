@@ -112,7 +112,7 @@ export default function FeedbackUserModal({ onClose }: FeedbackUserModalProps) {
             {/* Description */}
             <div className="px-4 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
               <p className="text-sm text-emerald-200/80 font-sans">
-                Help us build better tools! Sign up to receive occasional emails about feedback opportunities, user interviews, and online workshops.
+                We&apos;d love your input! You may receive occasional emails about feedback sessions and workshops. Unsubscribe anytime — completely optional.
               </p>
             </div>
 

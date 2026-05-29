@@ -1,10 +1,11 @@
 "use client"
 
 import { useCasting } from "@/components/casting/CastingContext"
-import { Bell, Folder, FileText, Users, Settings } from "lucide-react"
+import { Bell, Folder, FileText, Users, Settings, UserPlus } from "lucide-react"
 import { openModal } from "@/components/modals/ModalManager"
 import UserMenu from "./UserMenu"
 import { useState, useRef } from "react"
+import FeedbackUserModal from "@/components/modals/FeedbackUserModal"
 
 export default function TopMenuBar() {
   const { state } = useCasting()
@@ -12,6 +13,7 @@ export default function TopMenuBar() {
   const unreadNotifications = state.notifications.filter((n) => !n.read).length
 
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [isFeedbackUserModalOpen, setIsFeedbackUserModalOpen] = useState(false)
   const userAvatarRef = useRef<HTMLDivElement>(null)
 
   return (
@@ -24,6 +26,17 @@ export default function TopMenuBar() {
             <span className="text-xl font-semibold text-slate-700 tracking-tight">Tools</span>
             <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-white text-xs font-semibold uppercase tracking-wide">Beta</span>
           </a>
+
+          {/* Join Feedback Community Button */}
+          <button
+            onClick={() => setIsFeedbackUserModalOpen(true)}
+            className="flex items-center space-x-2 px-4 py-2.5 text-sm font-medium text-slate-700 hover:text-emerald-600 bg-white/60 hover:bg-white rounded-xl transition-all duration-200 shadow-sm hover:shadow-md border border-slate-200/50 backdrop-blur-sm group"
+            title="Join our feedback community"
+            aria-label="Sign up as feedback user"
+          >
+            <UserPlus className="w-4 h-4 text-emerald-500 group-hover:text-emerald-600 transition-colors" />
+            <span className="hidden lg:inline">Join Feedback Community</span>
+          </button>
 
           {/* Center Menu */}
           <div className="flex items-center space-x-2">
@@ -94,6 +107,11 @@ export default function TopMenuBar() {
           </div>
         </div>
       </div>
+
+      {/* Feedback User Sign-up Modal */}
+      {isFeedbackUserModalOpen && (
+        <FeedbackUserModal onClose={() => setIsFeedbackUserModalOpen(false)} />
+      )}
     </header>
   )
 }

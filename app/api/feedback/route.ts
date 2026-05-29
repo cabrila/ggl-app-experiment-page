@@ -27,7 +27,7 @@ ${screenshotUrl ? `<br><br><strong>Screenshot:</strong><br><img src="${screensho
     `.trim()
 
     const msg = {
-      to: "support@gogreenlight.ai",
+      to: "contact@gogreenlight.ai",
       from: process.env.SENDGRID_FROM_EMAIL || "noreply@gogreenlight.ai",
       subject: `GoGreenlight Feedback${heading ? `: ${heading}` : ""}`,
       html: emailContent,

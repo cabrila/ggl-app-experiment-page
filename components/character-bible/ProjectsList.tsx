@@ -1,19 +1,21 @@
 "use client"
 
 import { useState } from "react"
-import { FileText, Users, Calendar, Plus, Pencil, Trash2 } from "lucide-react"
+import { FileText, Users, Calendar, Plus, Pencil, Trash2, Share2 } from "lucide-react"
 import { useCharacterBible } from "./CharacterBibleContext"
 import { CharacterBible } from "@/types/character-bible"
 import DeleteConfirmationModal from "@/components/ui/DeleteConfirmationModal"
 import EditProjectWithThumbnailModal from "@/components/ui/EditProjectWithThumbnailModal"
 import { trackListCreated, trackDelete } from "@/lib/analytics"
 import { Badge } from "@/components/ui/badge"
+import ShareModal from "@/components/modals/ShareModal"
 
 export default function ProjectsList() {
   const { bibles, setView, setCurrentBible, deleteBible, updateBible } = useCharacterBible()
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<CharacterBible | null>(null)
   const [editTarget, setEditTarget] = useState<CharacterBible | null>(null)
+  const [shareTarget, setShareTarget] = useState<CharacterBible | null>(null)
 
   const handleOpenBible = (bible: CharacterBible) => {
     setCurrentBible(bible)
@@ -33,6 +35,11 @@ export default function ProjectsList() {
   const handleEdit = (e: React.MouseEvent, bible: CharacterBible) => {
     e.stopPropagation()
     setEditTarget(bible)
+  }
+
+  const handleShare = (e: React.MouseEvent, bible: CharacterBible) => {
+    e.stopPropagation()
+    setShareTarget(bible)
   }
 
   const handleConfirmDelete = () => {
@@ -108,6 +115,13 @@ export default function ProjectsList() {
               {/* Action buttons on hover */}
               {hoveredId === bible.id && (
                 <div className="absolute top-3 right-3 flex items-center gap-1">
+                  <button
+                    onClick={(e) => handleShare(e, bible)}
+                    className="p-2 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 transition-colors"
+                    title="Share"
+                  >
+                    <Share2 className="w-4 h-4 text-indigo-400" />
+                  </button>
                   <button
                     onClick={(e) => handleEdit(e, bible)}
                     className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
@@ -185,6 +199,16 @@ export default function ProjectsList() {
         label="Character Bible Name"
         accentColor="sky"
       />
+
+      {/* Share Modal */}
+      {shareTarget && (
+        <ShareModal
+          onClose={() => setShareTarget(null)}
+          toolType="character-bible"
+          projectName={shareTarget.name}
+          data={shareTarget.characters}
+        />
+      )}
       </div>
     </div>
   )

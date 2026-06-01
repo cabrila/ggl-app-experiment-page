@@ -294,50 +294,39 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
       </main>
 
       {/* Bottom tagline */}
-      <footer className="py-8 px-6 shrink-0 border-t border-white/10">
-        <div className="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-start gap-8">
+      <footer className="py-3 px-6 shrink-0 border-t border-white/10">
+        <div className="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
           {/* Left side - CTA */}
           <div className="text-center md:text-left">
             <a 
               href="https://www.gogreenlight.ai/" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-white font-semibold rounded-lg transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-semibold rounded-lg transition-colors"
             >
               Try GoGreenlight Casting Platform
               <ArrowRight className="w-4 h-4" />
             </a>
-            <p className="text-sm text-white/50 mt-3">
-              No credit card needed — your feedback is welcome in this Beta.
-            </p>
           </div>
 
-          {/* Right side - Legal Links */}
-          <div>
-            <h4 className="text-sm font-semibold text-white mb-2">Legal</h4>
-            <ul className="space-y-1">
-              <li>
-                <a href="https://www.gogreenlight.ai/legalstack" target="_blank" rel="noopener noreferrer" className="text-sm text-white/50 hover:text-white/80 transition-colors">
-                  Legal Stack
-                </a>
-              </li>
-              <li>
-                <a href="https://www.gogreenlight.ai/privacypolicy" target="_blank" rel="noopener noreferrer" className="text-sm text-white/50 hover:text-white/80 transition-colors">
-                  Privacy Policy
-                </a>
-              </li>
-              <li>
-                <a href="https://www.gogreenlight.ai/terms" target="_blank" rel="noopener noreferrer" className="text-sm text-white/50 hover:text-white/80 transition-colors">
-                  Terms
-                </a>
-              </li>
-            </ul>
+          {/* Center - Legal Links */}
+          <div className="flex items-center gap-4">
+            <a href="https://www.gogreenlight.ai/legalstack" target="_blank" rel="noopener noreferrer" className="text-xs text-white/50 hover:text-white/80 transition-colors">
+              Legal Stack
+            </a>
+            <a href="https://www.gogreenlight.ai/privacypolicy" target="_blank" rel="noopener noreferrer" className="text-xs text-white/50 hover:text-white/80 transition-colors">
+              Privacy Policy
+            </a>
+            <a href="https://www.gogreenlight.ai/terms" target="_blank" rel="noopener noreferrer" className="text-xs text-white/50 hover:text-white/80 transition-colors">
+              Terms
+            </a>
           </div>
+
+          {/* Right side - Copyright */}
+          <p className="text-[11px] text-white/20 tracking-wide">
+            © 2026 GoGreenlight
+          </p>
         </div>
-
-        <p className="text-[11px] text-white/20 tracking-wide mt-8 text-center">
-          © 2026 GoGreenlight. All rights reserved.
-        </p>
       </footer>
 
       {/* Feedback Modal */}

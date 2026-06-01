@@ -1,19 +1,21 @@
 "use client"
 
 import { useState } from "react"
-import { Film, Calendar, Plus, Pencil, Trash2 } from "lucide-react"
+import { Film, Calendar, Plus, Pencil, Trash2, Share2 } from "lucide-react"
 import { useSceneList } from "./SceneListContext"
 import { SceneProject } from "@/types/scene-list"
 import DeleteConfirmationModal from "@/components/ui/DeleteConfirmationModal"
 import EditProjectWithThumbnailModal from "@/components/ui/EditProjectWithThumbnailModal"
 import { trackListCreated, trackDelete } from "@/lib/analytics"
 import { Badge } from "@/components/ui/badge"
+import ShareModal from "@/components/modals/ShareModal"
 
 export default function SceneProjectsList() {
   const { projects, setView, setCurrentProject, deleteProject, updateProject } = useSceneList()
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<SceneProject | null>(null)
   const [editTarget, setEditTarget] = useState<SceneProject | null>(null)
+  const [shareTarget, setShareTarget] = useState<SceneProject | null>(null)
 
   const handleProjectClick = (projectId: string) => {
     const project = projects.find((p) => p.id === projectId)
@@ -31,6 +33,11 @@ export default function SceneProjectsList() {
   const handleEdit = (e: React.MouseEvent, project: SceneProject) => {
     e.stopPropagation()
     setEditTarget(project)
+  }
+
+  const handleShare = (e: React.MouseEvent, project: SceneProject) => {
+    e.stopPropagation()
+    setShareTarget(project)
   }
 
   const handleConfirmDelete = () => {
@@ -82,6 +89,13 @@ export default function SceneProjectsList() {
               >
                 {hoveredId === project.id && (
                   <div className="absolute top-3 right-3 flex items-center gap-1">
+                    <button
+                      onClick={(e) => handleShare(e, project)}
+                      className="p-2 bg-indigo-500/20 hover:bg-indigo-500/30 rounded-lg text-indigo-400 hover:text-indigo-300 transition-colors"
+                      title="Share"
+                    >
+                      <Share2 className="w-4 h-4" />
+                    </button>
                     <button
                       onClick={(e) => handleEdit(e, project)}
                       className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
@@ -159,6 +173,16 @@ export default function SceneProjectsList() {
           label="Scene Breakdown Name"
           accentColor="teal"
         />
+
+        {/* Share Modal */}
+        {shareTarget && (
+          <ShareModal
+            onClose={() => setShareTarget(null)}
+            toolType="scene-list"
+            projectName={shareTarget.name}
+            data={shareTarget.scenes}
+          />
+        )}
       </div>
     </div>
   )

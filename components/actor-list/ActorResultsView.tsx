@@ -1,17 +1,19 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { ArrowLeft, Plus, FileJson, Download, Trash2, FileSpreadsheet } from "lucide-react"
+import { ArrowLeft, Plus, FileJson, Download, Trash2, FileSpreadsheet, Share2 } from "lucide-react"
 import { useActorList } from "./ActorListContext"
 import ActorCard from "./ActorCard"
 import { Actor } from "@/types/actor-list"
 import { exportActorsAsJSON, exportActorsAsPDF, exportActorsAsExcel } from "@/lib/actor-export"
 import SearchBar from "@/components/ui/SearchBar"
 import { trackAddItem, trackExport, trackDelete } from "@/lib/analytics"
+import ShareModal from "@/components/modals/ShareModal"
 
 export default function ActorResultsView() {
   const { currentProject, goBack, addActor, updateActor, deleteActor, deleteProject } = useActorList()
   const [searchQuery, setSearchQuery] = useState("")
+  const [showShareModal, setShowShareModal] = useState(false)
   const [newItemId, setNewItemId] = useState<string | null>(null)
   const gridRef = useRef<HTMLDivElement>(null)
 
@@ -139,6 +141,14 @@ export default function ActorResultsView() {
               <span className="font-sans text-sm hidden sm:inline">PDF</span>
             </button>
             <button
+              onClick={() => setShowShareModal(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-lg text-white transition-colors"
+              title="Share via Email"
+            >
+              <Share2 className="w-4 h-4" />
+              <span className="font-sans text-sm hidden sm:inline">Share</span>
+            </button>
+            <button
               onClick={handleDeleteList}
               className="flex items-center gap-2 px-3 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded-lg text-red-400 transition-colors"
               title="Delete List"
@@ -181,6 +191,16 @@ export default function ActorResultsView() {
           </div>
         )}
       </div>
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <ShareModal
+          onClose={() => setShowShareModal(false)}
+          toolType="actor-list"
+          projectName={currentProject.name}
+          data={currentProject.actors}
+        />
+      )}
     </div>
   )
 }

@@ -9,6 +9,7 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY || "")
 type ToolType = "character-bible" | "location-overview" | "actor-list" | "prop-list" | "scene-list"
 
 interface ShareRequest {
+  from: string
   to: string
   subject: string
   message: string
@@ -205,10 +206,10 @@ function generateExcel(toolType: ToolType, data: unknown, projectName: string): 
 export async function POST(request: NextRequest) {
   try {
     const body: ShareRequest = await request.json()
-    const { to, subject, message, formats, toolType, projectName, data } = body
+    const { from, to, subject, message, formats, toolType, projectName, data } = body
 
     // Validation
-    if (!to || !subject || !message) {
+    if (!from || !to || !subject || !message) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
@@ -264,10 +265,14 @@ export async function POST(request: NextRequest) {
       </div>
     `.trim()
 
-    // Send email with BCC to GoGreenlight
+    // Send email with reply-to set to sender's email and BCC to GoGreenlight
     const msg = {
       to,
-      from: process.env.SENDGRID_FROM_EMAIL || "noreply@gogreenlight.ai",
+      from: {
+        email: process.env.SENDGRID_FROM_EMAIL || "noreply@gogreenlight.ai",
+        name: from, // Show sender's email as display name
+      },
+      replyTo: from, // When recipient clicks reply, it goes to the actual sender
       bcc: "contact@gogreenlight.ai",
       subject: `[Shared] ${subject}`,
       html: htmlMessage,

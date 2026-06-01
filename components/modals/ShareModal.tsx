@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { X, Send, Mail, FileText, FileJson, FileSpreadsheet, Check, Loader2 } from "lucide-react"
+import { getCurrentUser } from "@/lib/auth"
 
 export type ShareableToolType = 
   | "character-bible" 
@@ -28,6 +29,7 @@ const toolLabels: Record<ShareableToolType, string> = {
 export default function ShareModal({ onClose, toolType, projectName, data }: ShareModalProps) {
   const toolLabel = toolLabels[toolType]
   
+  const [fromEmail, setFromEmail] = useState("")
   const [email, setEmail] = useState("")
   const [subject, setSubject] = useState(`${toolLabel}: ${projectName}`)
   const [message, setMessage] = useState(
@@ -51,9 +53,18 @@ Best regards`
   const [isSuccess, setIsSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Pre-fill from email with logged-in user's email
+  useEffect(() => {
+    const user = getCurrentUser()
+    if (user?.email) {
+      setFromEmail(user.email)
+    }
+  }, [])
+
   const hasSelectedFormat = formats.pdf || formats.json || formats.excel
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-  const canSubmit = isValidEmail && hasSelectedFormat && !isSubmitting
+  const isValidFromEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fromEmail)
+  const canSubmit = isValidEmail && isValidFromEmail && hasSelectedFormat && !isSubmitting
 
   const toggleFormat = (format: "pdf" | "json" | "excel") => {
     setFormats((prev) => ({ ...prev, [format]: !prev[format] }))
@@ -71,6 +82,7 @@ Best regards`
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          from: fromEmail,
           to: email,
           subject,
           message,
@@ -136,6 +148,22 @@ Best regards`
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            {/* From Field */}
+            <div>
+              <label htmlFor="share-from" className="block text-sm font-medium text-white/70 mb-1.5 font-sans">
+                From
+              </label>
+              <input
+                id="share-from"
+                type="email"
+                value={fromEmail}
+                onChange={(e) => setFromEmail(e.target.value)}
+                placeholder="your@email.com"
+                className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all font-sans"
+                required
+              />
+            </div>
+
             {/* To Field */}
             <div>
               <label htmlFor="share-email" className="block text-sm font-medium text-white/70 mb-1.5 font-sans">

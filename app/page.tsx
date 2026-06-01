@@ -82,6 +82,7 @@ export default function App() {
   }
 
   const handleDemoAccess = () => {
+    console.log("[v0] handleDemoAccess called, setting bypassAuth=true and view=splash")
     setBypassAuth(true)
     setView("splash")
   }

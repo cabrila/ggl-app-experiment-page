@@ -294,8 +294,8 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
       </main>
 
       {/* Bottom tagline */}
-      <footer className="py-8 px-6 shrink-0 border-t border-white/10">
-        <div className="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-start gap-8">
+      <footer className="py-4 px-6 shrink-0 border-t border-white/10">
+        <div className="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-start gap-4">
           {/* Left side - CTA */}
           <div className="text-center md:text-left">
             <a 
@@ -335,7 +335,7 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
           </div>
         </div>
 
-        <p className="text-[11px] text-white/20 tracking-wide mt-8 text-center">
+        <p className="text-[11px] text-white/20 tracking-wide mt-4 text-center">
           © 2026 GoGreenlight. All rights reserved.
         </p>
       </footer>

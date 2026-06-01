@@ -1,19 +1,21 @@
 "use client"
 
 import { useState } from "react"
-import { MapPin, Calendar, Plus, Pencil, Trash2 } from "lucide-react"
+import { MapPin, Calendar, Plus, Pencil, Trash2, Share2 } from "lucide-react"
 import { useLocationScouting } from "./LocationScoutingContext"
 import { LocationProject } from "@/types/location-scouting"
 import DeleteConfirmationModal from "@/components/ui/DeleteConfirmationModal"
 import EditProjectWithThumbnailModal from "@/components/ui/EditProjectWithThumbnailModal"
 import { trackListCreated, trackDelete } from "@/lib/analytics"
 import { Badge } from "@/components/ui/badge"
+import ShareModal from "@/components/modals/ShareModal"
 
 export default function LocationProjectsList() {
   const { projects, setView, setCurrentProject, deleteProject, updateProject } = useLocationScouting()
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<LocationProject | null>(null)
   const [editTarget, setEditTarget] = useState<LocationProject | null>(null)
+  const [shareTarget, setShareTarget] = useState<LocationProject | null>(null)
 
   const handleProjectClick = (projectId: string) => {
     const project = projects.find((p) => p.id === projectId)
@@ -31,6 +33,11 @@ export default function LocationProjectsList() {
   const handleEditProject = (e: React.MouseEvent, project: LocationProject) => {
     e.stopPropagation()
     setEditTarget(project)
+  }
+
+  const handleShareProject = (e: React.MouseEvent, project: LocationProject) => {
+    e.stopPropagation()
+    setShareTarget(project)
   }
 
   const handleConfirmDelete = () => {
@@ -92,6 +99,13 @@ export default function LocationProjectsList() {
               {/* Hover Actions */}
               {hoveredId === project.id && (
                 <div className="absolute top-3 right-3 flex items-center gap-1">
+                  <button
+                    onClick={(e) => handleShareProject(e, project)}
+                    className="p-2 bg-indigo-500/20 hover:bg-indigo-500/30 rounded-lg text-indigo-400 hover:text-indigo-300 transition-colors"
+                    title="Share"
+                  >
+                    <Share2 className="w-4 h-4" />
+                  </button>
                   <button
                     onClick={(e) => handleEditProject(e, project)}
                     className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
@@ -176,6 +190,16 @@ export default function LocationProjectsList() {
         label="Location List Name"
         accentColor="amber"
       />
+
+      {/* Share Modal */}
+      {shareTarget && (
+        <ShareModal
+          onClose={() => setShareTarget(null)}
+          toolType="location-overview"
+          projectName={shareTarget.name}
+          data={shareTarget.locations}
+        />
+      )}
       </div>
     </div>
   )

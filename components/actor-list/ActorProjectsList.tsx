@@ -1,19 +1,21 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Users, Calendar, Pencil, Trash2 } from "lucide-react"
+import { Plus, Users, Calendar, Pencil, Trash2, Share2 } from "lucide-react"
 import { useActorList } from "./ActorListContext"
 import { ActorListProject } from "@/types/actor-list"
 import DeleteConfirmationModal from "@/components/ui/DeleteConfirmationModal"
 import EditProjectWithThumbnailModal from "@/components/ui/EditProjectWithThumbnailModal"
 import { trackListCreated, trackDelete } from "@/lib/analytics"
 import { Badge } from "@/components/ui/badge"
+import ShareModal from "@/components/modals/ShareModal"
 
 export default function ActorProjectsList() {
   const { projects, selectProject, deleteProject, updateProject, setView } = useActorList()
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ActorListProject | null>(null)
   const [editTarget, setEditTarget] = useState<ActorListProject | null>(null)
+  const [shareTarget, setShareTarget] = useState<ActorListProject | null>(null)
 
   const handleDeleteProject = (e: React.MouseEvent, project: ActorListProject) => {
     e.stopPropagation()
@@ -23,6 +25,11 @@ export default function ActorProjectsList() {
   const handleEditProject = (e: React.MouseEvent, project: ActorListProject) => {
     e.stopPropagation()
     setEditTarget(project)
+  }
+
+  const handleShareProject = (e: React.MouseEvent, project: ActorListProject) => {
+    e.stopPropagation()
+    setShareTarget(project)
   }
 
   const handleConfirmDelete = () => {
@@ -92,6 +99,13 @@ export default function ActorProjectsList() {
               {/* Hover Actions */}
               {hoveredId === project.id && (
                 <div className="absolute top-3 right-3 flex items-center gap-1 z-10">
+                  <button
+                    onClick={(e) => handleShareProject(e, project)}
+                    className="p-2 bg-indigo-500/20 hover:bg-indigo-500/30 rounded-lg text-indigo-400 hover:text-indigo-300 transition-colors"
+                    title="Share"
+                  >
+                    <Share2 className="w-4 h-4" />
+                  </button>
                   <button
                     onClick={(e) => handleEditProject(e, project)}
                     className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
@@ -174,6 +188,16 @@ export default function ActorProjectsList() {
         label="Actor List Name"
         accentColor="emerald"
       />
+
+      {/* Share Modal */}
+      {shareTarget && (
+        <ShareModal
+          onClose={() => setShareTarget(null)}
+          toolType="actor-list"
+          projectName={shareTarget.name}
+          data={shareTarget.actors}
+        />
+      )}
       </div>
     </div>
   )

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { PublicCastingProvider } from "./PublicCastingContext"
+import { ActorListProvider } from "@/components/actor-list/ActorListContext"
 import CastingCallsList from "./CastingCallsList"
 import CastingCallSetup from "./CastingCallSetup"
 import SubmissionsList from "./SubmissionsList"
@@ -80,7 +81,9 @@ function PublicCastingContent({ onBack, onSignOut, activeView, onNavigate }: Pub
 export default function PublicCastingScreen({ onBack, onSignOut, activeView, onNavigate }: PublicCastingScreenProps) {
   return (
     <PublicCastingProvider>
-      <PublicCastingContent onBack={onBack} onSignOut={onSignOut} activeView={activeView} onNavigate={onNavigate} />
+      <ActorListProvider>
+        <PublicCastingContent onBack={onBack} onSignOut={onSignOut} activeView={activeView} onNavigate={onNavigate} />
+      </ActorListProvider>
     </PublicCastingProvider>
   )
 }

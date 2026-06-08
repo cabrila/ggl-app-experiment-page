@@ -4,10 +4,13 @@ export interface CustomField {
   value: string
 }
 
+export type ActorGender = "Male" | "Female" | "Other" | "Not-specified"
+
 export interface Actor {
   id: string
   name: string
   age: number
+  gender?: ActorGender
   playingAge: string
   phone: string
   email: string
@@ -25,4 +28,15 @@ export interface ActorListProject {
   updatedAt: Date
   thumbnailUrl?: string
   isDemo?: boolean
+}
+
+/**
+ * An actor flattened across every list, annotated with which lists it
+ * belongs to. Powers the aggregated "All Actors" view.
+ */
+export interface AggregatedActor extends Actor {
+  sourceListIds: string[]
+  sourceListNames: string[]
+  isDuplicate: boolean
+  duplicateDismissed: boolean
 }

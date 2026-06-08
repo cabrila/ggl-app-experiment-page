@@ -34,15 +34,14 @@ const featureButtons = [
     iconBg: "bg-sky-500/20",
     iconColor: "text-sky-400",
   },
-  // Hidden for now — restore by uncommenting when Public Casting is ready.
-  // {
-  //   id: "public-casting",
-  //   title: "Public Casting",
-  //   description: "Share a simple casting form for actors to submit themselves for roles in your project.",
-  //   icon: Megaphone,
-  //   iconBg: "bg-violet-500/20",
-  //   iconColor: "text-violet-400",
-  // },
+  {
+    id: "public-casting",
+    title: "Public Casting",
+    description: "Share a simple casting form for actors to submit themselves for roles in your project.",
+    icon: Megaphone,
+    iconBg: "bg-violet-500/20",
+    iconColor: "text-violet-400",
+  },
   {
     id: "prop-list",
     title: "Prop List",

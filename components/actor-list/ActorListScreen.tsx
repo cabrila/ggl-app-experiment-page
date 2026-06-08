@@ -4,6 +4,7 @@ import { ActorListProvider, useActorList } from "./ActorListContext"
 import ActorProjectsList from "./ActorProjectsList"
 import ActorUploadView from "./ActorUploadView"
 import ActorResultsView from "./ActorResultsView"
+import AllActorsView from "./AllActorsView"
 import FeatureLayout from "@/components/layout/FeatureLayout"
 
 type ActiveView = "character-bible" | "location-overview" | "actor-database" | "public-casting" | "prop-list" | "scene-list"
@@ -24,6 +25,7 @@ function ActorListContent({ onBack, onSignOut, activeView, onNavigate }: ActorLi
         {view === "list" && <ActorProjectsList />}
         {view === "upload" && <ActorUploadView />}
         {view === "results" && <ActorResultsView />}
+        {view === "all-actors" && <AllActorsView />}
       </div>
     </FeatureLayout>
   )

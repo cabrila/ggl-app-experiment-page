@@ -261,8 +261,10 @@ export default function LoginScreen({ onDemoAccess, onSignedIn }: LoginScreenPro
 
       {/* Welcome Text */}
       <div className="text-center mb-8">
-        <h1 className="text-4xl md:text-5xl font-bold text-white mb-3 font-sans">
-          Welcome!
+        <h1 className="text-4xl md:text-5xl font-bold text-white mb-3 font-sans text-balance leading-tight">
+          Every creative
+          <br />
+          asset. <span className="text-emerald-300">One platform.</span>
         </h1>
         <p className="text-white/70 text-base md:text-lg font-sans max-w-md">
           A creative tool for film and television creators to organize and manage their creative assets.

@@ -27,6 +27,7 @@ interface EditingState {
 function PublicCastingContent({ onBack, onSignOut, activeView, onNavigate }: PublicCastingScreenProps) {
   const [view, setView] = useState<View>("list")
   const [editingState, setEditingState] = useState<EditingState | null>(null)
+  const [submissionsFormFilter, setSubmissionsFormFilter] = useState<string | undefined>(undefined)
 
   const handleNewCastingCall = () => {
     setEditingState(null)
@@ -43,13 +44,18 @@ function PublicCastingContent({ onBack, onSignOut, activeView, onNavigate }: Pub
     setView("list")
   }
 
+  const handleViewSubmissions = (formFilter?: string) => {
+    setSubmissionsFormFilter(formFilter)
+    setView("submissions")
+  }
+
   const renderContent = () => {
     switch (view) {
       case "list":
         return (
           <CastingCallsList
             onNewCastingCall={handleNewCastingCall}
-            onViewSubmissions={() => setView("submissions")}
+            onViewSubmissions={handleViewSubmissions}
             onEditCastingCall={handleEditCastingCall}
           />
         )
@@ -63,7 +69,7 @@ function PublicCastingContent({ onBack, onSignOut, activeView, onNavigate }: Pub
           />
         )
       case "submissions":
-        return <SubmissionsList onBack={() => setView("list")} />
+        return <SubmissionsList onBack={() => setView("list")} initialFormFilter={submissionsFormFilter} />
       default:
         return null
     }

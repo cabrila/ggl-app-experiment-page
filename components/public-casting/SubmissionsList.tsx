@@ -40,12 +40,13 @@ function submissionToActor(submission: CastingSubmission): Actor {
 
 interface SubmissionsListProps {
   onBack: () => void
+  initialFormFilter?: string
 }
 
 type SortOption = "newest" | "oldest" | "alphabetical" | "form" | "grade-high" | "grade-low"
 type GradeFilter = "all" | "graded" | "ungraded" | "high" | "medium" | "low"
 
-export default function SubmissionsList({ onBack }: SubmissionsListProps) {
+export default function SubmissionsList({ onBack, initialFormFilter }: SubmissionsListProps) {
   const { state, markSubmissionsAsRead, updateSubmission, deleteSubmission } = usePublicCasting()
   const actorCtx = useActorListSafe()
   const actorProjects = actorCtx?.projects ?? []
@@ -53,7 +54,7 @@ export default function SubmissionsList({ onBack }: SubmissionsListProps) {
   const updateActorProject = actorCtx?.updateProject
   const [searchQuery, setSearchQuery] = useState("")
   const [sortBy, setSortBy] = useState<SortOption>("newest")
-  const [filterByForm, setFilterByForm] = useState<string>("all")
+  const [filterByForm, setFilterByForm] = useState<string>(initialFormFilter ?? "all")
   const [filterByGrade, setFilterByGrade] = useState<GradeFilter>("all")
   const [showSortDropdown, setShowSortDropdown] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>("full")

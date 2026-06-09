@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ArrowLeft, Plus, Trash2, GripVertical, Copy, Check, ExternalLink, Eye, X } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, GripVertical, Copy, Check, ExternalLink, Eye, X, ChevronDown } from "lucide-react"
 import { usePublicCasting } from "./PublicCastingContext"
 import { CastingCallField, CastingCall, PublicCastingProject } from "@/types/public-casting"
 import CastingCallPreviewModal from "./CastingCallPreviewModal"
@@ -49,6 +49,7 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
   const [showPreview, setShowPreview] = useState(false)
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
+  const [showTypePicker, setShowTypePicker] = useState(false)
 
   // Create a preview casting call object for the modal
   const previewCastingCall: CastingCall = {
@@ -62,15 +63,16 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
     shareableLink: createdLink || "https://gogreenlight.ai/cast/preview",
   }
 
-  const addField = () => {
+  const addField = (type: CastingCallField["type"]) => {
     const newField: CastingCallField = {
       id: `f${Date.now()}`,
       label: "New Field",
-      type: "text",
+      type,
       required: false,
       placeholder: "",
     }
     setFields([...fields, newField])
+    setShowTypePicker(false)
   }
 
   const updateField = (id: string, updates: Partial<CastingCallField>) => {
@@ -327,13 +329,40 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
           <div className="bg-[#1a2e23] border border-white/10 rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-white font-sans">Form Fields</h2>
-              <button
-                onClick={addField}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 rounded-lg text-sm transition-colors font-sans"
-              >
-                <Plus className="w-4 h-4" />
-                Add Field
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => setShowTypePicker((v) => !v)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 rounded-lg text-sm transition-colors font-sans"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Field
+                  <ChevronDown className="w-3.5 h-3.5" />
+                </button>
+
+                {showTypePicker && (
+                  <>
+                    {/* Click-away overlay */}
+                    <div
+                      className="fixed inset-0 z-10"
+                      onClick={() => setShowTypePicker(false)}
+                    />
+                    <div className="absolute top-full right-0 mt-1 w-44 bg-[#13261c] border border-white/10 rounded-lg overflow-hidden shadow-xl z-20 py-1">
+                      <p className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-white/40 font-sans">
+                        Select field type
+                      </p>
+                      {fieldTypeOptions.map((opt) => (
+                        <button
+                          key={opt.value}
+                          onClick={() => addField(opt.value as CastingCallField["type"])}
+                          className="w-full px-3 py-2 text-left text-sm text-white/80 hover:bg-violet-500/20 hover:text-violet-200 transition-colors font-sans"
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
 
             <div className="space-y-3">
@@ -369,17 +398,12 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
                       className="px-3 py-2 bg-[#1a2e23] border border-white/10 rounded-lg text-white text-sm placeholder-white/30 focus:border-violet-500/50 focus:outline-none font-sans"
                     />
                     
-                    <select
-                      value={field.type}
-                      onChange={(e) => updateField(field.id, { type: e.target.value as CastingCallField["type"] })}
-                      className="px-3 py-2 bg-[#1a2e23] border border-white/10 rounded-lg text-white text-sm focus:border-violet-500/50 focus:outline-none font-sans"
+                    <div
+                      className="flex items-center px-3 py-2 bg-[#1a2e23] border border-white/10 rounded-lg text-white/60 text-sm font-sans"
+                      title="Field type cannot be changed after the field is added"
                     >
-                      {fieldTypeOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
+                      {fieldTypeOptions.find((opt) => opt.value === field.type)?.label || field.type}
+                    </div>
 
                     <input
                       type="text"

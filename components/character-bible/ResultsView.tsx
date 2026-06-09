@@ -127,7 +127,7 @@ export default function ResultsView() {
             className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm font-sans">Back to Projects</span>
+            <span className="text-sm font-sans">Back to My Characters</span>
           </button>
         </div>
 

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { ArrowLeft, Plus, FileJson, Download, Trash2, FileSpreadsheet, Share2, Phone, Mail } from "lucide-react"
+import { ArrowLeft, Plus, FileJson, Download, Trash2, FileSpreadsheet, Share2, Phone, Mail, ChevronDown } from "lucide-react"
 import { useActorList } from "./ActorListContext"
 import ActorCard from "./ActorCard"
 import { Actor, ActorGender } from "@/types/actor-list"
@@ -179,16 +179,19 @@ export default function ActorResultsView() {
               placeholder="Search actors..."
             />
           </div>
-          <select
-            value={genderFilter}
-            onChange={(e) => setGenderFilter(e.target.value as "all" | ActorGender)}
-            className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white/80 focus:border-sky-500/50 focus:outline-none font-sans"
-          >
-            <option value="all">All genders</option>
-            {GENDER_GROUPS.map((g) => (
-              <option key={g} value={g}>{g}</option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={genderFilter}
+              onChange={(e) => setGenderFilter(e.target.value as "all" | ActorGender)}
+              className="appearance-none pl-4 pr-10 py-2.5 bg-[#13261c] border border-white/10 rounded-xl text-sm text-white focus:border-emerald-500/50 focus:outline-none font-sans min-w-[150px] cursor-pointer"
+            >
+              <option value="all">All genders</option>
+              {GENDER_GROUPS.map((g) => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+          </div>
         </div>
       </div>
 

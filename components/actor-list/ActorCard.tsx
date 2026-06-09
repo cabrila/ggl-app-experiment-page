@@ -279,7 +279,7 @@ export default function ActorCard({ actor, onUpdate, onDelete }: ActorCardProps)
 
   // View Mode
   return (
-    <div className="group relative p-5 rounded-xl border border-white/10 bg-[#1a2e23] hover:border-white/20 transition-colors">
+    <div className="group relative p-5 rounded-2xl border border-white/10 bg-[#13261c] hover:border-emerald-500/30 transition-colors">
       {/* Hover Actions */}
       <div className="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
@@ -303,7 +303,7 @@ export default function ActorCard({ actor, onUpdate, onDelete }: ActorCardProps)
         <button
           onClick={() => actor.headshotUrl && setShowImageModal(true)}
           className={`w-16 h-16 rounded-full overflow-hidden bg-white/10 shrink-0 transition-all ${
-            actor.headshotUrl ? "cursor-pointer hover:ring-2 hover:ring-emerald-500/50 hover:ring-offset-2 hover:ring-offset-[#1a2e23]" : "cursor-default"
+            actor.headshotUrl ? "cursor-pointer hover:ring-2 hover:ring-emerald-500/50 hover:ring-offset-2 hover:ring-offset-[#13261c]" : "cursor-default"
           }`}
           disabled={!actor.headshotUrl}
           title={actor.headshotUrl ? "Click to view full image" : undefined}
@@ -324,17 +324,21 @@ export default function ActorCard({ actor, onUpdate, onDelete }: ActorCardProps)
           <h3 className="text-lg font-bold text-white uppercase tracking-wide font-sans truncate">
             {actor.name}
           </h3>
-          <p className="text-sm font-sans">
-            <span className="text-white/60">AGE</span>{" "}
-            <span className="text-white">{actor.age}</span>{" "}
-            <span className="text-white/60 ml-2">PLAYS</span>{" "}
-            <span className="text-emerald-400">{actor.playingAge}</span>
-          </p>
+          <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#0f1f17] border border-white/10 text-xs font-sans">
+              <span className="text-white/40">Age</span>
+              <span className="text-white">{actor.age}</span>
+            </span>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#0f1f17] border border-white/10 text-xs font-sans">
+              <span className="text-white/40">Plays</span>
+              <span className="text-emerald-300">{actor.playingAge}</span>
+            </span>
+          </div>
         </div>
       </div>
 
       {/* Contact Details */}
-      <div className="p-3 bg-[#0f1f17] rounded-lg mb-4">
+      <div className="p-3 bg-[#0f1f17] rounded-xl border border-white/10 mb-4">
         <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">
           Contact Details
         </p>

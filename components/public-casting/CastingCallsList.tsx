@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { Plus, Megaphone, Calendar, Users, Trash2, Link, Eye, FileEdit, FolderEdit, QrCode } from "lucide-react"
+import { useMemo, useState } from "react"
+import { Plus, Megaphone, Calendar, Users, Trash2, Link, Eye, FileEdit, FolderEdit, QrCode, Search, SlidersHorizontal, ChevronDown, Filter } from "lucide-react"
 import { usePublicCasting } from "./PublicCastingContext"
 import { CastingCall, PublicCastingProject } from "@/types/public-casting"
 import CastingCallPreviewModal from "./CastingCallPreviewModal"
@@ -15,6 +15,9 @@ interface CastingCallsListProps {
   onEditCastingCall: (castingCall: CastingCall, project: PublicCastingProject) => void
 }
 
+type CastingSortOption = "newest" | "oldest" | "alphabetical" | "most-submissions"
+type CastingStatusFilter = "all" | "with-submissions" | "no-submissions"
+
 export default function CastingCallsList({
   onNewCastingCall,
   onViewSubmissions,
@@ -26,6 +29,57 @@ export default function CastingCallsList({
   const [deleteTarget, setDeleteTarget] = useState<PublicCastingProject | null>(null)
   const [editTarget, setEditTarget] = useState<PublicCastingProject | null>(null)
   const [qrCodeCastingCall, setQrCodeCastingCall] = useState<CastingCall | null>(null)
+
+  // Search / sort / filter controls
+  const [searchQuery, setSearchQuery] = useState("")
+  const [sortBy, setSortBy] = useState<CastingSortOption>("newest")
+  const [filterByStatus, setFilterByStatus] = useState<CastingStatusFilter>("all")
+  const [showSortDropdown, setShowSortDropdown] = useState(false)
+
+  const sortOptions: { value: CastingSortOption; label: string }[] = [
+    { value: "newest", label: "Newest First" },
+    { value: "oldest", label: "Oldest First" },
+    { value: "alphabetical", label: "A-Z by Name" },
+    { value: "most-submissions", label: "Most Submissions" },
+  ]
+
+  const visibleProjects = useMemo(() => {
+    let result = [...state.projects]
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim()
+      result = result.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.castingCalls.some((cc) => cc.title.toLowerCase().includes(q))
+      )
+    }
+
+    if (filterByStatus !== "all") {
+      result = result.filter((p) =>
+        filterByStatus === "with-submissions"
+          ? p.submissions.length > 0
+          : p.submissions.length === 0
+      )
+    }
+
+    switch (sortBy) {
+      case "newest":
+        result.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        break
+      case "oldest":
+        result.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+        break
+      case "alphabetical":
+        result.sort((a, b) => a.name.localeCompare(b.name))
+        break
+      case "most-submissions":
+        result.sort((a, b) => b.submissions.length - a.submissions.length)
+        break
+    }
+
+    return result
+  }, [state.projects, searchQuery, filterByStatus, sortBy])
 
   const newCount = getNewSubmissionsCount()
   const totalSubmissions = getTotalSubmissions()
@@ -75,7 +129,7 @@ export default function CastingCallsList({
 
         {/* Submissions Button */}
         <button
-          onClick={onViewSubmissions}
+          onClick={() => onViewSubmissions()}
           className="relative flex items-center gap-2 px-4 py-2.5 bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/30 rounded-lg text-violet-300 transition-colors font-sans"
         >
           <Users className="w-4 h-4" />
@@ -91,6 +145,71 @@ export default function CastingCallsList({
         </button>
       </div>
 
+      {/* Search / Sort / Filter Controls */}
+      {state.projects.length > 0 && (
+        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 mb-6">
+          {/* Search */}
+          <div className="flex-1 min-w-[220px] relative">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search casting calls..."
+              className="w-full pl-10 pr-4 py-2.5 bg-[#13261c] border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-violet-500/50 focus:outline-none font-sans text-sm"
+            />
+          </div>
+
+          {/* Status Filter */}
+          <div className="relative">
+            <select
+              value={filterByStatus}
+              onChange={(e) => setFilterByStatus(e.target.value as CastingStatusFilter)}
+              className="appearance-none pl-10 pr-10 py-2.5 bg-[#13261c] border border-white/10 rounded-xl text-white text-sm focus:border-violet-500/50 focus:outline-none font-sans min-w-[170px] cursor-pointer"
+            >
+              <option value="all">All Casting Calls</option>
+              <option value="with-submissions">With Submissions</option>
+              <option value="no-submissions">No Submissions</option>
+            </select>
+            <Filter className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+          </div>
+
+          {/* Sort Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setShowSortDropdown(!showSortDropdown)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-[#13261c] border border-white/10 rounded-xl text-white text-sm hover:border-white/20 transition-colors font-sans min-w-[170px]"
+            >
+              <SlidersHorizontal className="w-4 h-4 text-white/60" />
+              <span>{sortOptions.find((o) => o.value === sortBy)?.label}</span>
+              <ChevronDown className="w-4 h-4 text-white/40 ml-auto" />
+            </button>
+
+            {showSortDropdown && (
+              <div className="absolute top-full mt-1 right-0 w-full bg-[#13261c] border border-white/10 rounded-xl overflow-hidden shadow-xl z-20">
+                {sortOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => {
+                      setSortBy(option.value)
+                      setShowSortDropdown(false)
+                    }}
+                    className={`w-full px-4 py-2.5 text-left text-sm font-sans transition-colors ${
+                      sortBy === option.value
+                        ? "bg-violet-500/20 text-violet-300"
+                        : "text-white/70 hover:bg-white/5 hover:text-white"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Projects Grid */}
       {state.projects.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -100,9 +219,17 @@ export default function CastingCallsList({
           <h3 className="text-lg font-semibold text-white/70 mb-2 font-sans">No casting calls yet</h3>
           <p className="text-white/40 text-sm font-sans mb-4">Create your first casting call to start receiving submissions.</p>
         </div>
+      ) : visibleProjects.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
+            <Search className="w-8 h-8 text-white/30" />
+          </div>
+          <h3 className="text-lg font-semibold text-white/70 mb-2 font-sans">No casting calls match your filters</h3>
+          <p className="text-white/40 text-sm font-sans mb-4">Try adjusting your search or filter options.</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {state.projects.map((project) => {
+          {visibleProjects.map((project) => {
             const castingCall = project.castingCalls[0]
             const hasCastingCall = !!castingCall
             

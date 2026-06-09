@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react"
 import Image from "next/image"
-import { ArrowLeft, Search, SlidersHorizontal, ChevronDown, FileJson, FileSpreadsheet, Download, ListPlus, Plus, X, Phone, Mail, Star } from "lucide-react"
+import { ArrowLeft, Search, SlidersHorizontal, ChevronDown, FileJson, FileSpreadsheet, Download, ListPlus, Plus, X, Phone, Mail, Star, Filter } from "lucide-react"
 import { usePublicCasting } from "./PublicCastingContext"
 import SubmissionCard from "./SubmissionCard"
 import { CastingSubmission } from "@/types/public-casting"
@@ -57,6 +57,12 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
   const [filterByForm, setFilterByForm] = useState<string>(initialFormFilter ?? "all")
   const [filterByGrade, setFilterByGrade] = useState<GradeFilter>("all")
   const [showSortDropdown, setShowSortDropdown] = useState(false)
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
+  const [ageMin, setAgeMin] = useState("")
+  const [ageMax, setAgeMax] = useState("")
+  const [filterByGender, setFilterByGender] = useState<string>("all")
+  const [filterByLocation, setFilterByLocation] = useState("")
+  const [filterByAvailability, setFilterByAvailability] = useState("")
   const [viewMode, setViewMode] = useState<ViewMode>("full")
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [showAddModal, setShowAddModal] = useState(false)
@@ -123,6 +129,34 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
       }
     }
 
+    // Advanced filters
+    const getAge = (s: CastingSubmission) => parseInt(s.age || "", 10)
+    if (ageMin) {
+      const min = parseInt(ageMin, 10)
+      if (!Number.isNaN(min)) result = result.filter((s) => !Number.isNaN(getAge(s)) && getAge(s) >= min)
+    }
+    if (ageMax) {
+      const max = parseInt(ageMax, 10)
+      if (!Number.isNaN(max)) result = result.filter((s) => !Number.isNaN(getAge(s)) && getAge(s) <= max)
+    }
+    if (filterByGender !== "all") {
+      result = result.filter(
+        (s) => (s.data?.gender || s.data?.Gender || "").toLowerCase() === filterByGender.toLowerCase()
+      )
+    }
+    if (filterByLocation.trim()) {
+      const loc = filterByLocation.toLowerCase().trim()
+      result = result.filter((s) =>
+        (s.data?.location || s.data?.Location || "").toLowerCase().includes(loc)
+      )
+    }
+    if (filterByAvailability.trim()) {
+      const avail = filterByAvailability.toLowerCase().trim()
+      result = result.filter((s) =>
+        (s.data?.availability || s.data?.Availability || "").toLowerCase().includes(avail)
+      )
+    }
+
     // Sort
     switch (sortBy) {
       case "newest":
@@ -146,7 +180,7 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
     }
 
     return result
-  }, [allSubmissions, searchQuery, filterByForm, filterByGrade, sortBy])
+  }, [allSubmissions, searchQuery, filterByForm, filterByGrade, sortBy, ageMin, ageMax, filterByGender, filterByLocation, filterByAvailability])
 
   const handleUpdateSubmission = (submissionId: string, updates: Partial<CastingSubmission>) => {
     updateSubmission(submissionId, updates)
@@ -219,6 +253,23 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
     { value: "medium", label: "Medium (5-7)" },
     { value: "low", label: "Low (1-4)" },
   ]
+
+  const genderOptions = ["Male", "Female", "Other", "Not-specified"]
+
+  const advancedFilterCount =
+    (ageMin ? 1 : 0) +
+    (ageMax ? 1 : 0) +
+    (filterByGender !== "all" ? 1 : 0) +
+    (filterByLocation.trim() ? 1 : 0) +
+    (filterByAvailability.trim() ? 1 : 0)
+
+  const clearAdvancedFilters = () => {
+    setAgeMin("")
+    setAgeMax("")
+    setFilterByGender("all")
+    setFilterByLocation("")
+    setFilterByAvailability("")
+  }
 
   return (
     <div className="h-full overflow-y-auto">
@@ -302,51 +353,75 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
           </div>
 
           {/* Filters Row */}
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
             {/* Search */}
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+            <div className="flex-1 min-w-[220px] relative">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by name, email, or form..."
-                className="w-full pl-10 pr-4 py-2.5 bg-[#1a2e23] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-violet-500/50 focus:outline-none font-sans text-sm"
+                className="w-full pl-10 pr-4 py-2.5 bg-[#13261c] border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-violet-500/50 focus:outline-none font-sans text-sm"
               />
             </div>
 
-            {/* Form Filter */}
-            <select
-              value={filterByForm}
-              onChange={(e) => setFilterByForm(e.target.value)}
-              className="px-4 py-2.5 bg-[#1a2e23] border border-white/10 rounded-lg text-white text-sm focus:border-violet-500/50 focus:outline-none font-sans min-w-[140px]"
+            {/* Filter Toggle */}
+            <button
+              onClick={() => setShowAdvancedFilters((v) => !v)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-sans transition-colors ${
+                showAdvancedFilters || advancedFilterCount > 0
+                  ? "bg-violet-500/20 border-violet-500/40 text-violet-200"
+                  : "bg-[#13261c] border-white/10 text-white hover:border-white/20"
+              }`}
             >
-              <option value="all">All Forms</option>
-              {formNames.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
+              <Filter className="w-4 h-4" />
+              <span>Filters</span>
+              {advancedFilterCount > 0 && (
+                <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 bg-violet-500 text-white text-[10px] font-bold rounded-full">
+                  {advancedFilterCount}
+                </span>
+              )}
+            </button>
+
+            {/* Form Filter */}
+            <div className="relative">
+              <select
+                value={filterByForm}
+                onChange={(e) => setFilterByForm(e.target.value)}
+                className="appearance-none pl-4 pr-10 py-2.5 bg-[#13261c] border border-white/10 rounded-xl text-white text-sm focus:border-violet-500/50 focus:outline-none font-sans min-w-[150px] cursor-pointer"
+              >
+                <option value="all">All Forms</option>
+                {formNames.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+            </div>
 
             {/* Grade Filter */}
-            <select
-              value={filterByGrade}
-              onChange={(e) => setFilterByGrade(e.target.value as GradeFilter)}
-              className="px-4 py-2.5 bg-[#1a2e23] border border-white/10 rounded-lg text-white text-sm focus:border-violet-500/50 focus:outline-none font-sans min-w-[130px]"
-            >
-              {gradeOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                value={filterByGrade}
+                onChange={(e) => setFilterByGrade(e.target.value as GradeFilter)}
+                className="appearance-none pl-4 pr-10 py-2.5 bg-[#13261c] border border-white/10 rounded-xl text-white text-sm focus:border-violet-500/50 focus:outline-none font-sans min-w-[140px] cursor-pointer"
+              >
+                {gradeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+            </div>
 
             {/* Sort Dropdown */}
             <div className="relative">
               <button
                 onClick={() => setShowSortDropdown(!showSortDropdown)}
-                className="flex items-center gap-2 px-4 py-2.5 bg-[#1a2e23] border border-white/10 rounded-lg text-white text-sm hover:border-white/20 transition-colors font-sans min-w-[150px]"
+                className="flex items-center gap-2 px-4 py-2.5 bg-[#13261c] border border-white/10 rounded-xl text-white text-sm hover:border-white/20 transition-colors font-sans min-w-[160px]"
               >
                 <SlidersHorizontal className="w-4 h-4 text-white/60" />
                 <span>{sortOptions.find((o) => o.value === sortBy)?.label}</span>
@@ -354,7 +429,7 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
               </button>
 
               {showSortDropdown && (
-                <div className="absolute top-full mt-1 right-0 w-full bg-[#1a2e23] border border-white/10 rounded-lg overflow-hidden shadow-xl z-20">
+                <div className="absolute top-full mt-1 right-0 w-full bg-[#13261c] border border-white/10 rounded-xl overflow-hidden shadow-xl z-20">
                   {sortOptions.map((option) => (
                     <button
                       key={option.value}
@@ -375,6 +450,89 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
               )}
             </div>
           </div>
+
+          {/* Advanced Filters Panel */}
+          {showAdvancedFilters && (
+            <div className="mt-3 rounded-xl border border-white/10 bg-[#13261c] p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold text-white font-sans">Advanced Filters</h3>
+                {advancedFilterCount > 0 && (
+                  <button
+                    onClick={clearAdvancedFilters}
+                    className="flex items-center gap-1 text-xs text-white/50 hover:text-white font-sans transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    Clear
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                {/* Age Min */}
+                <div>
+                  <label className="block text-xs text-white/50 mb-1.5 font-sans">Age (Min)</label>
+                  <input
+                    type="number"
+                    value={ageMin}
+                    onChange={(e) => setAgeMin(e.target.value)}
+                    placeholder="18"
+                    className="w-full px-3 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-violet-500/50 focus:outline-none font-sans text-sm"
+                  />
+                </div>
+                {/* Age Max */}
+                <div>
+                  <label className="block text-xs text-white/50 mb-1.5 font-sans">Age (Max)</label>
+                  <input
+                    type="number"
+                    value={ageMax}
+                    onChange={(e) => setAgeMax(e.target.value)}
+                    placeholder="65"
+                    className="w-full px-3 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-violet-500/50 focus:outline-none font-sans text-sm"
+                  />
+                </div>
+                {/* Gender */}
+                <div>
+                  <label className="block text-xs text-white/50 mb-1.5 font-sans">Gender</label>
+                  <div className="relative">
+                    <select
+                      value={filterByGender}
+                      onChange={(e) => setFilterByGender(e.target.value)}
+                      className="appearance-none w-full pl-3 pr-9 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white focus:border-violet-500/50 focus:outline-none font-sans text-sm cursor-pointer"
+                    >
+                      <option value="all">All Genders</option>
+                      {genderOptions.map((g) => (
+                        <option key={g} value={g}>
+                          {g}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                  </div>
+                </div>
+                {/* Location */}
+                <div>
+                  <label className="block text-xs text-white/50 mb-1.5 font-sans">Location</label>
+                  <input
+                    type="text"
+                    value={filterByLocation}
+                    onChange={(e) => setFilterByLocation(e.target.value)}
+                    placeholder="e.g. Los Angeles"
+                    className="w-full px-3 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-violet-500/50 focus:outline-none font-sans text-sm"
+                  />
+                </div>
+                {/* Availability */}
+                <div>
+                  <label className="block text-xs text-white/50 mb-1.5 font-sans">Availability</label>
+                  <input
+                    type="text"
+                    value={filterByAvailability}
+                    onChange={(e) => setFilterByAvailability(e.target.value)}
+                    placeholder="e.g. Weekends"
+                    className="w-full px-3 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-violet-500/50 focus:outline-none font-sans text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -386,7 +544,7 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
               <Search className="w-8 h-8 text-white/20" />
             </div>
             <p className="text-white/40 font-sans">
-              {searchQuery || filterByForm !== "all" || filterByGrade !== "all"
+              {searchQuery || filterByForm !== "all" || filterByGrade !== "all" || advancedFilterCount > 0
                 ? "No submissions match your filters"
                 : "No submissions yet"}
             </p>

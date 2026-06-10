@@ -396,9 +396,9 @@ export default function CastingCallsList({
                 </div>
 
                 {/* Content Section - 2/3 width */}
-                <div className="flex-1 flex flex-col p-5">
+                <div className="flex-1 flex flex-col px-5 pb-5 pt-0">
                   {/* Reserved header strip for hover action icons (keeps content below them) */}
-                  <div className="relative h-9 mb-1 flex-shrink-0">
+                  <div className="relative h-7 flex-shrink-0">
                     {hoveredProjectId === project.id && (
                       <div className="absolute top-0 right-0 flex items-center gap-1.5">
                         {hasCastingCall && (
@@ -467,7 +467,7 @@ export default function CastingCallsList({
 
                   {/* Submissions count */}
                   {project.submissions.length > 0 && (
-                    <div className="mb-2 flex items-center gap-1 text-xs text-violet-300">
+                    <div className="mb-7 flex items-center gap-1 text-xs text-violet-300">
                       <Users className="w-3 h-3" />
                       <button
                         type="button"

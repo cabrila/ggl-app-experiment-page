@@ -14,14 +14,33 @@ import {
   Filter,
   AlertTriangle,
   ListPlus,
+  Search,
+  SlidersHorizontal,
+  ChevronDown,
 } from "lucide-react"
 import { useActorList } from "./ActorListContext"
 import { Actor, ActorGender, AggregatedActor } from "@/types/actor-list"
-import SearchBar from "@/components/ui/SearchBar"
 import ViewModeToggle, { ViewMode } from "@/components/ui/ViewModeToggle"
 import ImageModal from "@/components/ui/ImageModal"
 
 const GENDER_GROUPS: ActorGender[] = ["Male", "Female", "Other", "Not-specified"]
+
+type ActorSortOption = "name-asc" | "name-desc" | "age-asc" | "age-desc"
+
+const actorSortOptions: { value: ActorSortOption; label: string }[] = [
+  { value: "name-asc", label: "A-Z by Name" },
+  { value: "name-desc", label: "Z-A by Name" },
+  { value: "age-asc", label: "Age (Low-High)" },
+  { value: "age-desc", label: "Age (High-Low)" },
+]
+
+// Read a custom field value off an actor by matching against candidate names.
+function getActorCustomValue(actor: Actor, keys: string[]): string {
+  const match = (actor.customFields || []).find((f) =>
+    keys.some((k) => f.name.toLowerCase().includes(k))
+  )
+  return match?.value || ""
+}
 
 export default function AllActorsView() {
   const {
@@ -43,6 +62,10 @@ export default function AllActorsView() {
   const [ageMin, setAgeMin] = useState("")
   const [ageMax, setAgeMax] = useState("")
   const [duplicatesOnly, setDuplicatesOnly] = useState(false)
+  const [filterByLocation, setFilterByLocation] = useState("")
+  const [filterByAvailability, setFilterByAvailability] = useState("")
+  const [sortBy, setSortBy] = useState<ActorSortOption>("name-asc")
+  const [showSortDropdown, setShowSortDropdown] = useState(false)
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [showAddModal, setShowAddModal] = useState(false)
@@ -51,20 +74,58 @@ export default function AllActorsView() {
   const [deleteTarget, setDeleteTarget] = useState<AggregatedActor | null>(null)
   const [fullScreenHeadshot, setFullScreenHeadshot] = useState<{ src: string; alt: string } | null>(null)
 
-  const filteredActors = allActors.filter((actor) => {
-    const q = searchQuery.toLowerCase()
-    const matchesSearch =
-      !q ||
-      actor.name.toLowerCase().includes(q) ||
-      actor.email.toLowerCase().includes(q) ||
-      actor.notes.toLowerCase().includes(q) ||
-      actor.sourceListNames.some((n) => n.toLowerCase().includes(q))
-    const matchesGender = genderFilter === "all" || (actor.gender || "Not-specified") === genderFilter
-    const matchesMin = !ageMin || actor.age >= parseInt(ageMin, 10)
-    const matchesMax = !ageMax || actor.age <= parseInt(ageMax, 10)
-    const matchesDup = !duplicatesOnly || actor.isDuplicate
-    return matchesSearch && matchesGender && matchesMin && matchesMax && matchesDup
-  })
+  const advancedFilterCount =
+    (ageMin ? 1 : 0) +
+    (ageMax ? 1 : 0) +
+    (genderFilter !== "all" ? 1 : 0) +
+    (filterByLocation.trim() ? 1 : 0) +
+    (filterByAvailability.trim() ? 1 : 0) +
+    (duplicatesOnly ? 1 : 0)
+
+  const clearAdvancedFilters = () => {
+    setAgeMin("")
+    setAgeMax("")
+    setGenderFilter("all")
+    setFilterByLocation("")
+    setFilterByAvailability("")
+    setDuplicatesOnly(false)
+  }
+
+  const filteredActors = allActors
+    .filter((actor) => {
+      const q = searchQuery.toLowerCase()
+      const matchesSearch =
+        !q ||
+        actor.name.toLowerCase().includes(q) ||
+        actor.email.toLowerCase().includes(q) ||
+        actor.notes.toLowerCase().includes(q) ||
+        actor.sourceListNames.some((n) => n.toLowerCase().includes(q))
+      const matchesGender = genderFilter === "all" || (actor.gender || "Not-specified") === genderFilter
+      const matchesMin = !ageMin || actor.age >= parseInt(ageMin, 10)
+      const matchesMax = !ageMax || actor.age <= parseInt(ageMax, 10)
+      const matchesDup = !duplicatesOnly || actor.isDuplicate
+      const matchesLocation =
+        !filterByLocation.trim() ||
+        getActorCustomValue(actor, ["location"]).toLowerCase().includes(filterByLocation.toLowerCase().trim())
+      const matchesAvailability =
+        !filterByAvailability.trim() ||
+        getActorCustomValue(actor, ["availability"]).toLowerCase().includes(filterByAvailability.toLowerCase().trim())
+      return matchesSearch && matchesGender && matchesMin && matchesMax && matchesDup && matchesLocation && matchesAvailability
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "name-asc":
+          return a.name.localeCompare(b.name)
+        case "name-desc":
+          return b.name.localeCompare(a.name)
+        case "age-asc":
+          return (a.age || 0) - (b.age || 0)
+        case "age-desc":
+          return (b.age || 0) - (a.age || 0)
+        default:
+          return 0
+      }
+    })
 
   const selectedActors = filteredActors.filter((a) => selectedIds.has(a.id))
 
@@ -180,55 +241,152 @@ export default function AllActorsView() {
           </div>
         </div>
 
-        {/* Search + Filters */}
-        <div className="px-6 pb-4 flex flex-col sm:flex-row gap-3">
-          <div className="flex-1">
-            <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Search by name, email, or list..." />
+        {/* Search + Filters + Sort */}
+        <div className="px-6 pb-4 flex flex-col sm:flex-row sm:flex-wrap gap-3">
+          {/* Search */}
+          <div className="flex-1 min-w-[220px] relative">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by name, email, or list..."
+              className="w-full pl-10 pr-4 py-2.5 bg-[#13261c] border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-sky-500/50 focus:outline-none font-sans text-sm"
+            />
           </div>
-          <select
-            value={genderFilter}
-            onChange={(e) => setGenderFilter(e.target.value as "all" | ActorGender)}
-            className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white/80 focus:border-sky-500/50 focus:outline-none font-sans"
-          >
-            <option value="all">All genders</option>
-            {GENDER_GROUPS.map((g) => (
-              <option key={g} value={g}>{g}</option>
-            ))}
-          </select>
+
+          {/* Filter Toggle */}
           <button
             onClick={() => setShowFilters((s) => !s)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-sans transition-colors ${
-              showFilters || ageMin || ageMax || duplicatesOnly
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-sans transition-colors ${
+              showFilters || advancedFilterCount > 0
                 ? "bg-sky-500/20 border-sky-500/40 text-sky-300"
-                : "bg-white/5 border-white/10 text-white/70 hover:text-white"
+                : "bg-[#13261c] border-white/10 text-white hover:border-white/20"
             }`}
           >
             <Filter className="w-4 h-4" />
-            Filters
+            <span>Filters</span>
+            {advancedFilterCount > 0 && (
+              <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 bg-sky-500 text-white text-[10px] font-bold rounded-full">
+                {advancedFilterCount}
+              </span>
+            )}
           </button>
+
+          {/* Sort Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setShowSortDropdown(!showSortDropdown)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-[#13261c] border border-white/10 rounded-xl text-white text-sm hover:border-white/20 transition-colors font-sans min-w-[160px]"
+            >
+              <SlidersHorizontal className="w-4 h-4 text-white/60" />
+              <span>{actorSortOptions.find((o) => o.value === sortBy)?.label}</span>
+              <ChevronDown className="w-4 h-4 text-white/40 ml-auto" />
+            </button>
+
+            {showSortDropdown && (
+              <div className="absolute top-full mt-1 right-0 w-full bg-[#13261c] border border-white/10 rounded-xl overflow-hidden shadow-xl z-20">
+                {actorSortOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => {
+                      setSortBy(option.value)
+                      setShowSortDropdown(false)
+                    }}
+                    className={`w-full px-4 py-2.5 text-left text-sm font-sans transition-colors ${
+                      sortBy === option.value
+                        ? "bg-sky-500/20 text-sky-300"
+                        : "text-white/70 hover:bg-white/5 hover:text-white"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {showFilters && (
-          <div className="px-6 pb-4 flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-white/50 font-sans">Age</span>
-              <input
-                type="number"
-                value={ageMin}
-                onChange={(e) => setAgeMin(e.target.value)}
-                placeholder="Min"
-                className="w-20 px-2 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white/80 focus:border-sky-500/50 focus:outline-none font-sans"
-              />
-              <span className="text-white/30">–</span>
-              <input
-                type="number"
-                value={ageMax}
-                onChange={(e) => setAgeMax(e.target.value)}
-                placeholder="Max"
-                className="w-20 px-2 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white/80 focus:border-sky-500/50 focus:outline-none font-sans"
-              />
+          <div className="mx-6 mb-4 rounded-xl border border-white/10 bg-[#13261c] p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-white font-sans">Advanced Filters</h3>
+              {advancedFilterCount > 0 && (
+                <button
+                  onClick={clearAdvancedFilters}
+                  className="flex items-center gap-1 text-xs text-white/50 hover:text-white font-sans transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  Clear
+                </button>
+              )}
             </div>
-            <label className="flex items-center gap-2 text-sm text-white/70 font-sans cursor-pointer">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {/* Age Min */}
+              <div>
+                <label className="block text-xs text-white/50 mb-1.5 font-sans">Age (Min)</label>
+                <input
+                  type="number"
+                  value={ageMin}
+                  onChange={(e) => setAgeMin(e.target.value)}
+                  placeholder="18"
+                  className="w-full px-3 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-sky-500/50 focus:outline-none font-sans text-sm"
+                />
+              </div>
+              {/* Age Max */}
+              <div>
+                <label className="block text-xs text-white/50 mb-1.5 font-sans">Age (Max)</label>
+                <input
+                  type="number"
+                  value={ageMax}
+                  onChange={(e) => setAgeMax(e.target.value)}
+                  placeholder="65"
+                  className="w-full px-3 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-sky-500/50 focus:outline-none font-sans text-sm"
+                />
+              </div>
+              {/* Gender */}
+              <div>
+                <label className="block text-xs text-white/50 mb-1.5 font-sans">Gender</label>
+                <div className="relative">
+                  <select
+                    value={genderFilter}
+                    onChange={(e) => setGenderFilter(e.target.value as "all" | ActorGender)}
+                    className="appearance-none w-full pl-3 pr-9 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white focus:border-sky-500/50 focus:outline-none font-sans text-sm cursor-pointer"
+                  >
+                    <option value="all">All Genders</option>
+                    {GENDER_GROUPS.map((g) => (
+                      <option key={g} value={g}>
+                        {g}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                </div>
+              </div>
+              {/* Location */}
+              <div>
+                <label className="block text-xs text-white/50 mb-1.5 font-sans">Location</label>
+                <input
+                  type="text"
+                  value={filterByLocation}
+                  onChange={(e) => setFilterByLocation(e.target.value)}
+                  placeholder="e.g. Los Angeles"
+                  className="w-full px-3 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-sky-500/50 focus:outline-none font-sans text-sm"
+                />
+              </div>
+              {/* Availability */}
+              <div>
+                <label className="block text-xs text-white/50 mb-1.5 font-sans">Availability</label>
+                <input
+                  type="text"
+                  value={filterByAvailability}
+                  onChange={(e) => setFilterByAvailability(e.target.value)}
+                  placeholder="e.g. Weekends"
+                  className="w-full px-3 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-sky-500/50 focus:outline-none font-sans text-sm"
+                />
+              </div>
+            </div>
+            <label className="flex items-center gap-2 text-sm text-white/70 font-sans cursor-pointer mt-4">
               <input
                 type="checkbox"
                 checked={duplicatesOnly}

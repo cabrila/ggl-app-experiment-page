@@ -1,12 +1,11 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { ArrowLeft, Trash2, Share2, Phone, Mail, ChevronDown, X } from "lucide-react"
+import { ArrowLeft, Trash2, Share2, Phone, Mail, ChevronDown, X, Search, SlidersHorizontal, Filter } from "lucide-react"
 import { useActorList } from "./ActorListContext"
 import ActorCard from "./ActorCard"
 import { Actor, ActorGender } from "@/types/actor-list"
 import { exportActorsAsJSON, exportActorsAsPDF, exportActorsAsExcel } from "@/lib/actor-export"
-import SearchBar from "@/components/ui/SearchBar"
 import ViewModeToggle, { ViewMode } from "@/components/ui/ViewModeToggle"
 import AddItemDropdown from "@/components/ui/AddItemDropdown"
 import DownloadDropdown from "@/components/ui/DownloadDropdown"
@@ -18,6 +17,23 @@ import Image from "next/image"
 
 const GENDER_GROUPS: ActorGender[] = ["Male", "Female", "Other", "Not-specified"]
 
+type ActorSortOption = "name-asc" | "name-desc" | "age-asc" | "age-desc"
+
+const actorSortOptions: { value: ActorSortOption; label: string }[] = [
+  { value: "name-asc", label: "A-Z by Name" },
+  { value: "name-desc", label: "Z-A by Name" },
+  { value: "age-asc", label: "Age (Low-High)" },
+  { value: "age-desc", label: "Age (High-Low)" },
+]
+
+// Read a custom field value off an actor by matching against candidate names.
+function getActorCustomValue(actor: Actor, keys: string[]): string {
+  const match = (actor.customFields || []).find((f) =>
+    keys.some((k) => f.name.toLowerCase().includes(k))
+  )
+  return match?.value || ""
+}
+
 export default function ActorResultsView() {
   const { currentProject, goBack, addActor, updateActor, deleteActor, deleteProject } = useActorList()
   const [searchQuery, setSearchQuery] = useState("")
@@ -27,7 +43,29 @@ export default function ActorResultsView() {
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [newItemId, setNewItemId] = useState<string | null>(null)
   const [detailActorId, setDetailActorId] = useState<string | null>(null)
+  const [sortBy, setSortBy] = useState<ActorSortOption>("name-asc")
+  const [showSortDropdown, setShowSortDropdown] = useState(false)
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
+  const [ageMin, setAgeMin] = useState("")
+  const [ageMax, setAgeMax] = useState("")
+  const [filterByLocation, setFilterByLocation] = useState("")
+  const [filterByAvailability, setFilterByAvailability] = useState("")
   const gridRef = useRef<HTMLDivElement>(null)
+
+  const advancedFilterCount =
+    (ageMin ? 1 : 0) +
+    (ageMax ? 1 : 0) +
+    (genderFilter !== "all" ? 1 : 0) +
+    (filterByLocation.trim() ? 1 : 0) +
+    (filterByAvailability.trim() ? 1 : 0)
+
+  const clearAdvancedFilters = () => {
+    setAgeMin("")
+    setAgeMax("")
+    setGenderFilter("all")
+    setFilterByLocation("")
+    setFilterByAvailability("")
+  }
 
   // Scroll to newly added item
   useEffect(() => {
@@ -47,13 +85,36 @@ export default function ActorResultsView() {
 
   if (!currentProject) return null
 
-  const filteredActors = currentProject.actors.filter((actor) => {
-    const matchesSearch =
-      actor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      actor.notes.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesGender = genderFilter === "all" || (actor.gender || "Not-specified") === genderFilter
-    return matchesSearch && matchesGender
-  })
+  const filteredActors = currentProject.actors
+    .filter((actor) => {
+      const matchesSearch =
+        actor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        actor.notes.toLowerCase().includes(searchQuery.toLowerCase())
+      const matchesGender = genderFilter === "all" || (actor.gender || "Not-specified") === genderFilter
+      const matchesMin = !ageMin || (Number.isFinite(actor.age) && actor.age >= parseInt(ageMin, 10))
+      const matchesMax = !ageMax || (Number.isFinite(actor.age) && actor.age <= parseInt(ageMax, 10))
+      const matchesLocation =
+        !filterByLocation.trim() ||
+        getActorCustomValue(actor, ["location"]).toLowerCase().includes(filterByLocation.toLowerCase().trim())
+      const matchesAvailability =
+        !filterByAvailability.trim() ||
+        getActorCustomValue(actor, ["availability"]).toLowerCase().includes(filterByAvailability.toLowerCase().trim())
+      return matchesSearch && matchesGender && matchesMin && matchesMax && matchesLocation && matchesAvailability
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "name-asc":
+          return a.name.localeCompare(b.name)
+        case "name-desc":
+          return b.name.localeCompare(a.name)
+        case "age-asc":
+          return (a.age || 0) - (b.age || 0)
+        case "age-desc":
+          return (b.age || 0) - (a.age || 0)
+        default:
+          return 0
+      }
+    })
 
   const handleAddActor = () => {
     const id = Date.now().toString()
@@ -185,29 +246,154 @@ export default function ActorResultsView() {
           </div>
         </div>
 
-        {/* Search Bar + Filter */}
-        <div className="px-6 pb-4 flex flex-col sm:flex-row gap-3">
-          <div className="flex-1">
-            <SearchBar
+        {/* Search Bar + Filters + Sort */}
+        <div className="px-6 pb-4 flex flex-col sm:flex-row sm:flex-wrap gap-3">
+          {/* Search */}
+          <div className="flex-1 min-w-[220px] relative">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+            <input
+              type="text"
               value={searchQuery}
-              onChange={setSearchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search actors..."
+              className="w-full pl-10 pr-4 py-2.5 bg-[#13261c] border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-emerald-500/50 focus:outline-none font-sans text-sm"
             />
           </div>
+
+          {/* Filter Toggle */}
+          <button
+            onClick={() => setShowAdvancedFilters((v) => !v)}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-sans transition-colors ${
+              showAdvancedFilters || advancedFilterCount > 0
+                ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-200"
+                : "bg-[#13261c] border-white/10 text-white hover:border-white/20"
+            }`}
+          >
+            <Filter className="w-4 h-4" />
+            <span>Filters</span>
+            {advancedFilterCount > 0 && (
+              <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 bg-emerald-500 text-white text-[10px] font-bold rounded-full">
+                {advancedFilterCount}
+              </span>
+            )}
+          </button>
+
+          {/* Sort Dropdown */}
           <div className="relative">
-            <select
-              value={genderFilter}
-              onChange={(e) => setGenderFilter(e.target.value as "all" | ActorGender)}
-              className="appearance-none pl-4 pr-10 py-2.5 bg-[#13261c] border border-white/10 rounded-xl text-sm text-white focus:border-emerald-500/50 focus:outline-none font-sans min-w-[150px] cursor-pointer"
+            <button
+              onClick={() => setShowSortDropdown(!showSortDropdown)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-[#13261c] border border-white/10 rounded-xl text-white text-sm hover:border-white/20 transition-colors font-sans min-w-[160px]"
             >
-              <option value="all">All genders</option>
-              {GENDER_GROUPS.map((g) => (
-                <option key={g} value={g}>{g}</option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+              <SlidersHorizontal className="w-4 h-4 text-white/60" />
+              <span>{actorSortOptions.find((o) => o.value === sortBy)?.label}</span>
+              <ChevronDown className="w-4 h-4 text-white/40 ml-auto" />
+            </button>
+
+            {showSortDropdown && (
+              <div className="absolute top-full mt-1 right-0 w-full bg-[#13261c] border border-white/10 rounded-xl overflow-hidden shadow-xl z-20">
+                {actorSortOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => {
+                      setSortBy(option.value)
+                      setShowSortDropdown(false)
+                    }}
+                    className={`w-full px-4 py-2.5 text-left text-sm font-sans transition-colors ${
+                      sortBy === option.value
+                        ? "bg-emerald-500/20 text-emerald-300"
+                        : "text-white/70 hover:bg-white/5 hover:text-white"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Advanced Filters Panel */}
+        {showAdvancedFilters && (
+          <div className="mx-6 mb-4 rounded-xl border border-white/10 bg-[#13261c] p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-white font-sans">Advanced Filters</h3>
+              {advancedFilterCount > 0 && (
+                <button
+                  onClick={clearAdvancedFilters}
+                  className="flex items-center gap-1 text-xs text-white/50 hover:text-white font-sans transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  Clear
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {/* Age Min */}
+              <div>
+                <label className="block text-xs text-white/50 mb-1.5 font-sans">Age (Min)</label>
+                <input
+                  type="number"
+                  value={ageMin}
+                  onChange={(e) => setAgeMin(e.target.value)}
+                  placeholder="18"
+                  className="w-full px-3 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-emerald-500/50 focus:outline-none font-sans text-sm"
+                />
+              </div>
+              {/* Age Max */}
+              <div>
+                <label className="block text-xs text-white/50 mb-1.5 font-sans">Age (Max)</label>
+                <input
+                  type="number"
+                  value={ageMax}
+                  onChange={(e) => setAgeMax(e.target.value)}
+                  placeholder="65"
+                  className="w-full px-3 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-emerald-500/50 focus:outline-none font-sans text-sm"
+                />
+              </div>
+              {/* Gender */}
+              <div>
+                <label className="block text-xs text-white/50 mb-1.5 font-sans">Gender</label>
+                <div className="relative">
+                  <select
+                    value={genderFilter}
+                    onChange={(e) => setGenderFilter(e.target.value as "all" | ActorGender)}
+                    className="appearance-none w-full pl-3 pr-9 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white focus:border-emerald-500/50 focus:outline-none font-sans text-sm cursor-pointer"
+                  >
+                    <option value="all">All Genders</option>
+                    {GENDER_GROUPS.map((g) => (
+                      <option key={g} value={g}>
+                        {g}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                </div>
+              </div>
+              {/* Location */}
+              <div>
+                <label className="block text-xs text-white/50 mb-1.5 font-sans">Location</label>
+                <input
+                  type="text"
+                  value={filterByLocation}
+                  onChange={(e) => setFilterByLocation(e.target.value)}
+                  placeholder="e.g. Los Angeles"
+                  className="w-full px-3 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-emerald-500/50 focus:outline-none font-sans text-sm"
+                />
+              </div>
+              {/* Availability */}
+              <div>
+                <label className="block text-xs text-white/50 mb-1.5 font-sans">Availability</label>
+                <input
+                  type="text"
+                  value={filterByAvailability}
+                  onChange={(e) => setFilterByAvailability(e.target.value)}
+                  placeholder="e.g. Weekends"
+                  className="w-full px-3 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-emerald-500/50 focus:outline-none font-sans text-sm"
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Actors Grid */}

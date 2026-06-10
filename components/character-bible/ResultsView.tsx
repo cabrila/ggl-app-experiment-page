@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { ArrowLeft, Plus, FileJson, Download, Trash2, FileSpreadsheet, Share2, User } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Share2, User } from "lucide-react"
 import { useCharacterBible } from "./CharacterBibleContext"
 import CharacterCard from "./CharacterCard"
 import { Character } from "@/types/character-bible"
@@ -9,6 +9,7 @@ import { exportCharactersAsJSON, exportCharactersAsPDF, exportCharactersAsExcel 
 import SearchBar from "@/components/ui/SearchBar"
 import ViewModeToggle, { ViewMode } from "@/components/ui/ViewModeToggle"
 import AddItemDropdown from "@/components/ui/AddItemDropdown"
+import DownloadDropdown from "@/components/ui/DownloadDropdown"
 import AddViaUploadModal, { FoundEntry } from "@/components/ui/AddViaUploadModal"
 import type { CharacterExtractResult } from "@/types/ai"
 import { trackAddItem, trackExport, trackDelete } from "@/lib/analytics"
@@ -184,30 +185,13 @@ export default function ResultsView() {
               onAddViaUpload={() => setShowUploadModal(true)}
               triggerClassName="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white transition-colors"
             />
-            <button
-              onClick={handleExportJSON}
-              className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white transition-colors"
-              title="Export as JSON"
-            >
-              <FileJson className="w-4 h-4" />
-              <span className="text-sm font-sans hidden sm:inline">JSON</span>
-            </button>
-            <button
-              onClick={handleExportExcel}
-              className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white transition-colors"
-              title="Export as Excel"
-            >
-              <FileSpreadsheet className="w-4 h-4" />
-              <span className="text-sm font-sans hidden sm:inline">Excel</span>
-            </button>
-            <button
-              onClick={handleExportPDF}
-              className="flex items-center gap-2 px-3 py-2 bg-emerald-500 hover:bg-emerald-600 rounded-lg text-white transition-colors"
-              title="Export as PDF"
-            >
-              <Download className="w-4 h-4" />
-              <span className="text-sm font-sans hidden sm:inline">PDF</span>
-            </button>
+            <DownloadDropdown
+              onDownloadJSON={handleExportJSON}
+              onDownloadExcel={handleExportExcel}
+              onDownloadPDF={handleExportPDF}
+              triggerClassName="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white transition-colors"
+              labelClassName="text-sm font-sans hidden sm:inline"
+            />
             <button
               onClick={() => setShowShareModal(true)}
               className="flex items-center gap-2 px-3 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-lg text-white transition-colors"

@@ -291,6 +291,17 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
           </button>
         </div>
 
+        {/* Header Image Banner - reflects uploaded header image */}
+        {headerImageUrl && (
+          <div className="w-full h-48 rounded-xl overflow-hidden mb-8 border border-white/10">
+            <img
+              src={headerImageUrl || "/placeholder.svg"}
+              alt="Casting call header"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+
         {/* Form */}
         <div className="space-y-6">
           {/* Basic Info */}

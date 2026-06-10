@@ -9,6 +9,7 @@ import { CastingSubmission } from "@/types/public-casting"
 import { exportSubmissionsAsJSON, exportSubmissionsAsPDF, exportSubmissionsAsExcel } from "@/lib/submission-export"
 import { useActorListSafe } from "@/components/actor-list/ActorListContext"
 import { Actor, ActorGender } from "@/types/actor-list"
+import { getExtraSubmissionFields } from "@/utils/submissionFields"
 import ViewModeToggle, { ViewMode } from "@/components/ui/ViewModeToggle"
 
 const ACTOR_GENDERS: ActorGender[] = ["Male", "Female", "Other", "Not-specified"]
@@ -25,6 +26,14 @@ function coerceGender(value?: string): ActorGender | undefined {
 
 // Map a casting submission into the Actor shape used by actor lists.
 function submissionToActor(submission: CastingSubmission): Actor {
+  // Carry every extra form field (beyond the standard ones) onto the actor as
+  // custom fields so the full submission data stays visible under "My Actors".
+  const customFields = getExtraSubmissionFields(submission.data).map((field, index) => ({
+    id: `${submission.id}-${field.key}-${index}`,
+    name: field.label,
+    value: field.value,
+  }))
+
   return {
     id: crypto.randomUUID(),
     name: submission.name,
@@ -35,6 +44,7 @@ function submissionToActor(submission: CastingSubmission): Actor {
     email: submission.email,
     headshotUrl: submission.headshot || "",
     notes: submission.notes || "",
+    customFields: customFields.length > 0 ? customFields : undefined,
   }
 }
 

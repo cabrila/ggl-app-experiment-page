@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Pencil, Trash2, Phone, Mail, X, Save, Plus, Video, ExternalLink } from "lucide-react"
+import { Pencil, Trash2, Phone, Mail, X, Save, Plus, Video, ExternalLink, ChevronDown } from "lucide-react"
 import { Actor, CustomField } from "@/types/actor-list"
 import ImageModal from "@/components/ui/ImageModal"
 import MediaModal from "@/components/ui/MediaModal"
@@ -34,6 +34,7 @@ export default function ActorCard({ actor, onUpdate, onDelete }: ActorCardProps)
   const [newFieldName, setNewFieldName] = useState("")
   const [showImageModal, setShowImageModal] = useState(false)
   const [showMediaModal, setShowMediaModal] = useState(false)
+  const [showMoreInfo, setShowMoreInfo] = useState(false)
 
   const handleSave = () => {
     onUpdate(editedActor)
@@ -372,20 +373,31 @@ export default function ActorCard({ actor, onUpdate, onDelete }: ActorCardProps)
         </div>
       )}
 
-      {/* Custom Fields */}
+      {/* More Information - extra submission fields */}
       {actor.customFields && actor.customFields.length > 0 && (
-        <div className="mb-4">
-          <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">
-            Additional Info
-          </p>
-          <div className="space-y-1.5">
-            {actor.customFields.map((field) => (
-              <div key={field.id} className="flex items-start gap-2 text-sm">
-                <span className="text-white/50 font-sans shrink-0">{field.name}:</span>
-                <span className="text-white/80 font-sans">{field.value || "-"}</span>
-              </div>
-            ))}
-          </div>
+        <div className="mb-4 rounded-xl border border-white/10 overflow-hidden">
+          <button
+            onClick={() => setShowMoreInfo((v) => !v)}
+            className="w-full flex items-center justify-between px-3 py-2.5 bg-[#0f1f17] hover:bg-[#0f1f17]/70 transition-colors"
+            aria-expanded={showMoreInfo}
+          >
+            <span className="text-xs font-semibold text-white/40 uppercase tracking-wider">
+              More Information
+            </span>
+            <ChevronDown
+              className={`w-4 h-4 text-white/40 transition-transform ${showMoreInfo ? "rotate-180" : ""}`}
+            />
+          </button>
+          {showMoreInfo && (
+            <div className="px-3 py-3 bg-[#0f1f17] border-t border-white/10 space-y-1.5">
+              {actor.customFields.map((field) => (
+                <div key={field.id} className="flex items-start gap-2 text-sm">
+                  <span className="text-white/50 font-sans shrink-0">{field.name}:</span>
+                  <span className="text-white/80 font-sans break-words">{field.value || "-"}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

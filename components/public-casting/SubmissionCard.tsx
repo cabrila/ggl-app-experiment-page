@@ -1,11 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { Phone, Mail, Pencil, Trash2, X, Save, Tag, Star } from "lucide-react"
+import { Phone, Mail, Pencil, Trash2, X, Save, Tag, Star, ChevronDown } from "lucide-react"
 import { CastingSubmission } from "@/types/public-casting"
 import Image from "next/image"
 import ImageModal from "@/components/ui/ImageModal"
 import { getVideoEmbed, isImageValue, splitMultiValue } from "@/utils/mediaEmbed"
+import { getExtraSubmissionFields } from "@/utils/submissionFields"
 
 interface SubmissionCardProps {
   submission: CastingSubmission
@@ -20,6 +21,7 @@ export default function SubmissionCard({ submission, onUpdate, onDelete, isSelec
   const [focusGrade, setFocusGrade] = useState(false)
   const [showImageModal, setShowImageModal] = useState(false)
   const [activeImage, setActiveImage] = useState<string | undefined>(undefined)
+  const [showMoreInfo, setShowMoreInfo] = useState(false)
   const [editData, setEditData] = useState({
     name: submission.name,
     email: submission.email,
@@ -74,6 +76,9 @@ export default function SubmissionCard({ submission, onUpdate, onDelete, isSelec
     .filter((entry) => isImageValue(entry))
     // Avoid duplicating the headshot already shown in the avatar
     .filter((entry) => entry !== submission.headshot)
+
+  // Any form fields beyond the defaults shown above go into "More Information".
+  const extraFields = getExtraSubmissionFields(submission.data)
 
   // Edit Mode
   if (isEditing) {
@@ -386,6 +391,34 @@ export default function SubmissionCard({ submission, onUpdate, onDelete, isSelec
           <p className="text-sm text-white/80 font-sans leading-relaxed">
             {submission.notes}
           </p>
+        </div>
+      )}
+
+      {/* More Information - extra form fields beyond the defaults */}
+      {extraFields.length > 0 && (
+        <div className="mt-3 rounded-lg border border-white/10 overflow-hidden">
+          <button
+            onClick={() => setShowMoreInfo((v) => !v)}
+            className="w-full flex items-center justify-between px-3 py-2.5 bg-[#0f1f17] hover:bg-[#0f1f17]/70 transition-colors"
+            aria-expanded={showMoreInfo}
+          >
+            <span className="text-xs font-semibold text-white/60 uppercase tracking-wider">
+              More Information
+            </span>
+            <ChevronDown
+              className={`w-4 h-4 text-white/40 transition-transform ${showMoreInfo ? "rotate-180" : ""}`}
+            />
+          </button>
+          {showMoreInfo && (
+            <div className="px-3 py-3 bg-[#0f1f17] border-t border-white/10 space-y-2">
+              {extraFields.map((field) => (
+                <div key={field.key} className="flex items-start gap-2 text-sm">
+                  <span className="text-white/50 font-sans shrink-0">{field.label}:</span>
+                  <span className="text-white/80 font-sans break-words">{field.value}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

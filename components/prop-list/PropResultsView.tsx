@@ -1,21 +1,43 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { ArrowLeft, Plus, FileJson, Download, Trash2, FileSpreadsheet, Share2 } from "lucide-react"
+import { ArrowLeft, Plus, FileJson, Download, Trash2, FileSpreadsheet, Share2, Package } from "lucide-react"
 import { usePropList } from "./PropListContext"
 import PropCard from "./PropCard"
 import { Prop, PropCategory } from "@/types/prop-list"
 import { exportPropsAsJSON, exportPropsAsPDF, exportPropsAsExcel } from "@/lib/prop-export"
 import SearchBar from "@/components/ui/SearchBar"
+import ViewModeToggle, { ViewMode } from "@/components/ui/ViewModeToggle"
 import AddItemDropdown from "@/components/ui/AddItemDropdown"
 import AddViaUploadModal, { FoundEntry } from "@/components/ui/AddViaUploadModal"
 import type { PropExtractResult } from "@/types/ai"
 import { trackAddItem, trackExport, trackDelete } from "@/lib/analytics"
 import ShareModal from "@/components/modals/ShareModal"
 
+const CATEGORY_LABELS: Record<PropCategory, string> = {
+  weapon: "Weapon",
+  container: "Container",
+  surveillance_device: "Surveillance Device",
+  tool: "Tool",
+  currency: "Currency",
+  contraband: "Contraband",
+  equipment: "Equipment",
+  food_or_drink: "Food / Drink",
+  vehicle: "Vehicle",
+  wardrobe: "Wardrobe",
+  document: "Document",
+  other: "Other",
+}
+const CATEGORY_ORDER: PropCategory[] = [
+  "weapon", "container", "surveillance_device", "tool", "currency",
+  "contraband", "equipment", "food_or_drink", "vehicle", "wardrobe",
+  "document", "other",
+]
+
 export default function PropResultsView() {
   const { currentProject, setView, updateProp, deleteProp, addProp, deleteProject } = usePropList()
   const [searchQuery, setSearchQuery] = useState("")
+  const [viewMode, setViewMode] = useState<ViewMode>("full")
   const [showShareModal, setShowShareModal] = useState(false)
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [newItemId, setNewItemId] = useState<string | null>(null)
@@ -195,6 +217,9 @@ export default function PropResultsView() {
               <Trash2 className="w-4 h-4" />
               <span className="hidden sm:inline">Delete</span>
             </button>
+
+            {/* View Mode Toggle */}
+            <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
           </div>
         </div>
 
@@ -204,17 +229,100 @@ export default function PropResultsView() {
       </header>
 
       <div className="flex-1 overflow-y-auto p-6">
-        <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-          {filtered.map((prop) => (
-            <div key={prop.id} data-prop-id={prop.id} className="transition-all duration-300 rounded-xl">
-              <PropCard
-                prop={prop}
-                onUpdate={(updated) => updateProp(currentProject.id, updated)}
-                onDelete={() => deleteProp(currentProject.id, prop.id)}
-              />
-            </div>
-          ))}
-        </div>
+        {/* Full View - card grid */}
+        {viewMode === "full" && (
+          <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+            {filtered.map((prop) => (
+              <div key={prop.id} data-prop-id={prop.id} className="transition-all duration-300 rounded-xl">
+                <PropCard
+                  prop={prop}
+                  onUpdate={(updated) => updateProp(currentProject.id, updated)}
+                  onDelete={() => deleteProp(currentProject.id, prop.id)}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Minimal View - condensed cards */}
+        {viewMode === "minimal" && (
+          <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
+            {filtered.map((prop) => (
+              <div
+                key={prop.id}
+                data-prop-id={prop.id}
+                className="group relative p-3 rounded-lg border border-white/10 bg-[#1a2e23] hover:border-white/20 transition-colors"
+              >
+                <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => deleteProp(currentProject.id, prop.id)}
+                    className="p-1 bg-red-500/20 hover:bg-red-500/30 rounded text-red-400 hover:text-red-300 transition-colors"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-full bg-rose-500/20 flex-shrink-0 flex items-center justify-center">
+                    <Package className="w-5 h-5 text-rose-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-semibold text-white truncate">{prop.name}</h3>
+                    <p className="text-xs text-white/50 truncate">{CATEGORY_LABELS[prop.category]}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* List View - grouped by category */}
+        {viewMode === "list" && (
+          <div ref={gridRef} className="space-y-6">
+            {CATEGORY_ORDER.map((category) => {
+              const categoryProps = filtered.filter((p) => p.category === category)
+              if (categoryProps.length === 0) return null
+              return (
+                <div key={category} className="border border-white/10 rounded-xl overflow-hidden">
+                  <div className="px-4 py-3 bg-white/5 border-b border-white/10">
+                    <h3 className="text-sm font-semibold text-white/80 uppercase tracking-wider">
+                      {CATEGORY_LABELS[category]} ({categoryProps.length})
+                    </h3>
+                  </div>
+                  <div className="divide-y divide-white/5">
+                    {categoryProps.map((prop) => (
+                      <div
+                        key={prop.id}
+                        data-prop-id={prop.id}
+                        className="flex items-center gap-4 px-4 py-3 hover:bg-white/5 transition-colors"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-rose-500/20 flex-shrink-0 flex items-center justify-center">
+                          <Package className="w-5 h-5 text-rose-400" />
+                        </div>
+                        <div className="w-40 sm:w-48 md:w-56 min-w-0 flex-shrink-0">
+                          <h4 className="text-sm font-semibold text-white truncate">{prop.name}</h4>
+                          <p className="text-xs text-white/50 truncate">{CATEGORY_LABELS[prop.category]}</p>
+                        </div>
+                        {prop.description && (
+                          <div className="hidden lg:block flex-1 text-xs text-white/40 truncate">
+                            {prop.description}
+                          </div>
+                        )}
+                        <button
+                          onClick={() => deleteProp(currentProject.id, prop.id)}
+                          className="p-1.5 bg-red-500/10 hover:bg-red-500/20 rounded text-red-400 hover:text-red-300 transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
 
         {filtered.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16">

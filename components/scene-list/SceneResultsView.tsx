@@ -7,6 +7,7 @@ import SceneCard from "./SceneCard"
 import { Scene } from "@/types/scene-list"
 import { exportScenesAsJSON, exportScenesAsPDF, exportScenesAsExcel } from "@/lib/scene-export"
 import SearchBar from "@/components/ui/SearchBar"
+import ViewModeToggle, { ViewMode } from "@/components/ui/ViewModeToggle"
 import AddItemDropdown from "@/components/ui/AddItemDropdown"
 import AddViaUploadModal, { FoundEntry } from "@/components/ui/AddViaUploadModal"
 import type { SceneExtractResult } from "@/types/ai"
@@ -16,6 +17,7 @@ import ShareModal from "@/components/modals/ShareModal"
 export default function SceneResultsView() {
   const { currentProject, setView, updateScene, deleteScene, addScene, deleteProject } = useSceneList()
   const [searchQuery, setSearchQuery] = useState("")
+  const [viewMode, setViewMode] = useState<ViewMode>("full")
   const [showShareModal, setShowShareModal] = useState(false)
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [newItemId, setNewItemId] = useState<string | null>(null)
@@ -193,6 +195,9 @@ export default function SceneResultsView() {
               <Trash2 className="w-4 h-4" />
               <span className="hidden sm:inline">Delete</span>
             </button>
+
+            {/* View Mode Toggle */}
+            <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
           </div>
         </div>
 
@@ -202,17 +207,91 @@ export default function SceneResultsView() {
       </header>
 
       <div className="flex-1 overflow-y-auto p-6">
-        <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {sorted.map((scene) => (
-            <div key={scene.id} data-scene-id={scene.id} className="transition-all duration-300 rounded-xl">
-              <SceneCard
-                scene={scene}
-                onUpdate={(updated) => updateScene(currentProject.id, updated)}
-                onDelete={() => deleteScene(currentProject.id, scene.id)}
-              />
+        {/* Full View - card grid */}
+        {viewMode === "full" && (
+          <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {sorted.map((scene) => (
+              <div key={scene.id} data-scene-id={scene.id} className="transition-all duration-300 rounded-xl">
+                <SceneCard
+                  scene={scene}
+                  onUpdate={(updated) => updateScene(currentProject.id, updated)}
+                  onDelete={() => deleteScene(currentProject.id, scene.id)}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Minimal View - condensed cards */}
+        {viewMode === "minimal" && (
+          <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
+            {sorted.map((scene) => (
+              <div
+                key={scene.id}
+                data-scene-id={scene.id}
+                className="group relative p-3 rounded-lg border border-white/10 bg-[#1a2e23] hover:border-white/20 transition-colors"
+              >
+                <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => deleteScene(currentProject.id, scene.id)}
+                    className="p-1 bg-red-500/20 hover:bg-red-500/30 rounded text-red-400 hover:text-red-300 transition-colors"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-full bg-teal-500/20 flex-shrink-0 flex items-center justify-center">
+                    <span className="text-xs font-bold text-teal-400">{scene.sceneNumber}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-semibold text-white truncate">{scene.sceneHeading}</h3>
+                    <p className="text-xs text-white/50 truncate">
+                      {[scene.location, scene.timeOfDay].filter(Boolean).join(" • ")}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* List View - compact rows */}
+        {viewMode === "list" && (
+          <div ref={gridRef} className="border border-white/10 rounded-xl overflow-hidden">
+            <div className="divide-y divide-white/5">
+              {sorted.map((scene) => (
+                <div
+                  key={scene.id}
+                  data-scene-id={scene.id}
+                  className="flex items-center gap-4 px-4 py-3 hover:bg-white/5 transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-full bg-teal-500/20 flex-shrink-0 flex items-center justify-center">
+                    <span className="text-xs font-bold text-teal-400">{scene.sceneNumber}</span>
+                  </div>
+                  <div className="w-44 sm:w-56 md:w-64 min-w-0 flex-shrink-0">
+                    <h4 className="text-sm font-semibold text-white truncate">{scene.sceneHeading}</h4>
+                    <p className="text-xs text-white/50 truncate">
+                      {[scene.location, scene.timeOfDay].filter(Boolean).join(" • ")}
+                    </p>
+                  </div>
+                  {scene.rawText && (
+                    <div className="hidden lg:block flex-1 text-xs text-white/40 truncate">
+                      {scene.rawText}
+                    </div>
+                  )}
+                  <button
+                    onClick={() => deleteScene(currentProject.id, scene.id)}
+                    className="p-1.5 bg-red-500/10 hover:bg-red-500/20 rounded text-red-400 hover:text-red-300 transition-colors"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        )}
 
         {sorted.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16">

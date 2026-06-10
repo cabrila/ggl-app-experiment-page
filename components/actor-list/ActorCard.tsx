@@ -290,9 +290,9 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
 
   // View Mode
   return (
-    <div className="group relative p-5 rounded-2xl border border-white/10 bg-[#13261c] hover:border-emerald-500/30 transition-colors">
-      {/* Hover Actions */}
-      <div className="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+    <div className="group relative p-5 rounded-xl border bg-[#1a2e23] border-white/10 hover:border-white/20 transition-colors">
+      {/* Action Icons - Upper Right Corner */}
+      <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
           onClick={() => setIsEditing(true)}
           className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
@@ -309,12 +309,15 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
         </button>
       </div>
 
-      {/* Header with Headshot and Name */}
-      <div className="flex items-center gap-4 mb-4">
+      {/* Header with Avatar */}
+      <div className="flex items-start gap-4 mb-4 pt-7">
+        {/* Avatar - Clickable to open modal */}
         <button
           onClick={() => actor.headshotUrl && setShowImageModal(true)}
-          className={`w-16 h-16 rounded-full overflow-hidden bg-white/10 shrink-0 transition-all ${
-            actor.headshotUrl ? "cursor-pointer hover:ring-2 hover:ring-emerald-500/50 hover:ring-offset-2 hover:ring-offset-[#13261c]" : "cursor-default"
+          className={`w-14 h-14 rounded-full overflow-hidden bg-emerald-500/20 flex-shrink-0 transition-all ${
+            actor.headshotUrl
+              ? "cursor-pointer hover:ring-2 hover:ring-emerald-500/50 hover:ring-offset-2 hover:ring-offset-[#1a2e23]"
+              : "cursor-default"
           }`}
           disabled={!actor.headshotUrl}
           title={actor.headshotUrl ? "Click to view full image" : undefined}
@@ -326,59 +329,77 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-white/40 text-xl font-bold">
-              {actor.name.charAt(0)}
+            <div className="w-full h-full flex items-center justify-center text-emerald-400 text-xl font-bold">
+              {actor.name.charAt(0).toUpperCase()}
             </div>
           )}
         </button>
-        <div className="min-w-0 pr-16">
+
+        {/* Name & Age */}
+        <div className="flex-1 min-w-0 pt-1">
           {onNameClick && !forceExpanded ? (
             <button onClick={onNameClick} className="text-left max-w-full" title="View full actor details">
-              <h3 className="text-lg font-bold text-white uppercase tracking-wide font-sans truncate hover:text-emerald-300 transition-colors cursor-pointer">
+              <h3 className="text-lg font-bold text-white font-sans uppercase tracking-wide truncate pr-20 hover:text-emerald-300 transition-colors cursor-pointer">
                 {actor.name}
               </h3>
             </button>
           ) : (
-            <h3 className="text-lg font-bold text-white uppercase tracking-wide font-sans truncate">
+            <h3 className="text-lg font-bold text-white font-sans uppercase tracking-wide truncate pr-20">
               {actor.name}
             </h3>
           )}
-          <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#0f1f17] border border-white/10 text-xs font-sans">
-              <span className="text-white/40">Age</span>
-              <span className="text-white">{actor.age}</span>
-            </span>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#0f1f17] border border-white/10 text-xs font-sans">
-              <span className="text-white/40">Plays</span>
-              <span className="text-emerald-300">{actor.playingAge}</span>
-            </span>
+          <div className="flex items-center gap-2 text-sm">
+            {actor.age ? (
+              <span className="text-white/60">
+                AGE <span className="text-white">{actor.age}</span>
+              </span>
+            ) : null}
+            {actor.playingAge ? (
+              <span className="text-white/60">
+                PLAYS <span className="text-emerald-400">{actor.playingAge}</span>
+              </span>
+            ) : null}
           </div>
         </div>
       </div>
 
       {/* Contact Details */}
-      <div className="p-3 bg-[#0f1f17] rounded-xl border border-white/10 mb-4">
+      <div className="p-3 bg-[#0f1f17] rounded-lg mb-4">
         <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">
           Contact Details
         </p>
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-2 text-sm">
-            <Phone className="w-4 h-4 text-white/40" />
-            <span className="text-white/80 font-sans">{actor.phone}</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
+        <div className="space-y-2">
+          {actor.phone && (
+            <div className="flex items-center gap-2 text-sm text-white/80">
+              <Phone className="w-4 h-4 text-white/40" />
+              <span>{actor.phone}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-2 text-sm text-white/80">
             <Mail className="w-4 h-4 text-white/40" />
-            <span className="text-white/80 font-sans">{actor.email}</span>
+            <span className="truncate">{actor.email}</span>
           </div>
         </div>
       </div>
 
+      {/* Notes */}
+      {actor.notes && (
+        <div className="p-3 bg-[#0f1f17] rounded-lg">
+          <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">
+            Notes
+          </p>
+          <p className="text-sm text-white/80 font-sans leading-relaxed">
+            {actor.notes}
+          </p>
+        </div>
+      )}
+
       {/* More Information - extra submission fields + media material */}
       {hasMoreInfo && (
-        <div className="mb-4 rounded-xl border border-white/10 overflow-hidden">
+        <div className="mt-3 rounded-lg border border-white/10 overflow-hidden">
           {forceExpanded ? (
             <div className="w-full flex items-center px-3 py-2.5 bg-[#0f1f17]">
-              <span className="text-xs font-semibold text-white/40 uppercase tracking-wider">
+              <span className="text-xs font-semibold text-white/60 uppercase tracking-wider">
                 More Information
               </span>
             </div>
@@ -388,7 +409,7 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
               className="w-full flex items-center justify-between px-3 py-2.5 bg-[#0f1f17] hover:bg-[#0f1f17]/70 transition-colors"
               aria-expanded={moreInfoOpen}
             >
-              <span className="text-xs font-semibold text-white/40 uppercase tracking-wider">
+              <span className="text-xs font-semibold text-white/60 uppercase tracking-wider">
                 More Information
               </span>
               <ChevronDown
@@ -399,7 +420,7 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
           {moreInfoOpen && (
             <div className="px-3 py-3 bg-[#0f1f17] border-t border-white/10 space-y-3">
               {hasCustomFields && (
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   {actor.customFields!.map((field) => (
                     <div key={field.id} className="flex items-start gap-2 text-sm">
                       <span className="text-white/50 font-sans shrink-0">{field.name}:</span>
@@ -426,18 +447,6 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
               )}
             </div>
           )}
-        </div>
-      )}
-
-      {/* Notes */}
-      {actor.notes && (
-        <div>
-          <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">
-            Notes
-          </p>
-          <p className="text-sm text-white/70 font-sans leading-relaxed">
-            {actor.notes}
-          </p>
         </div>
       )}
 

@@ -133,8 +133,16 @@ export default function CastingCallsList({
     { value: "most-submissions", label: "Most Submissions" },
   ]
 
+  // IDs of projects that belong to a casting group. A casting call lives in
+  // either a group container OR the unassigned list, never both.
+  const groupedProjectIds = useMemo(
+    () => new Set(groups.flatMap((g) => g.projectIds)),
+    [groups]
+  )
+
   const visibleProjects = useMemo(() => {
-    let result = [...state.projects]
+    // Only unassigned casting calls appear in the grid below the groups.
+    let result = state.projects.filter((p) => !groupedProjectIds.has(p.id))
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim()
@@ -169,7 +177,7 @@ export default function CastingCallsList({
     }
 
     return result
-  }, [state.projects, searchQuery, filterByStatus, sortBy])
+  }, [state.projects, searchQuery, filterByStatus, sortBy, groupedProjectIds])
 
   const newCount = getNewSubmissionsCount()
   const totalSubmissions = getTotalSubmissions()
@@ -331,7 +339,10 @@ export default function CastingCallsList({
         </div>
       )}
 
-      {/* Projects Grid */}
+      {/* Groups render first (top), unassigned casting calls below */}
+      <div className="flex flex-col gap-10">
+      {/* Unassigned Casting Calls Grid (rendered below groups) */}
+      <div className="order-2">
       {state.projects.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
@@ -341,13 +352,15 @@ export default function CastingCallsList({
           <p className="text-white/40 text-sm font-sans mb-4">Create your first casting call to start receiving submissions.</p>
         </div>
       ) : visibleProjects.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
-            <Search className="w-8 h-8 text-white/30" />
+        searchQuery.trim() || filterByStatus !== "all" ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
+              <Search className="w-8 h-8 text-white/30" />
+            </div>
+            <h3 className="text-lg font-semibold text-white/70 mb-2 font-sans">No casting calls match your filters</h3>
+            <p className="text-white/40 text-sm font-sans mb-4">Try adjusting your search or filter options.</p>
           </div>
-          <h3 className="text-lg font-semibold text-white/70 mb-2 font-sans">No casting calls match your filters</h3>
-          <p className="text-white/40 text-sm font-sans mb-4">Try adjusting your search or filter options.</p>
-        </div>
+        ) : null
       ) : (
         <div
           className={
@@ -683,10 +696,11 @@ export default function CastingCallsList({
           })}
         </div>
       )}
+      </div>
 
-      {/* Casting Groups - Collapsable Folders */}
+      {/* Casting Groups - Collapsable Folders (rendered above unassigned) */}
       {groups.length > 0 && (
-        <div className="mt-10">
+        <div className="order-1">
           <h2 className="text-xl font-bold text-white mb-4 font-sans">Casting Groups</h2>
           <div className="flex flex-col gap-4">
             {groups.map((group) => {
@@ -907,6 +921,7 @@ export default function CastingCallsList({
           </div>
         </div>
       )}
+      </div>
 
       {/* Preview Modal */}
       {previewCastingCall && (

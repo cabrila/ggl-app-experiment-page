@@ -19,6 +19,7 @@ import { useActorList } from "./ActorListContext"
 import { Actor, ActorGender, AggregatedActor } from "@/types/actor-list"
 import SearchBar from "@/components/ui/SearchBar"
 import ViewModeToggle, { ViewMode } from "@/components/ui/ViewModeToggle"
+import ImageModal from "@/components/ui/ImageModal"
 
 const GENDER_GROUPS: ActorGender[] = ["Male", "Female", "Other", "Not-specified"]
 
@@ -47,6 +48,8 @@ export default function AllActorsView() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [newListName, setNewListName] = useState("")
   const [editActor, setEditActor] = useState<Actor | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<AggregatedActor | null>(null)
+  const [fullScreenHeadshot, setFullScreenHeadshot] = useState<{ src: string; alt: string } | null>(null)
 
   const filteredActors = allActors.filter((actor) => {
     const q = searchQuery.toLowerCase()
@@ -109,8 +112,13 @@ export default function AllActorsView() {
   }
 
   const handleDelete = (actor: AggregatedActor) => {
-    if (confirm(`Delete ${actor.name} from all lists? This cannot be undone.`)) {
-      deleteActorGlobally(actor.id)
+    setDeleteTarget(actor)
+  }
+
+  const confirmDelete = () => {
+    if (deleteTarget) {
+      deleteActorGlobally(deleteTarget.id)
+      setDeleteTarget(null)
     }
   }
 
@@ -247,6 +255,9 @@ export default function AllActorsView() {
                 onEdit={() => setEditActor(stripAggregate(actor))}
                 onDelete={() => handleDelete(actor)}
                 onDismissDuplicate={() => dismissDuplicate(actor.name)}
+                onViewHeadshot={() =>
+                  actor.headshotUrl && setFullScreenHeadshot({ src: actor.headshotUrl, alt: actor.name })
+                }
               />
             ))}
           </div>
@@ -272,7 +283,12 @@ export default function AllActorsView() {
                 </div>
                 <div className="flex items-center gap-2.5">
                   <Checkbox checked={selectedIds.has(actor.id)} onClick={() => toggleSelect(actor.id)} />
-                  <Avatar actor={actor} />
+                  <Avatar
+                    actor={actor}
+                    onClick={() =>
+                      actor.headshotUrl && setFullScreenHeadshot({ src: actor.headshotUrl, alt: actor.name })
+                    }
+                  />
                   <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-semibold text-white truncate">{actor.name}</h3>
                     <p className="text-xs text-white/50 truncate">
@@ -308,7 +324,12 @@ export default function AllActorsView() {
                         }`}
                       >
                         <Checkbox checked={selectedIds.has(actor.id)} onClick={() => toggleSelect(actor.id)} />
-                        <Avatar actor={actor} />
+                        <Avatar
+                          actor={actor}
+                          onClick={() =>
+                            actor.headshotUrl && setFullScreenHeadshot({ src: actor.headshotUrl, alt: actor.name })
+                          }
+                        />
                         <div className="w-40 sm:w-48 md:w-56 min-w-0 flex-shrink-0">
                           <h4 className="text-sm font-semibold text-white truncate">{actor.name}</h4>
                           <p className="text-xs text-white/50 truncate">
@@ -440,6 +461,56 @@ export default function AllActorsView() {
           }}
         />
       )}
+
+      {/* Delete Warning Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setDeleteTarget(null)}>
+          <div className="bg-[#1a2e23] border border-white/10 rounded-xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-red-400" />
+                <h2 className="text-lg font-bold text-white font-sans">Delete Actor</h2>
+              </div>
+              <button onClick={() => setDeleteTarget(null)} className="p-1 hover:bg-white/10 rounded-lg transition-colors">
+                <X className="w-5 h-5 text-white/50" />
+              </button>
+            </div>
+            <div className="p-5">
+              <p className="text-white/80 text-sm font-sans leading-relaxed">
+                Deleting <span className="font-semibold text-white">{deleteTarget.name}</span> here will delete this
+                actor from <span className="font-semibold text-white">all lists</span> as well.
+              </p>
+              {deleteTarget.sourceListNames.length > 0 && (
+                <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                  {deleteTarget.sourceListNames.map((name, idx) => (
+                    <span key={idx} className="px-2 py-0.5 bg-red-500/15 border border-red-500/25 rounded text-[11px] text-red-300 truncate max-w-[160px]">
+                      {name}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <p className="mt-3 text-white/50 text-xs font-sans">This action cannot be undone.</p>
+            </div>
+            <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-white/10">
+              <button onClick={() => setDeleteTarget(null)} className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white text-sm transition-colors font-sans">
+                Cancel
+              </button>
+              <button onClick={confirmDelete} className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-400 rounded-lg text-white text-sm transition-colors font-sans">
+                <Trash2 className="w-4 h-4" />
+                Delete from all lists
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full-screen Headshot Viewer */}
+      <ImageModal
+        isOpen={!!fullScreenHeadshot}
+        onClose={() => setFullScreenHeadshot(null)}
+        src={fullScreenHeadshot?.src || ""}
+        alt={fullScreenHeadshot?.alt || ""}
+      />
     </div>
   )
 }
@@ -478,9 +549,18 @@ function Checkbox({ checked, onClick }: { checked: boolean; onClick: () => void 
   )
 }
 
-function Avatar({ actor }: { actor: Actor }) {
+function Avatar({ actor, onClick }: { actor: Actor; onClick?: () => void }) {
+  const clickable = !!(onClick && actor.headshotUrl)
   return (
-    <div className="w-10 h-10 rounded-full overflow-hidden bg-sky-500/20 flex-shrink-0">
+    <button
+      type="button"
+      onClick={clickable ? onClick : undefined}
+      disabled={!clickable}
+      title={clickable ? "Click to view full image" : undefined}
+      className={`w-10 h-10 rounded-full overflow-hidden bg-sky-500/20 flex-shrink-0 transition-all ${
+        clickable ? "cursor-pointer hover:ring-2 hover:ring-sky-500/50" : "cursor-default"
+      }`}
+    >
       {actor.headshotUrl ? (
         <Image src={actor.headshotUrl} alt={actor.name} width={40} height={40} className="w-full h-full object-cover" />
       ) : (
@@ -488,7 +568,7 @@ function Avatar({ actor }: { actor: Actor }) {
           {actor.name.charAt(0).toUpperCase()}
         </div>
       )}
-    </div>
+    </button>
   )
 }
 
@@ -499,6 +579,7 @@ function ActorFullCard({
   onEdit,
   onDelete,
   onDismissDuplicate,
+  onViewHeadshot,
 }: {
   actor: AggregatedActor
   selected: boolean
@@ -506,6 +587,7 @@ function ActorFullCard({
   onEdit: () => void
   onDelete: () => void
   onDismissDuplicate: () => void
+  onViewHeadshot: () => void
 }) {
   return (
     <div
@@ -534,7 +616,7 @@ function ActorFullCard({
 
       <div className="flex items-start gap-3">
         <Checkbox checked={selected} onClick={onToggle} />
-        <Avatar actor={actor} />
+        <Avatar actor={actor} onClick={onViewHeadshot} />
         <div className="flex-1 min-w-0">
           <h3 className="text-base font-semibold text-white truncate font-sans">{actor.name}</h3>
           <p className="text-xs text-white/50 font-sans">

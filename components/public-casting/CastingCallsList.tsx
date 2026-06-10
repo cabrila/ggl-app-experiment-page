@@ -383,46 +383,48 @@ export default function CastingCallsList({
 
                 {/* Content Section - 2/3 width */}
                 <div className="flex-1 flex flex-col p-4">
-                  {/* Top-right Quick Actions (always visible on hover) */}
-                  {hoveredProjectId === project.id && (
-                    <div className="absolute top-3 right-3 flex items-center gap-1">
-                      {hasCastingCall && (
+                  {/* Reserved header strip for hover action icons (keeps content below them) */}
+                  <div className="relative h-8 mb-1 flex-shrink-0">
+                    {hoveredProjectId === project.id && (
+                      <div className="absolute top-0 right-0 flex items-center gap-1">
+                        {hasCastingCall && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setQrCodeCastingCall(castingCall)
+                            }}
+                            className="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
+                            title="Generate QR Code"
+                          >
+                            <QrCode className="w-4 h-4" />
+                          </button>
+                        )}
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setQrCodeCastingCall(castingCall)
-                          }}
+                          onClick={(e) => handleEditProject(e, project)}
                           className="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
-                          title="Generate QR Code"
+                          title="Rename"
                         >
-                          <QrCode className="w-4 h-4" />
+                          <FolderEdit className="w-4 h-4" />
                         </button>
-                      )}
-                      <button
-                        onClick={(e) => handleEditProject(e, project)}
-                        className="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
-                        title="Rename"
-                      >
-                        <FolderEdit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={(e) => handleDeleteProject(e, project)}
-                        className="p-1.5 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-red-400 hover:text-red-300 transition-colors"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
+                        <button
+                          onClick={(e) => handleDeleteProject(e, project)}
+                          className="p-1.5 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-red-400 hover:text-red-300 transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
 
                   {/* Project Name */}
-                  <h3 className="text-sm font-semibold text-white mb-0.5 font-sans pr-16 line-clamp-1">
+                  <h3 className="text-sm font-semibold text-white mb-0.5 font-sans line-clamp-1">
                     {project.name}
                   </h3>
 
                   {/* Casting Call Title (if exists) */}
                   {hasCastingCall && castingCall.title && (
-                    <p className="text-xs text-white/50 mb-2 font-sans truncate pr-16">
+                    <p className="text-xs text-white/50 mb-2 font-sans truncate">
                       {castingCall.title}
                     </p>
                   )}

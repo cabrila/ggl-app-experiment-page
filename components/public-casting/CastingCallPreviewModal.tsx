@@ -55,8 +55,7 @@ export default function CastingCallPreviewModal({ castingCall, project, onClose 
     }
   }
 
-  // Update one entry within a multi-value (newline-separated) field
-  // Add a blank entry to a multi-value field
+  // Add an entry to a multi-value field (used for multiple image uploads)
   const handleAddMultiValue = (fieldLabel: string, value = "") => {
     const values = splitMultiValue(formData[fieldLabel])
     values.push(value)

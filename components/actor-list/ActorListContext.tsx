@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useMemo, ReactNode } from "react"
 import { User } from "firebase/auth"
-import { Actor, ActorListProject, AggregatedActor } from "@/types/actor-list"
+import { Actor, ActorGender, ActorListProject, AggregatedActor } from "@/types/actor-list"
 import { subscribeToAuthStateChanges } from "@/lib/auth"
 import {
   subscribeToActorProjects,
@@ -115,6 +115,148 @@ const demoActors: Actor[] = [
   },
 ]
 
+// Re-used demo headshot images, split by gender (existing mock data images).
+const maleHeadshots = [
+  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face",
+  "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
+  "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop&crop=face",
+  "https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=150&h=150&fit=crop&crop=face",
+  "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&h=150&fit=crop&crop=face",
+]
+const femaleHeadshots = [
+  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face",
+  "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
+]
+
+// Helper: build a list of actors from compact tuples, assigning a gender-matched
+// re-used headshot image automatically.
+// Tuple shape: [name, gender, age, playingAge, phone, email, notes]
+const buildActors = (
+  key: string,
+  rows: [string, ActorGender, number, string, string, string, string][]
+): Actor[] => {
+  let mi = 0
+  let fi = 0
+  return rows.map(([name, gender, age, playingAge, phone, email, notes], i) => {
+    const headshotUrl =
+      gender === "Female"
+        ? femaleHeadshots[fi++ % femaleHeadshots.length]
+        : maleHeadshots[mi++ % maleHeadshots.length]
+    return {
+      id: `${key}-actor-${i + 1}`,
+      name,
+      age,
+      gender,
+      playingAge,
+      phone,
+      email,
+      headshotUrl,
+      notes,
+    }
+  })
+}
+
+const extraActorProjects: ActorListProject[] = [
+  {
+    id: "demo-actors-drama",
+    name: "Crimson_Vale_Drama_Shortlist",
+    createdAt: new Date("2026-05-02"),
+    updatedAt: new Date("2026-05-02"),
+    isDemo: true,
+    actors: buildActors("drama", [
+      ["Beatrix Lowell", "Female", 34, "30-40", "+1-555-1001", "beatrix.lowell@email.com", "Trained at RADA. Excels in restrained emotional roles. Available from June."],
+      ["Desmond Aoki", "Male", 41, "38-48", "+1-555-1002", "desmond.aoki@email.com", "Bilingual (English/Japanese). Strong screen presence for antagonists."],
+      ["Cordelia Marsh", "Female", 27, "24-30", "+1-555-1003", "cordelia.marsh@email.com", "Rising stage talent. Comfortable with intense close-up work."],
+      ["Roman Ellison", "Male", 52, "48-60", "+1-555-1004", "roman.ellison@email.com", "Veteran character actor. Gravitas for authority figures and patriarchs."],
+      ["Saffron Bell", "Female", 38, "35-45", "+1-555-1005", "saffron.bell@email.com", "Award-nominated indie lead. Prefers character-driven scripts."],
+      ["Atticus Vaughn", "Male", 30, "28-36", "+1-555-1006", "atticus.vaughn@email.com", "Physical theater background. Great with movement-heavy blocking."],
+      ["Lucinda Frost", "Female", 45, "42-52", "+1-555-1007", "lucinda.frost@email.com", "Commanding voice. Frequently cast as judges and executives."],
+      ["Bartholomew Vue", "Male", 36, "32-42", "+1-555-1008", "bart.vue@email.com", "Subtle comedic instincts that ground heavy drama. SAG-AFTRA."],
+      ["Ophelia Crane", "Female", 29, "25-33", "+1-555-1009", "ophelia.crane@email.com", "Dancer-actor hybrid. Available for relocation shoots."],
+      ["Gideon Hawthorne", "Male", 48, "44-55", "+1-555-1010", "gideon.hawthorne@email.com", "Specializes in morally ambiguous leads. Strong improv skills."],
+      ["Tamsin Ngata", "Female", 33, "30-40", "+1-555-1011", "tamsin.ngata@email.com", "International credits. Fluent accent work across regions."],
+    ]),
+  },
+  {
+    id: "demo-actors-action",
+    name: "Steel_Horizon_Action_Pool",
+    createdAt: new Date("2026-05-03"),
+    updatedAt: new Date("2026-05-03"),
+    isDemo: true,
+    actors: buildActors("action", [
+      ["Cassius Reed", "Male", 35, "30-42", "+1-555-2001", "cassius.reed@email.com", "Certified in stage combat and motorcycle stunts. Does own driving."],
+      ["Valentina Cruz", "Female", 31, "27-36", "+1-555-2002", "valentina.cruz@email.com", "Former gymnast. Wire work and fight choreography experience."],
+      ["Knox Barret", "Male", 44, "40-50", "+1-555-2003", "knox.barret@email.com", "Ex-military advisor and actor. Authentic tactical movement."],
+      ["Sable Knight", "Female", 28, "24-32", "+1-555-2004", "sable.knight@email.com", "Parkour athlete. Comfortable at height with proper rigging."],
+      ["Dominic Stahl", "Male", 39, "35-45", "+1-555-2005", "dominic.stahl@email.com", "Heavy/villain types. Trained in MMA for realistic fight scenes."],
+      ["Wren Castillo", "Female", 26, "22-30", "+1-555-2006", "wren.castillo@email.com", "Stunt driver and actor. Available for international productions."],
+      ["Magnus Thorne", "Male", 50, "46-58", "+1-555-2007", "magnus.thorne@email.com", "Imposing build. Often cast as mercenaries and enforcers."],
+      ["Indira Sol", "Female", 37, "33-43", "+1-555-2008", "indira.sol@email.com", "Weapons-handling certified. Calm under pyrotechnics."],
+      ["Ezra Vance", "Male", 33, "29-38", "+1-555-2009", "ezra.vance@email.com", "Lead-hero quality with action chops. Excellent stamina for long days."],
+      ["Petra Lindqvist", "Female", 42, "38-48", "+1-555-2010", "petra.lindqvist@email.com", "Veteran action actress. Multilingual; strong on improvised reaction."],
+    ]),
+  },
+  {
+    id: "demo-actors-comedy",
+    name: "Sunny_Side_Comedy_Casting",
+    createdAt: new Date("2026-05-04"),
+    updatedAt: new Date("2026-05-04"),
+    isDemo: true,
+    actors: buildActors("comedy", [
+      ["Toby Fairchild", "Male", 29, "25-34", "+1-555-3001", "toby.fairchild@email.com", "Improv troupe veteran. Impeccable timing; great for ensemble work."],
+      ["Margot Pennywhistle", "Female", 35, "30-42", "+1-555-3002", "margot.penny@email.com", "Sketch comedy background. Strong physical and deadpan range."],
+      ["Reggie Salazar", "Male", 47, "42-55", "+1-555-3003", "reggie.salazar@email.com", "Sitcom veteran. Warm everyman dad energy audiences love."],
+      ["Bella Quintero", "Female", 24, "20-28", "+1-555-3004", "bella.quintero@email.com", "Fresh comedic lead. Viral short-form following; quick study."],
+      ["Hugo Bramble", "Male", 38, "34-44", "+1-555-3005", "hugo.bramble@email.com", "Dry British wit. Excellent at playing exasperated authority."],
+      ["Dot Mancini", "Female", 52, "48-60", "+1-555-3006", "dot.mancini@email.com", "Scene-stealing supporting comedienne. Decades of stage farce."],
+      ["Pip Calloway", "Male", 26, "22-30", "+1-555-3007", "pip.calloway@email.com", "Goofy charm and elastic face. Strong reactive comedy."],
+      ["Florence Vane", "Female", 31, "27-36", "+1-555-3008", "florence.vane@email.com", "Rom-com lead quality. Natural chemistry in chemistry reads."],
+      ["Marvin Oduya", "Male", 43, "38-48", "+1-555-3009", "marvin.oduya@email.com", "Stand-up crossover. Confident with live audience and ad-libs."],
+      ["Cleo Hartwell", "Female", 28, "24-33", "+1-555-3010", "cleo.hartwell@email.com", "Musical comedy skills. Sings and plays for character bits."],
+      ["Sid Brennan", "Male", 34, "30-40", "+1-555-3011", "sid.brennan@email.com", "Straight-man specialist. Anchors chaotic ensemble scenes."],
+    ]),
+  },
+  {
+    id: "demo-actors-period",
+    name: "Gilded_Era_Period_Longlist",
+    createdAt: new Date("2026-05-05"),
+    updatedAt: new Date("2026-05-05"),
+    isDemo: true,
+    actors: buildActors("period", [
+      ["Augustus Pemberton", "Male", 55, "50-65", "+1-555-4001", "augustus.pemberton@email.com", "Classical training. Exceptional with period diction and bearing."],
+      ["Genevieve Ashford", "Female", 40, "35-48", "+1-555-4002", "genevieve.ashford@email.com", "Corseted-drama veteran. Skilled in period dance and etiquette."],
+      ["Percival Crane", "Male", 33, "28-40", "+1-555-4003", "percival.crane@email.com", "Romantic lead for costume drama. Horse-riding certified."],
+      ["Arabella Stone", "Female", 26, "22-30", "+1-555-4004", "arabella.stone@email.com", "Ingenue roles. Trained in historical movement and fan work."],
+      ["Edmund Hale", "Male", 61, "55-70", "+1-555-4005", "edmund.hale@email.com", "Distinguished elder statesman type. Rich baritone narration voice."],
+      ["Constance Vey", "Female", 48, "44-56", "+1-555-4006", "constance.vey@email.com", "Matriarch and dowager specialist. Commanding period presence."],
+      ["Theodore Fox", "Male", 37, "32-44", "+1-555-4007", "theodore.fox@email.com", "Plays scheming aristocrats with relish. Fluent in fencing."],
+      ["Lavinia Birch", "Female", 30, "26-36", "+1-555-4008", "lavinia.birch@email.com", "Governess and lady's-maid roles. Detailed accent precision."],
+      ["Horace Welling", "Male", 44, "40-52", "+1-555-4009", "horace.welling@email.com", "Merchant and tradesman types. Grounded, naturalistic style."],
+      ["Millicent Gray", "Female", 35, "30-42", "+1-555-4010", "millicent.gray@email.com", "Strong dramatic period lead. Comfortable in long single takes."],
+    ]),
+  },
+  {
+    id: "demo-actors-youth",
+    name: "Bright_Futures_Young_Talent",
+    createdAt: new Date("2026-05-06"),
+    updatedAt: new Date("2026-05-06"),
+    isDemo: true,
+    actors: buildActors("youth", [
+      ["Felix Marlow", "Male", 19, "16-22", "+1-555-5001", "felix.marlow@email.com", "Recent drama-school grad. Eager, coachable, strong emotional access."],
+      ["Juniper Vale", "Female", 21, "18-24", "+1-555-5002", "juniper.vale@email.com", "Breakout short-film lead. Natural, unaffected screen quality."],
+      ["Caleb Ross", "Male", 23, "19-26", "+1-555-5003", "caleb.ross@email.com", "Athletic young-lead type. Plays both charming and troubled."],
+      ["Maya Brennan", "Female", 18, "15-21", "+1-555-5004", "maya.brennan@email.com", "Teen-role specialist. Plays younger; experienced on set."],
+      ["Oscar Lin", "Male", 22, "18-25", "+1-555-5005", "oscar.lin@email.com", "Music and acting double threat. Strong with comedic timing."],
+      ["Harper Quinn", "Female", 20, "17-23", "+1-555-5006", "harper.quinn@email.com", "Dramatic young actress. Notable indie festival credit last year."],
+      ["Elliot Voss", "Male", 24, "20-28", "+1-555-5007", "elliot.voss@email.com", "College-age everyman. Relatable, grounded delivery."],
+      ["Sienna Frost", "Female", 19, "16-22", "+1-555-5008", "sienna.frost@email.com", "Dance-trained newcomer. Expressive physicality and presence."],
+      ["Jude Castillo", "Male", 21, "18-24", "+1-555-5009", "jude.castillo@email.com", "Rising social-media talent transitioning to scripted roles."],
+      ["Nora Ellison", "Female", 23, "19-26", "+1-555-5010", "nora.ellison@email.com", "Versatile young lead. Excellent cold-read and improv ability."],
+    ]),
+  },
+]
+
 const demoProjects: ActorListProject[] = [
   {
     id: "demo-1",
@@ -124,6 +266,7 @@ const demoProjects: ActorListProject[] = [
     updatedAt: new Date("2026-04-29"),
     isDemo: true,
   },
+  ...extraActorProjects,
 ]
 
 export function ActorListProvider({ children }: { children: ReactNode }) {

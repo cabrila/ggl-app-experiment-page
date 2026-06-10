@@ -145,8 +145,8 @@ const createDemoData = (): PublicCastingProject[] => {
     {
       id: "proj-1",
       name: "Midnight Echo",
-      castingCalls: demoCastingCalls,
-      submissions: demoSubmissions,
+      castingCalls: [...demoCastingCalls, ...extraCastingCalls],
+      submissions: [...demoSubmissions, ...extraSubmissions],
       createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
     },
   ]

@@ -224,16 +224,19 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
     clearSelection()
   }
 
+  // Cards to export: selected ones if any are selected, otherwise all filtered (default).
+  const submissionsToExport = selectedSubmissions.length > 0 ? selectedSubmissions : filteredSubmissions
+
   const handleExportJSON = () => {
-    exportSubmissionsAsJSON(filteredSubmissions, "casting_submissions")
+    exportSubmissionsAsJSON(submissionsToExport, "casting_submissions")
   }
 
   const handleExportPDF = () => {
-    exportSubmissionsAsPDF(filteredSubmissions, "casting_submissions")
+    exportSubmissionsAsPDF(submissionsToExport, "casting_submissions")
   }
 
   const handleExportExcel = () => {
-    exportSubmissionsAsExcel(filteredSubmissions, "casting_submissions")
+    exportSubmissionsAsExcel(submissionsToExport, "casting_submissions")
   }
 
   const sortOptions: { value: SortOption; label: string }[] = [

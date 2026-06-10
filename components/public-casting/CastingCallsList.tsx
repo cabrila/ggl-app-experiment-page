@@ -467,7 +467,7 @@ export default function CastingCallsList({
 
                   {/* Submissions count */}
                   {project.submissions.length > 0 && (
-                    <div className="mb-6 flex items-center gap-1 text-xs text-violet-300">
+                    <div className="mb-8 flex items-center gap-1 text-xs text-violet-300">
                       <Users className="w-3 h-3" />
                       <button
                         type="button"

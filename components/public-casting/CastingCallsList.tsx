@@ -8,6 +8,7 @@ import CastingCallPreviewModal from "./CastingCallPreviewModal"
 import DeleteConfirmationModal from "@/components/ui/DeleteConfirmationModal"
 import EditProjectWithThumbnailModal from "@/components/ui/EditProjectWithThumbnailModal"
 import QRCodeModal from "./QRCodeModal"
+import ViewModeToggle, { ViewMode } from "@/components/ui/ViewModeToggle"
 
 interface CastingCallsListProps {
   onNewCastingCall: () => void
@@ -42,6 +43,9 @@ export default function CastingCallsList({
   const [sortBy, setSortBy] = useState<CastingSortOption>("newest")
   const [filterByStatus, setFilterByStatus] = useState<CastingStatusFilter>("all")
   const [showSortDropdown, setShowSortDropdown] = useState(false)
+
+  // View mode (applies to both the main grid and created casting groups)
+  const [viewMode, setViewMode] = useState<ViewMode>("full")
 
   // Selection + Casting Groups
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([])
@@ -321,6 +325,9 @@ export default function CastingCallsList({
               </div>
             )}
           </div>
+
+          {/* View Mode Toggle */}
+          <ViewModeToggle viewMode={viewMode} onChange={setViewMode} className="sm:ml-auto" />
         </div>
       )}
 
@@ -342,11 +349,171 @@ export default function CastingCallsList({
           <p className="text-white/40 text-sm font-sans mb-4">Try adjusting your search or filter options.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div
+          className={
+            viewMode === "list"
+              ? "flex flex-col gap-2"
+              : viewMode === "minimal"
+              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"
+              : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+          }
+        >
           {visibleProjects.map((project) => {
             const castingCall = project.castingCalls[0]
             const hasCastingCall = !!castingCall
-            
+
+            // List view - single dense row
+            if (viewMode === "list") {
+              return (
+                <div
+                  key={project.id}
+                  className={`group relative flex items-center gap-3 p-3 rounded-lg border bg-[#1a2e23] transition-colors ${
+                    selectedProjectIds.includes(project.id)
+                      ? "border-amber-500/50 ring-2 ring-amber-500/20"
+                      : "border-white/10 hover:border-violet-500/30"
+                  }`}
+                >
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      toggleSelectProject(project.id)
+                    }}
+                    className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                      selectedProjectIds.includes(project.id)
+                        ? "bg-amber-500 border-amber-500 text-white"
+                        : "border-white/40 hover:border-amber-400 bg-[#0f1f17]/80"
+                    }`}
+                    title={selectedProjectIds.includes(project.id) ? "Deselect" : "Select"}
+                  >
+                    {selectedProjectIds.includes(project.id) && (
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </button>
+                  <div className="w-10 h-10 rounded-lg bg-[#0f1f17] flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {project.thumbnailUrl ? (
+                      <img src={project.thumbnailUrl} alt={project.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <Megaphone className="w-5 h-5 text-violet-400" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-white truncate font-sans">
+                      {hasCastingCall && castingCall.title ? castingCall.title : project.name}
+                    </p>
+                    <p className="text-xs text-white/50 truncate font-sans">{project.name}</p>
+                  </div>
+                  <span className="text-xs text-white/40 font-sans flex items-center gap-1 flex-shrink-0">
+                    <Users className="w-3 h-3" />
+                    {project.submissions.length}
+                  </span>
+                  {hasCastingCall && (
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setPreviewCastingCall(castingCall)
+                        }}
+                        className="p-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/70 hover:text-white transition-colors"
+                        title="Preview"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onEditCastingCall(castingCall, project)
+                        }}
+                        className="p-1.5 bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/30 rounded-lg text-violet-300 hover:text-violet-200 transition-colors"
+                        title="Edit"
+                      >
+                        <FileEdit className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )
+            }
+
+            // Minimal view - condensed card
+            if (viewMode === "minimal") {
+              return (
+                <div
+                  key={project.id}
+                  className={`group relative flex flex-col rounded-xl border bg-[#1a2e23] transition-colors overflow-hidden ${
+                    selectedProjectIds.includes(project.id)
+                      ? "border-amber-500/50 ring-2 ring-amber-500/20"
+                      : "border-white/10 hover:border-violet-500/30"
+                  }`}
+                >
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      toggleSelectProject(project.id)
+                    }}
+                    className={`absolute top-2 left-2 z-10 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                      selectedProjectIds.includes(project.id)
+                        ? "bg-amber-500 border-amber-500 text-white"
+                        : "border-white/40 hover:border-amber-400 bg-[#0f1f17]/80"
+                    }`}
+                    title={selectedProjectIds.includes(project.id) ? "Deselect" : "Select"}
+                  >
+                    {selectedProjectIds.includes(project.id) && (
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </button>
+                  <div className="h-24 bg-[#0f1f17] flex-shrink-0">
+                    {project.thumbnailUrl ? (
+                      <img src={project.thumbnailUrl} alt={project.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Megaphone className="w-7 h-7 text-violet-400" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1 p-3">
+                    <h3 className="text-sm font-bold text-white font-sans line-clamp-1">
+                      {hasCastingCall && castingCall.title ? castingCall.title : project.name}
+                    </h3>
+                    <p className="text-xs text-white/50 truncate font-sans">{project.name}</p>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-xs text-white/40 font-sans flex items-center gap-1">
+                        <Users className="w-3 h-3" />
+                        {project.submissions.length}
+                      </span>
+                      {hasCastingCall && (
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setPreviewCastingCall(castingCall)
+                            }}
+                            className="p-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/70 hover:text-white transition-colors"
+                            title="Preview"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onEditCastingCall(castingCall, project)
+                            }}
+                            className="p-1 bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/30 rounded-lg text-violet-300 hover:text-violet-200 transition-colors"
+                            title="Edit"
+                          >
+                            <FileEdit className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )
+            }
+
             return (
               <div
                 key={project.id}
@@ -625,11 +792,84 @@ export default function CastingCallsList({
                     </div>
                   </div>
 
-                  {/* Group Contents */}
+                  {/* Group Contents - rendered in the slot matching the selected view mode */}
                   {!isCollapsed && (
-                    <div className="px-4 pb-4 flex flex-col gap-2">
+                    <div
+                      className={
+                        viewMode === "list"
+                          ? "px-4 pb-4 flex flex-col gap-2"
+                          : viewMode === "minimal"
+                          ? "px-4 pb-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"
+                          : "px-4 pb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+                      }
+                    >
                       {groupProjects.map((project) => {
                         const cc = project.castingCalls[0]
+
+                        // Full slot - thumbnail card
+                        if (viewMode === "full") {
+                          return (
+                            <div
+                              key={project.id}
+                              className="flex flex-col rounded-lg bg-[#0f1f17] border border-white/10 overflow-hidden"
+                            >
+                              <div className="h-24 bg-[#13261c] flex-shrink-0">
+                                {project.thumbnailUrl ? (
+                                  <img
+                                    src={project.thumbnailUrl || "/placeholder.svg"}
+                                    alt={project.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center">
+                                    <Megaphone className="w-7 h-7 text-violet-400" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex flex-col gap-1 p-3">
+                                <p className="text-sm font-semibold text-white font-sans line-clamp-1">
+                                  {cc?.title || project.name}
+                                </p>
+                                <p className="text-xs text-white/50 truncate font-sans">{project.name}</p>
+                                <span className="mt-1 text-xs text-white/40 font-sans flex items-center gap-1">
+                                  <Users className="w-3 h-3" />
+                                  {project.submissions.length} submissions
+                                </span>
+                              </div>
+                            </div>
+                          )
+                        }
+
+                        // Minimal slot - compact card
+                        if (viewMode === "minimal") {
+                          return (
+                            <div
+                              key={project.id}
+                              className="flex flex-col items-center text-center gap-2 p-3 rounded-lg bg-[#0f1f17] border border-white/10"
+                            >
+                              <div className="w-12 h-12 rounded-lg bg-violet-500/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                                {project.thumbnailUrl ? (
+                                  <img
+                                    src={project.thumbnailUrl || "/placeholder.svg"}
+                                    alt={project.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <Megaphone className="w-5 h-5 text-violet-400" />
+                                )}
+                              </div>
+                              <p className="text-xs font-semibold text-white line-clamp-1 w-full font-sans">
+                                {cc?.title || project.name}
+                              </p>
+                              <span className="text-[11px] text-white/40 font-sans flex items-center gap-1">
+                                <Users className="w-3 h-3" />
+                                {project.submissions.length}
+                              </span>
+                            </div>
+                          )
+                        }
+
+                        // List slot - dense row
                         return (
                           <div
                             key={project.id}

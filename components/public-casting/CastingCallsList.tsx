@@ -416,7 +416,7 @@ export default function CastingCallsList({
                         <button
                           onClick={(e) => handleEditProject(e, project)}
                           className="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
-                          title="Rename"
+                          title="Edit Project"
                         >
                           <FolderEdit className="w-4 h-4" />
                         </button>
@@ -431,17 +431,17 @@ export default function CastingCallsList({
                     )}
                   </div>
 
-                  {/* Project Name */}
-                  <h3 className="text-sm font-semibold text-white mb-0.5 font-sans line-clamp-1">
-                    {project.name}
-                  </h3>
-
                   {/* Casting Call Title (if exists) */}
                   {hasCastingCall && castingCall.title && (
-                    <p className="text-xs text-white/50 mb-2 font-sans truncate">
+                    <h3 className="text-sm font-semibold text-white mb-0.5 font-sans line-clamp-1">
                       {castingCall.title}
-                    </p>
+                    </h3>
                   )}
+
+                  {/* Project Name */}
+                  <p className="text-xs text-white/50 mb-2 font-sans truncate">
+                    {project.name}
+                  </p>
 
                   {/* Completed Status Label */}
                   {hasCastingCall && castingCall.isCompleted && (

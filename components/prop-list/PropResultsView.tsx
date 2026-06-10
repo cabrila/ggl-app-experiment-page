@@ -4,9 +4,12 @@ import { useState, useRef, useEffect } from "react"
 import { ArrowLeft, Plus, FileJson, Download, Trash2, FileSpreadsheet, Share2 } from "lucide-react"
 import { usePropList } from "./PropListContext"
 import PropCard from "./PropCard"
-import { Prop } from "@/types/prop-list"
+import { Prop, PropCategory } from "@/types/prop-list"
 import { exportPropsAsJSON, exportPropsAsPDF, exportPropsAsExcel } from "@/lib/prop-export"
 import SearchBar from "@/components/ui/SearchBar"
+import AddItemDropdown from "@/components/ui/AddItemDropdown"
+import AddViaUploadModal, { FoundEntry } from "@/components/ui/AddViaUploadModal"
+import type { PropExtractResult } from "@/types/ai"
 import { trackAddItem, trackExport, trackDelete } from "@/lib/analytics"
 import ShareModal from "@/components/modals/ShareModal"
 
@@ -14,6 +17,7 @@ export default function PropResultsView() {
   const { currentProject, setView, updateProp, deleteProp, addProp, deleteProject } = usePropList()
   const [searchQuery, setSearchQuery] = useState("")
   const [showShareModal, setShowShareModal] = useState(false)
+  const [showUploadModal, setShowUploadModal] = useState(false)
   const [newItemId, setNewItemId] = useState<string | null>(null)
   const gridRef = useRef<HTMLDivElement>(null)
 
@@ -60,6 +64,49 @@ export default function PropResultsView() {
     setNewItemId(id)
   }
 
+  // Map AI extraction result into selectable entries for the modal.
+  const VALID_CATEGORIES: PropCategory[] = [
+    "weapon", "container", "surveillance_device", "tool", "currency",
+    "contraband", "equipment", "food_or_drink", "vehicle", "wardrobe",
+    "document", "other",
+  ]
+  const normalizeCategory = (cat?: string): PropCategory => {
+    if (!cat) return "other"
+    const lower = cat.toLowerCase().replace(/\s+/g, "_") as PropCategory
+    return VALID_CATEGORIES.includes(lower) ? lower : "other"
+  }
+
+  const mapPropResult = (result: PropExtractResult): FoundEntry<Prop>[] =>
+    (result.props || []).map((p, i) => {
+      const appearances = Array.isArray(p.scene_appearances) ? p.scene_appearances : []
+      return {
+        item: {
+          id: `${Date.now()}-${i}`,
+          name: typeof p.name === "string" ? p.name : "",
+          category: normalizeCategory(p.category),
+          description: typeof p.description === "string" ? p.description : "",
+          sceneAppearances: appearances.map((a, j) => ({
+            id: `${Date.now()}-${i}-${j}`,
+            sceneHeading: typeof a.scene_heading === "string" ? a.scene_heading : "",
+            handledBy: typeof a.handled_by === "string" ? a.handled_by : "unknown",
+            citation: typeof a.citation === "string" ? a.citation : "",
+          })),
+        },
+        label: p.name || "Unnamed prop",
+        sublabel: normalizeCategory(p.category).replace(/_/g, " "),
+      }
+    })
+
+  const handleAddUploaded = (items: Prop[]) => {
+    let lastId: string | null = null
+    items.forEach((item) => {
+      addProp(currentProject.id, item)
+      trackAddItem("prop-list", "prop")
+      lastId = item.id
+    })
+    if (lastId) setNewItemId(lastId)
+  }
+
   const handleExportJSON = () => {
     trackExport("prop-list", "json")
     exportPropsAsJSON(currentProject.props, currentProject.name)
@@ -101,14 +148,13 @@ export default function PropResultsView() {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={handleAdd}
-              className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white font-sans text-sm transition-colors"
-              title="Add Prop"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Add Prop</span>
-            </button>
+            <AddItemDropdown
+              label="Add Prop"
+              onAddManually={handleAdd}
+              onAddViaUpload={() => setShowUploadModal(true)}
+              triggerClassName="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white font-sans text-sm transition-colors"
+              labelClassName="hidden sm:inline"
+            />
             <button
               onClick={handleExportJSON}
               className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white font-sans text-sm transition-colors"
@@ -195,6 +241,20 @@ export default function PropResultsView() {
           toolType="prop-list"
           projectName={currentProject.name}
           data={currentProject.props}
+        />
+      )}
+
+      {/* Add via Upload Modal */}
+      {showUploadModal && (
+        <AddViaUploadModal<Prop, PropExtractResult>
+          title="Props"
+          taskType="prop-extract"
+          accept=".pdf,.docx"
+          acceptLabel="PDF or DOCX files"
+          accent="rose"
+          mapResult={mapPropResult}
+          onAddSelected={handleAddUploaded}
+          onClose={() => setShowUploadModal(false)}
         />
       )}
     </div>

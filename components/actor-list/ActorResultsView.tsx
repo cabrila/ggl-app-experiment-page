@@ -1,13 +1,16 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { ArrowLeft, Plus, FileJson, Download, Trash2, FileSpreadsheet, Share2, Phone, Mail, ChevronDown } from "lucide-react"
+import { ArrowLeft, FileJson, Download, Trash2, FileSpreadsheet, Share2, Phone, Mail, ChevronDown } from "lucide-react"
 import { useActorList } from "./ActorListContext"
 import ActorCard from "./ActorCard"
 import { Actor, ActorGender } from "@/types/actor-list"
 import { exportActorsAsJSON, exportActorsAsPDF, exportActorsAsExcel } from "@/lib/actor-export"
 import SearchBar from "@/components/ui/SearchBar"
 import ViewModeToggle, { ViewMode } from "@/components/ui/ViewModeToggle"
+import AddItemDropdown from "@/components/ui/AddItemDropdown"
+import AddViaUploadModal, { FoundEntry } from "@/components/ui/AddViaUploadModal"
+import type { ActorExtractResult } from "@/types/ai"
 import { trackAddItem, trackExport, trackDelete } from "@/lib/analytics"
 import ShareModal from "@/components/modals/ShareModal"
 import Image from "next/image"
@@ -20,6 +23,7 @@ export default function ActorResultsView() {
   const [genderFilter, setGenderFilter] = useState<"all" | ActorGender>("all")
   const [viewMode, setViewMode] = useState<ViewMode>("full")
   const [showShareModal, setShowShareModal] = useState(false)
+  const [showUploadModal, setShowUploadModal] = useState(false)
   const [newItemId, setNewItemId] = useState<string | null>(null)
   const gridRef = useRef<HTMLDivElement>(null)
 
@@ -64,6 +68,33 @@ export default function ActorResultsView() {
     addActor(newActor)
     trackAddItem("actor-list", "actor")
     setNewItemId(id)
+  }
+
+  // Map AI extraction result into selectable entries for the modal.
+  const mapActorResult = (result: ActorExtractResult): FoundEntry<Actor>[] =>
+    (result.actors || []).map((actor, index) => ({
+      item: {
+        id: `${Date.now()}-${index}`,
+        name: actor.name,
+        age: actor.age || 0,
+        playingAge: actor.playing_age || "Unknown",
+        phone: actor.phone || "",
+        email: actor.email || "",
+        headshotUrl: actor.headshot_url || "",
+        notes: actor.notes || "",
+      },
+      label: actor.name || "Unnamed actor",
+      sublabel: [actor.age ? `${actor.age}yo` : "", actor.email].filter(Boolean).join(" • "),
+    }))
+
+  const handleAddUploaded = (items: Actor[]) => {
+    let lastId: string | null = null
+    items.forEach((item) => {
+      addActor(item)
+      trackAddItem("actor-list", "actor")
+      lastId = item.id
+    })
+    if (lastId) setNewItemId(lastId)
   }
 
   const handleExportJSON = () => {
@@ -116,14 +147,13 @@ export default function ActorResultsView() {
 
           {/* Actions */}
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={handleAddActor}
-              className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white transition-colors"
-              title="Add Actor"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="font-sans text-sm hidden sm:inline">Add Actor</span>
-            </button>
+            <AddItemDropdown
+              label="Add Actor"
+              onAddManually={handleAddActor}
+              onAddViaUpload={() => setShowUploadModal(true)}
+              triggerClassName="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white transition-colors"
+              labelClassName="font-sans text-sm hidden sm:inline"
+            />
             <button
               onClick={handleExportJSON}
               className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white transition-colors"
@@ -335,6 +365,20 @@ export default function ActorResultsView() {
           toolType="actor-list"
           projectName={currentProject.name}
           data={currentProject.actors}
+        />
+      )}
+
+      {/* Add via Upload Modal */}
+      {showUploadModal && (
+        <AddViaUploadModal<Actor, ActorExtractResult>
+          title="Actors"
+          taskType="actor-extract"
+          accept=".pdf,.csv,.xlsx,.xls"
+          acceptLabel="Supports .CSV, .XLSX, and .PDF"
+          accent="sky"
+          mapResult={mapActorResult}
+          onAddSelected={handleAddUploaded}
+          onClose={() => setShowUploadModal(false)}
         />
       )}
     </div>

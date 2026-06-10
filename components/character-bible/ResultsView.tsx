@@ -8,6 +8,9 @@ import { Character } from "@/types/character-bible"
 import { exportCharactersAsJSON, exportCharactersAsPDF, exportCharactersAsExcel } from "@/lib/character-export"
 import SearchBar from "@/components/ui/SearchBar"
 import ViewModeToggle, { ViewMode } from "@/components/ui/ViewModeToggle"
+import AddItemDropdown from "@/components/ui/AddItemDropdown"
+import AddViaUploadModal, { FoundEntry } from "@/components/ui/AddViaUploadModal"
+import type { CharacterExtractResult } from "@/types/ai"
 import { trackAddItem, trackExport, trackDelete } from "@/lib/analytics"
 import ShareModal from "@/components/modals/ShareModal"
 
@@ -27,6 +30,7 @@ export default function ResultsView() {
   const { currentBible, setView, setCurrentBible, updateCharacter, deleteCharacter, addCharacter, deleteBible } = useCharacterBible()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
+  const [showUploadModal, setShowUploadModal] = useState(false)
   const [newItemId, setNewItemId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [genderFilter, setGenderFilter] = useState<"all" | (typeof GENDER_GROUPS)[number]>("all")
@@ -84,6 +88,36 @@ export default function ResultsView() {
     addCharacter(currentBible.id, newCharacter)
     trackAddItem("character-bible", "character")
     setNewItemId(id)
+  }
+
+  // Map the AI extraction result into selectable entries for the modal.
+  const mapCharacterResult = (result: CharacterExtractResult): FoundEntry<Character>[] =>
+    (result.characters || []).map((char) => ({
+      item: {
+        id: char.id || crypto.randomUUID(),
+        source: "ai" as const,
+        name: char.name,
+        aliases: char.aliases || [],
+        gender: char.gender || "unknown",
+        ageRange: char.age_range || "unknown",
+        description: char.description || "",
+        sceneAppearances: (char.scene_appearances || []).map((sa) => ({
+          sceneHeading: sa.scene_heading,
+          citation: sa.citation,
+        })),
+      },
+      label: char.name || "Unnamed character",
+      sublabel: [char.gender, char.age_range].filter((v) => v && v !== "unknown").join(" • "),
+    }))
+
+  const handleAddUploaded = (items: Character[]) => {
+    let lastId: string | null = null
+    items.forEach((item) => {
+      addCharacter(currentBible.id, item)
+      trackAddItem("character-bible", "character")
+      lastId = item.id
+    })
+    if (lastId) setNewItemId(lastId)
   }
 
   const handleExportJSON = () => {
@@ -144,14 +178,12 @@ export default function ResultsView() {
 
           {/* Action Buttons */}
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={handleAddCharacter}
-              className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white transition-colors"
-              title="Add Character"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="text-sm font-sans hidden sm:inline">Add Character</span>
-            </button>
+            <AddItemDropdown
+              label="Add Character"
+              onAddManually={handleAddCharacter}
+              onAddViaUpload={() => setShowUploadModal(true)}
+              triggerClassName="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white transition-colors"
+            />
             <button
               onClick={handleExportJSON}
               className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white transition-colors"
@@ -375,6 +407,20 @@ export default function ResultsView() {
           toolType="character-bible"
           projectName={currentBible.name}
           data={currentBible.characters}
+        />
+      )}
+
+      {/* Add via Upload Modal */}
+      {showUploadModal && (
+        <AddViaUploadModal<Character, CharacterExtractResult>
+          title="Characters"
+          taskType="character-extract"
+          accept=".pdf,.docx"
+          acceptLabel="PDF or DOCX files"
+          accent="emerald"
+          mapResult={mapCharacterResult}
+          onAddSelected={handleAddUploaded}
+          onClose={() => setShowUploadModal(false)}
         />
       )}
     </div>

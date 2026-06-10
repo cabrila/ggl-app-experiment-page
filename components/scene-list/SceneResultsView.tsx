@@ -7,6 +7,9 @@ import SceneCard from "./SceneCard"
 import { Scene } from "@/types/scene-list"
 import { exportScenesAsJSON, exportScenesAsPDF, exportScenesAsExcel } from "@/lib/scene-export"
 import SearchBar from "@/components/ui/SearchBar"
+import AddItemDropdown from "@/components/ui/AddItemDropdown"
+import AddViaUploadModal, { FoundEntry } from "@/components/ui/AddViaUploadModal"
+import type { SceneExtractResult } from "@/types/ai"
 import { trackAddItem, trackExport, trackDelete } from "@/lib/analytics"
 import ShareModal from "@/components/modals/ShareModal"
 
@@ -14,6 +17,7 @@ export default function SceneResultsView() {
   const { currentProject, setView, updateScene, deleteScene, addScene, deleteProject } = useSceneList()
   const [searchQuery, setSearchQuery] = useState("")
   const [showShareModal, setShowShareModal] = useState(false)
+  const [showUploadModal, setShowUploadModal] = useState(false)
   const [newItemId, setNewItemId] = useState<string | null>(null)
   const gridRef = useRef<HTMLDivElement>(null)
 
@@ -66,6 +70,41 @@ export default function SceneResultsView() {
     setNewItemId(id)
   }
 
+  // Map AI extraction result into selectable entries for the modal.
+  const mapSceneResult = (result: SceneExtractResult): FoundEntry<Scene>[] =>
+    (result.scenes || []).map((s, i) => ({
+      item: {
+        id: `${Date.now()}-${i}`,
+        sceneNumber: typeof s.scene_number === "number" ? s.scene_number : i + 1,
+        sceneHeading:
+          typeof s.scene_heading === "string" && s.scene_heading
+            ? s.scene_heading
+            : `Scene ${i + 1}`,
+        location: typeof s.location === "string" ? s.location : "",
+        timeOfDay: typeof s.time_of_day === "string" ? s.time_of_day : "",
+        rawText: typeof s.raw_text === "string" ? s.raw_text : "",
+      },
+      label:
+        (typeof s.scene_heading === "string" && s.scene_heading) || `Scene ${i + 1}`,
+      sublabel: [s.location, s.time_of_day].filter(Boolean).join(" • "),
+    }))
+
+  const handleAddUploaded = (items: Scene[]) => {
+    // Continue scene numbering from the current max so added scenes don't
+    // collide with existing ones.
+    let nextNumber = currentProject.scenes.length
+      ? Math.max(...currentProject.scenes.map((s) => s.sceneNumber)) + 1
+      : 1
+    let lastId: string | null = null
+    items.forEach((item) => {
+      const scene: Scene = { ...item, sceneNumber: nextNumber++ }
+      addScene(currentProject.id, scene)
+      trackAddItem("scene-list", "scene")
+      lastId = scene.id
+    })
+    if (lastId) setNewItemId(lastId)
+  }
+
   const handleExportJSON = () => {
     trackExport("scene-list", "json")
     exportScenesAsJSON(currentProject.scenes, currentProject.name)
@@ -107,14 +146,13 @@ export default function SceneResultsView() {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={handleAdd}
-              className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white font-sans text-sm transition-colors"
-              title="Add Scene"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Add Scene</span>
-            </button>
+            <AddItemDropdown
+              label="Add Scene"
+              onAddManually={handleAdd}
+              onAddViaUpload={() => setShowUploadModal(true)}
+              triggerClassName="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white font-sans text-sm transition-colors"
+              labelClassName="hidden sm:inline"
+            />
             <button
               onClick={handleExportJSON}
               className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white font-sans text-sm transition-colors"
@@ -201,6 +239,20 @@ export default function SceneResultsView() {
           toolType="scene-list"
           projectName={currentProject.name}
           data={currentProject.scenes}
+        />
+      )}
+
+      {/* Add via Upload Modal */}
+      {showUploadModal && (
+        <AddViaUploadModal<Scene, SceneExtractResult>
+          title="Scenes"
+          taskType="scene-extract"
+          accept=".pdf,.docx"
+          acceptLabel="PDF or DOCX files"
+          accent="teal"
+          mapResult={mapSceneResult}
+          onAddSelected={handleAddUploaded}
+          onClose={() => setShowUploadModal(false)}
         />
       )}
     </div>

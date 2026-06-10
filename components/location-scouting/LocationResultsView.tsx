@@ -8,6 +8,9 @@ import { Location } from "@/types/location-scouting"
 import { exportLocationsAsJSON, exportLocationsAsPDF, exportLocationsAsExcel } from "@/lib/location-export"
 import SearchBar from "@/components/ui/SearchBar"
 import ViewModeToggle, { ViewMode } from "@/components/ui/ViewModeToggle"
+import AddItemDropdown from "@/components/ui/AddItemDropdown"
+import AddViaUploadModal, { FoundEntry } from "@/components/ui/AddViaUploadModal"
+import type { LocationOverviewResult } from "@/types/ai"
 import { trackAddItem, trackExport, trackDelete } from "@/lib/analytics"
 import ShareModal from "@/components/modals/ShareModal"
 
@@ -31,6 +34,7 @@ export default function LocationResultsView() {
   const [timeFilter, setTimeFilter] = useState<"all" | Location["timeOfDay"]>("all")
   const [viewMode, setViewMode] = useState<ViewMode>("full")
   const [showShareModal, setShowShareModal] = useState(false)
+  const [showUploadModal, setShowUploadModal] = useState(false)
   const [newItemId, setNewItemId] = useState<string | null>(null)
   const gridRef = useRef<HTMLDivElement>(null)
 
@@ -82,6 +86,31 @@ export default function LocationResultsView() {
     setNewItemId(id)
   }
 
+  // Map AI extraction result into selectable entries for the modal.
+  const mapLocationResult = (result: LocationOverviewResult): FoundEntry<Location>[] =>
+    (result.locations || []).map((loc, index) => ({
+      item: {
+        id: `${Date.now()}-${index}`,
+        name: loc.name,
+        type: loc.type === "INT/EXT" ? "INT" : (loc.type === "unknown" ? "INT" : loc.type) || "EXT",
+        timeOfDay: loc.time_of_day === "unknown" ? "DAY" : loc.time_of_day || "DAY",
+        description: loc.description || "",
+        scoutingNotes: loc.scouting_notes || "",
+      },
+      label: loc.name || "Unnamed location",
+      sublabel: [loc.type, loc.time_of_day].filter((v) => v && v !== "unknown").join(" • "),
+    }))
+
+  const handleAddUploaded = (items: Location[]) => {
+    let lastId: string | null = null
+    items.forEach((item) => {
+      addLocation(currentProject.id, item)
+      trackAddItem("location-overview", "location")
+      lastId = item.id
+    })
+    if (lastId) setNewItemId(lastId)
+  }
+
   const handleExportJSON = () => {
     trackExport("location-overview", "json")
     exportLocationsAsJSON(currentProject.locations, currentProject.name)
@@ -131,14 +160,13 @@ export default function LocationResultsView() {
 
           {/* Right Side - Actions */}
           <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={handleAddLocation}
-              className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white font-sans text-sm transition-colors"
-              title="Add Location"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Add Location</span>
-            </button>
+            <AddItemDropdown
+              label="Add Location"
+              onAddManually={handleAddLocation}
+              onAddViaUpload={() => setShowUploadModal(true)}
+              triggerClassName="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white font-sans text-sm transition-colors"
+              labelClassName="hidden sm:inline"
+            />
             <button
               onClick={handleExportJSON}
               className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white font-sans text-sm transition-colors"
@@ -341,6 +369,20 @@ export default function LocationResultsView() {
           toolType="location-overview"
           projectName={currentProject.name}
           data={currentProject.locations}
+        />
+      )}
+
+      {/* Add via Upload Modal */}
+      {showUploadModal && (
+        <AddViaUploadModal<Location, LocationOverviewResult>
+          title="Locations"
+          taskType="location-overview"
+          accept=".pdf,.docx"
+          acceptLabel="PDF or DOCX files"
+          accent="amber"
+          mapResult={mapLocationResult}
+          onAddSelected={handleAddUploaded}
+          onClose={() => setShowUploadModal(false)}
         />
       )}
     </div>

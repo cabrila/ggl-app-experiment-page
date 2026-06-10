@@ -27,22 +27,6 @@ const featureButtons = [
     iconColor: "text-amber-400",
   },
   {
-    id: "actor-database",
-    title: "Actor List",
-    description: "Create and manage an easily navigable list of actors for your production.",
-    icon: Users,
-    iconBg: "bg-sky-500/20",
-    iconColor: "text-sky-400",
-  },
-  {
-    id: "public-casting",
-    title: "Public Casting",
-    description: "Share a simple casting form for actors to submit themselves for roles in your project.",
-    icon: Megaphone,
-    iconBg: "bg-violet-500/20",
-    iconColor: "text-violet-400",
-  },
-  {
     id: "prop-list",
     title: "Prop List",
     description: "Extract every prop and set dressing item from your script with scene-by-scene appearances.",
@@ -57,6 +41,22 @@ const featureButtons = [
     icon: Film,
     iconBg: "bg-teal-500/20",
     iconColor: "text-teal-400",
+  },
+  {
+    id: "actor-database",
+    title: "Actor Management",
+    description: "Create and manage easily navigable list and databases of actors for your productions.",
+    icon: Users,
+    iconBg: "bg-sky-500/20",
+    iconColor: "text-sky-400",
+  },
+  {
+    id: "public-casting",
+    title: "Public Casting",
+    description: "Share a simple casting form for actors to submit themselves for roles in your project.",
+    icon: Megaphone,
+    iconBg: "bg-violet-500/20",
+    iconColor: "text-violet-400",
   },
 ]
 

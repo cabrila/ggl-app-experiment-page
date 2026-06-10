@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { X, Check, Upload, Image as ImageIcon, Trash2 } from "lucide-react"
+import { X, Check, Upload, Image as ImageIcon, Trash2, FileEdit } from "lucide-react"
 
 interface EditProjectWithThumbnailModalProps {
   isOpen: boolean
@@ -12,6 +12,8 @@ interface EditProjectWithThumbnailModalProps {
   title: string
   label?: string
   accentColor?: "emerald" | "sky" | "amber" | "violet" | "rose" | "teal"
+  onEditForm?: () => void
+  editFormLabel?: string
 }
 
 export default function EditProjectWithThumbnailModal({
@@ -23,6 +25,8 @@ export default function EditProjectWithThumbnailModal({
   title,
   label = "Project Name",
   accentColor = "emerald",
+  onEditForm,
+  editFormLabel = "Edit Casting Call Form",
 }: EditProjectWithThumbnailModalProps) {
   const [name, setName] = useState(currentName)
   const [thumbnail, setThumbnail] = useState<string | undefined>(currentThumbnail)
@@ -309,6 +313,23 @@ export default function EditProjectWithThumbnailModal({
               placeholder="Enter name..."
             />
           </div>
+
+          {/* Edit Casting Call Form Trigger */}
+          {onEditForm && (
+            <div className="mb-6">
+              <button
+                type="button"
+                onClick={() => {
+                  onClose()
+                  onEditForm()
+                }}
+                className={`w-full flex items-center justify-center gap-2 py-3 ${colors.bg} ${colors.text} border ${colors.border} hover:bg-white/10 rounded-xl font-semibold transition-colors font-sans`}
+              >
+                <FileEdit className="w-4 h-4" />
+                {editFormLabel}
+              </button>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex gap-3">

@@ -714,43 +714,8 @@ export default function CastingCallsList({
                 >
                   {/* Group Header */}
                   <div className="relative">
-                    {/* Header image / upload zone */}
-                    <div
-                      onClick={() => groupImageInputRefs.current[group.id]?.click()}
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={(e) => {
-                        e.preventDefault()
-                        setGroupImageFromFile(group.id, e.dataTransfer.files?.[0])
-                      }}
-                      className="relative h-28 w-full cursor-pointer bg-[#0f1f17] group/header"
-                      title="Click or drag an image to set the group header"
-                    >
-                      {group.headerImageUrl ? (
-                        <img
-                          src={group.headerImageUrl || "/placeholder.svg"}
-                          alt={`${group.name} header`}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center text-white/40 gap-1">
-                          <ImageIcon className="w-6 h-6" />
-                          <span className="text-xs font-sans">Click or drag to upload header image</span>
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-black/0 group-hover/header:bg-black/20 transition-colors" />
-                      <input
-                        ref={(el) => {
-                          groupImageInputRefs.current[group.id] = el
-                        }}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => setGroupImageFromFile(group.id, e.target.files?.[0])}
-                      />
-                    </div>
-
-                    {/* Title row */}
-                    <div className="flex items-center gap-3 px-4 py-3 border-t border-white/10">
+                    {/* Title row - always visible (collapsed shows only title + count) */}
+                    <div className="flex items-center gap-3 px-4 py-3">
                       <button
                         onClick={() => toggleGroupCollapse(group.id)}
                         className="p-1 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors"
@@ -806,17 +771,54 @@ export default function CastingCallsList({
                     </div>
                   </div>
 
-                  {/* Group Contents - rendered in the slot matching the selected view mode */}
+                  {/* Group Contents - only visible when expanded */}
                   {!isCollapsed && (
-                    <div
-                      className={
-                        viewMode === "list"
-                          ? "px-4 pb-4 flex flex-col gap-2"
-                          : viewMode === "minimal"
-                          ? "px-4 pb-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"
-                          : "px-4 pb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
-                      }
-                    >
+                    <div className="border-t border-white/10">
+                      {/* Header image / upload zone - lives inside the collapsible area */}
+                      <div
+                        onClick={() => groupImageInputRefs.current[group.id]?.click()}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault()
+                          setGroupImageFromFile(group.id, e.dataTransfer.files?.[0])
+                        }}
+                        className="relative h-28 w-full cursor-pointer bg-[#0f1f17] group/header"
+                        title="Click or drag an image to set the group header"
+                      >
+                        {group.headerImageUrl ? (
+                          <img
+                            src={group.headerImageUrl || "/placeholder.svg"}
+                            alt={`${group.name} header`}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center text-white/40 gap-1">
+                            <ImageIcon className="w-6 h-6" />
+                            <span className="text-xs font-sans">Click or drag to upload header image</span>
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-black/0 group-hover/header:bg-black/20 transition-colors" />
+                        <input
+                          ref={(el) => {
+                            groupImageInputRefs.current[group.id] = el
+                          }}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => setGroupImageFromFile(group.id, e.target.files?.[0])}
+                        />
+                      </div>
+
+                      {/* Casting call slots - rendered in the slot matching the selected view mode */}
+                      <div
+                        className={
+                          viewMode === "list"
+                            ? "px-4 py-4 flex flex-col gap-2"
+                            : viewMode === "minimal"
+                            ? "px-4 py-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"
+                            : "px-4 py-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+                        }
+                      >
                       {groupProjects.map((project) => {
                         const cc = project.castingCalls[0]
 
@@ -913,6 +915,7 @@ export default function CastingCallsList({
                           </div>
                         )
                       })}
+                      </div>
                     </div>
                   )}
                 </div>

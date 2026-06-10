@@ -18,6 +18,9 @@ export interface CastingCall {
   shareableLink: string
   headerImageUrl?: string
   isCompleted?: boolean
+  // Talent pool consent (shown as a final checkbox on the generated form)
+  talentPoolConsentEnabled?: boolean
+  talentPoolConsentText?: string
 }
 
 export interface CastingSubmission {

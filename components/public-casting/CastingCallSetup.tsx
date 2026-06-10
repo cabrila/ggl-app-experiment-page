@@ -34,6 +34,9 @@ const defaultFields: CastingCallField[] = [
   { id: "f7", label: "About You", type: "textarea", required: false, placeholder: "Tell us about yourself..." },
 ]
 
+const DEFAULT_CONSENT_TEXT =
+  "I consent to being added to the talent pool to be considered for future projects."
+
 export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall, editingProject }: CastingCallSetupProps) {
   const { state, createProject, createCastingCall, updateCastingCall } = usePublicCasting()
   
@@ -45,6 +48,12 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
   const [projectName, setProjectName] = useState(editingCastingCall?.projectName || editingProject?.name || "")
   const [headerImageUrl, setHeaderImageUrl] = useState(editingCastingCall?.headerImageUrl || "")
   const [isCompleted, setIsCompleted] = useState(editingCastingCall?.isCompleted || false)
+  const [talentPoolConsentEnabled, setTalentPoolConsentEnabled] = useState(
+    editingCastingCall?.talentPoolConsentEnabled ?? true
+  )
+  const [talentPoolConsentText, setTalentPoolConsentText] = useState(
+    editingCastingCall?.talentPoolConsentText || DEFAULT_CONSENT_TEXT
+  )
   const [fields, setFields] = useState<CastingCallField[]>(editingCastingCall?.fields || defaultFields)
   const [createdLink, setCreatedLink] = useState(editingCastingCall?.shareableLink || "")
   const [copied, setCopied] = useState(false)
@@ -76,6 +85,8 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
     shareableLink: createdLink || "https://gogreenlight.ai/cast/preview",
     headerImageUrl: headerImageUrl || undefined,
     isCompleted,
+    talentPoolConsentEnabled,
+    talentPoolConsentText,
   }
 
   const addField = (type: CastingCallField["type"]) => {
@@ -146,6 +157,8 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
         fields,
         headerImageUrl: headerImageUrl || undefined,
         isCompleted,
+        talentPoolConsentEnabled,
+        talentPoolConsentText,
       })
       setCreatedLink(editingCastingCall.shareableLink)
       setStep("success")
@@ -156,7 +169,10 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
         project = createProject(projectName)
       }
 
-      const castingCall = createCastingCall(project.id, title, description, projectName, fields, headerImageUrl || undefined)
+      const castingCall = createCastingCall(project.id, title, description, projectName, fields, headerImageUrl || undefined, {
+        talentPoolConsentEnabled,
+        talentPoolConsentText,
+      })
       setCreatedLink(castingCall.shareableLink)
       setStep("success")
     }
@@ -412,6 +428,45 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
                   rows={3}
                   className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-violet-500/50 focus:outline-none transition-colors font-sans resize-none"
                 />
+              </div>
+
+              {/* Talent Pool Consent */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs font-semibold text-violet-400 uppercase tracking-wider">
+                    Talent Pool Consent
+                  </label>
+                  {/* On/Off toggle controlling visibility on the generated form */}
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={talentPoolConsentEnabled}
+                    onClick={() => setTalentPoolConsentEnabled((v) => !v)}
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/50 ${
+                      talentPoolConsentEnabled ? "bg-violet-500" : "bg-white/15"
+                    }`}
+                    title={talentPoolConsentEnabled ? "Shown on form" : "Hidden from form"}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        talentPoolConsentEnabled ? "translate-x-6" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+                <textarea
+                  value={talentPoolConsentText}
+                  onChange={(e) => setTalentPoolConsentText(e.target.value)}
+                  disabled={!talentPoolConsentEnabled}
+                  placeholder="Consent checkbox label shown at the end of the form..."
+                  rows={2}
+                  className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-violet-500/50 focus:outline-none transition-colors font-sans resize-none disabled:opacity-40 disabled:cursor-not-allowed"
+                />
+                <p className="text-xs text-white/40 mt-1.5 font-sans">
+                  {talentPoolConsentEnabled
+                    ? "This checkbox appears at the very end of the generated form."
+                    : "The consent checkbox is hidden from the generated form."}
+                </p>
               </div>
             </div>
           </div>

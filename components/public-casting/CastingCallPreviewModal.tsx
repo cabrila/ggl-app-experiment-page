@@ -20,6 +20,7 @@ export default function CastingCallPreviewModal({ castingCall, project, onClose 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [errors, setErrors] = useState<Record<string, boolean>>({})
+  const [talentPoolConsent, setTalentPoolConsent] = useState(false)
 
   // Initialize form data
   useEffect(() => {
@@ -128,8 +129,11 @@ export default function CastingCallPreviewModal({ castingCall, project, onClose 
     // Simulate network delay for realism
     await new Promise(resolve => setTimeout(resolve, 800))
     
-    // Add submission to context
-    addSubmission(castingCall.id, formData)
+    // Add submission to context (include talent pool consent when enabled)
+    const submissionData = castingCall.talentPoolConsentEnabled
+      ? { ...formData, "Talent Pool Consent": talentPoolConsent ? "Yes" : "No" }
+      : formData
+    addSubmission(castingCall.id, submissionData)
     
     setIsSubmitting(false)
     setIsSubmitted(true)
@@ -144,6 +148,7 @@ export default function CastingCallPreviewModal({ castingCall, project, onClose 
     setUrlRows({})
     setIsSubmitted(false)
     setErrors({})
+    setTalentPoolConsent(false)
   }
 
   return (
@@ -396,6 +401,22 @@ export default function CastingCallPreviewModal({ castingCall, project, onClose 
                     )}
                   </div>
                 ))}
+
+                {/* Talent Pool Consent - always rendered at the very end of the form */}
+                {castingCall.talentPoolConsentEnabled && (
+                  <label className="flex items-start gap-3 cursor-pointer pt-2">
+                    <input
+                      type="checkbox"
+                      checked={talentPoolConsent}
+                      onChange={(e) => setTalentPoolConsent(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 rounded border-white/30 bg-white/5 text-emerald-500 focus:ring-emerald-500/50 focus:ring-offset-0 cursor-pointer"
+                    />
+                    <span className="text-sm text-white/70 font-sans leading-relaxed">
+                      {castingCall.talentPoolConsentText ||
+                        "I consent to being added to the talent pool to be considered for future projects."}
+                    </span>
+                  </label>
+                )}
 
                 {/* Submit Button */}
                 <button

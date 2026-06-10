@@ -433,7 +433,7 @@ export default function CastingCallsList({
 
                   {/* Casting Call Title (if exists) */}
                   {hasCastingCall && castingCall.title && (
-                    <h3 className="w-full text-base font-semibold text-white mb-0.5 font-sans line-clamp-2 text-pretty">
+                    <h3 className="w-full text-lg font-bold text-white mb-0.5 font-sans line-clamp-2 text-pretty leading-snug">
                       {castingCall.title}
                     </h3>
                   )}

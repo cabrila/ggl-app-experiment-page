@@ -670,7 +670,7 @@ export default function CastingCallsList({
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleConfirmDelete}
-        title="Delete Casting Project"
+        title="Delete Casting Calls"
         itemName={deleteTarget?.name || ""}
         description="This will permanently delete this project, all its casting calls, and submissions. This action cannot be undone."
       />
@@ -682,8 +682,8 @@ export default function CastingCallsList({
         onSave={handleSaveEdit}
         currentName={editTarget?.name || ""}
         currentThumbnail={editTarget?.thumbnailUrl}
-        title="Edit Casting Project"
-        label="Project Name"
+        title="Edit Casting Call"
+        label="Casting Call"
         accentColor="violet"
       />
       </div>

@@ -368,15 +368,19 @@ const createDemoData = (): PublicCastingProject[] => {
     ),
   ]
 
-  return [
-    {
-      id: "proj-1",
-      name: "Midnight Echo",
-      castingCalls: [...demoCastingCalls, ...extraCastingCalls],
-      submissions: [...demoSubmissions, ...extraSubmissions],
-      createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
-    },
-  ]
+  // Each casting call form is its own entry/card on the My Casting Calls page.
+  // Split every casting call into its own project, carrying the submissions
+  // that belong to it (matched by castingCallId).
+  const allCastingCalls = [...demoCastingCalls, ...extraCastingCalls]
+  const allSubmissions = [...demoSubmissions, ...extraSubmissions]
+
+  return allCastingCalls.map((castingCall) => ({
+    id: `proj-${castingCall.id}`,
+    name: castingCall.projectName || castingCall.title,
+    castingCalls: [castingCall],
+    submissions: allSubmissions.filter((s) => s.castingCallId === castingCall.id),
+    createdAt: castingCall.createdAt,
+  }))
 }
 
 export function PublicCastingProvider({ children }: { children: ReactNode }) {

@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useRef, useState } from "react"
-import { Plus, Megaphone, Calendar, Users, Trash2, Link, Eye, FileEdit, FolderEdit, QrCode, Search, SlidersHorizontal, ChevronDown, Filter, FolderPlus, ChevronRight, ImageIcon, X, Check } from "lucide-react"
+import { Plus, Megaphone, Calendar, Users, Trash2, Eye, FileEdit, FolderEdit, QrCode, Search, SlidersHorizontal, ChevronDown, Filter, FolderPlus, ChevronRight, ImageIcon, X, Check } from "lucide-react"
 import { usePublicCasting } from "./PublicCastingContext"
 import { CastingCall, PublicCastingProject } from "@/types/public-casting"
 import CastingCallPreviewModal from "./CastingCallPreviewModal"
@@ -455,10 +455,6 @@ export default function CastingCallsList({
 
                   {/* Meta Info */}
                   <div className="flex flex-wrap items-center gap-2 text-xs text-white/50 mb-2">
-                    <div className="flex items-center gap-1">
-                      <Link className="w-3 h-3" />
-                      <span>{project.castingCalls.length} forms</span>
-                    </div>
                     <div className="flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
                       <span>{project.createdAt.toLocaleDateString()}</span>

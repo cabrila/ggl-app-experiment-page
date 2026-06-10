@@ -96,6 +96,8 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
       type,
       required: false,
       placeholder: "",
+      // Seed dropdown fields with two empty options to fill in.
+      ...(type === "select" ? { options: ["", ""] } : {}),
     }
     setFields([...fields, newField])
     setShowTypePicker(false)
@@ -107,6 +109,33 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
 
   const removeField = (id: string) => {
     setFields(fields.filter((f) => f.id !== id))
+  }
+
+  // Dropdown option management (only relevant for "select" fields)
+  const addOption = (fieldId: string) => {
+    setFields(
+      fields.map((f) =>
+        f.id === fieldId ? { ...f, options: [...(f.options || []), ""] } : f
+      )
+    )
+  }
+
+  const updateOption = (fieldId: string, index: number, value: string) => {
+    setFields(
+      fields.map((f) =>
+        f.id === fieldId
+          ? { ...f, options: (f.options || []).map((opt, i) => (i === index ? value : opt)) }
+          : f
+      )
+    )
+  }
+
+  const removeOption = (fieldId: string, index: number) => {
+    setFields(
+      fields.map((f) =>
+        f.id === fieldId ? { ...f, options: (f.options || []).filter((_, i) => i !== index) } : f
+      )
+    )
   }
 
   // Drag and drop handlers
@@ -526,8 +555,8 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
                 </div>
               )}
               {fields.map((field, index) => (
+                <div key={field.id}>
                 <div
-                  key={field.id}
                   draggable
                   onDragStart={() => handleDragStart(index)}
                   onDragOver={(e) => handleDragOver(e, index)}
@@ -593,6 +622,47 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
                     </div>
                   </div>
                 </div>
+
+                {/* Dropdown options editor - only for "select" (Dropdown) fields */}
+                {field.type === "select" && (
+                  <div className="ml-7 mt-1 rounded-lg border border-violet-500/20 bg-[#13261c] p-3">
+                    <p className="text-[10px] font-semibold text-violet-300/80 uppercase tracking-wider mb-2 font-sans">
+                      Dropdown Options
+                    </p>
+                    <div className="space-y-2">
+                      {(field.options || []).map((option, optIndex) => (
+                        <div key={optIndex} className="flex items-center gap-2">
+                          <span className="text-xs text-white/30 font-sans w-5 flex-shrink-0 text-right">
+                            {optIndex + 1}.
+                          </span>
+                          <input
+                            type="text"
+                            value={option}
+                            onChange={(e) => updateOption(field.id, optIndex, e.target.value)}
+                            placeholder={`Option ${optIndex + 1}`}
+                            className="flex-1 px-3 py-1.5 bg-[#1a2e23] border border-white/10 rounded-lg text-white text-sm placeholder-white/30 focus:border-violet-500/50 focus:outline-none font-sans"
+                          />
+                          <button
+                            onClick={() => removeOption(field.id, optIndex)}
+                            disabled={(field.options || []).length <= 1}
+                            className="p-1.5 text-red-400/60 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                            title="Remove option"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => addOption(field.id)}
+                      className="mt-2 flex items-center gap-1.5 px-3 py-1.5 bg-violet-500/15 hover:bg-violet-500/25 text-violet-300 rounded-lg text-xs transition-colors font-sans"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Add Option
+                    </button>
+                  </div>
+                )}
+              </div>
               ))}
             </div>
           </div>

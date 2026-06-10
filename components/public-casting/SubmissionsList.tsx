@@ -77,6 +77,7 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [showAddModal, setShowAddModal] = useState(false)
   const [newListName, setNewListName] = useState("")
+  const [detailSubmissionId, setDetailSubmissionId] = useState<string | null>(null)
 
   // Get all submissions across all projects
   const allSubmissions = useMemo(() => {
@@ -572,6 +573,7 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
                 onDelete={() => handleDeleteSubmission(submission.id)}
                 isSelected={selectedIds.has(submission.id)}
                 onToggleSelect={() => toggleSelect(submission.id)}
+                onNameClick={() => setDetailSubmissionId(submission.id)}
               />
             ))}
           </div>
@@ -588,7 +590,13 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
                   <SubmissionCheckbox checked={selectedIds.has(submission.id)} onClick={() => toggleSelect(submission.id)} />
                   <SubmissionAvatar submission={submission} />
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-semibold text-white truncate">{submission.name}</h3>
+                    <button
+                      onClick={() => setDetailSubmissionId(submission.id)}
+                      className="text-left max-w-full"
+                      title="View full actor details"
+                    >
+                      <h3 className="text-sm font-semibold text-white truncate hover:text-violet-300 transition-colors cursor-pointer">{submission.name}</h3>
+                    </button>
                     <p className="text-xs text-white/50 truncate">{submission.castingCallTitle}</p>
                   </div>
                   {submission.grade && submission.grade > 0 ? (
@@ -625,7 +633,13 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
                         <SubmissionCheckbox checked={selectedIds.has(submission.id)} onClick={() => toggleSelect(submission.id)} />
                         <SubmissionAvatar submission={submission} />
                         <div className="w-40 sm:w-48 md:w-56 min-w-0 flex-shrink-0">
-                          <h4 className="text-sm font-semibold text-white truncate">{submission.name}</h4>
+                          <button
+                            onClick={() => setDetailSubmissionId(submission.id)}
+                            className="text-left max-w-full"
+                            title="View full actor details"
+                          >
+                            <h4 className="text-sm font-semibold text-white truncate hover:text-violet-300 transition-colors cursor-pointer">{submission.name}</h4>
+                          </button>
                           <p className="text-xs text-white/50 truncate">
                             {submission.age && `Age: ${submission.age}`}
                             {(submission.data?.gender || submission.data?.Gender) && ` • ${submission.data?.gender || submission.data?.Gender}`}
@@ -658,6 +672,37 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
           </div>
         )}
       </div>
+
+      {/* Submission Detail Modal - full card, fully expanded */}
+      {detailSubmissionId && (() => {
+        const detailSubmission = allSubmissions.find((s) => s.id === detailSubmissionId)
+        if (!detailSubmission) return null
+        return (
+          <div
+            className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 sm:p-8"
+            onClick={() => setDetailSubmissionId(null)}
+          >
+            <div className="relative w-full max-w-xl my-auto" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={() => setDetailSubmissionId(null)}
+                className="absolute -top-2 -right-2 z-10 p-2 bg-[#1a2e23] hover:bg-white/20 border border-white/10 rounded-full text-white/70 hover:text-white transition-colors"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <SubmissionCard
+                submission={detailSubmission}
+                onUpdate={(updates) => handleUpdateSubmission(detailSubmission.id, updates)}
+                onDelete={() => {
+                  handleDeleteSubmission(detailSubmission.id)
+                  setDetailSubmissionId(null)
+                }}
+                forceExpanded
+              />
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Add selected submissions to an actor list */}
       {showAddModal && (

@@ -14,9 +14,13 @@ interface SubmissionCardProps {
   onDelete: () => void
   isSelected?: boolean
   onToggleSelect?: () => void
+  /** When true, the "More Information" panel is rendered fully expanded (used inside the detail modal). */
+  forceExpanded?: boolean
+  /** When provided (and not forceExpanded), clicking the actor name opens the detail modal. */
+  onNameClick?: () => void
 }
 
-export default function SubmissionCard({ submission, onUpdate, onDelete, isSelected, onToggleSelect }: SubmissionCardProps) {
+export default function SubmissionCard({ submission, onUpdate, onDelete, isSelected, onToggleSelect, forceExpanded = false, onNameClick }: SubmissionCardProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [focusGrade, setFocusGrade] = useState(false)
   const [showImageModal, setShowImageModal] = useState(false)
@@ -79,6 +83,10 @@ export default function SubmissionCard({ submission, onUpdate, onDelete, isSelec
 
   // Any form fields beyond the defaults shown above go into "More Information".
   const extraFields = getExtraSubmissionFields(submission.data)
+
+  // The "More Information" panel holds extra fields and the submitted video(s).
+  const hasMoreInfo = extraFields.length > 0 || submittedVideos.length > 0
+  const moreInfoOpen = forceExpanded || showMoreInfo
 
   // Edit Mode
   if (isEditing) {
@@ -339,9 +347,21 @@ export default function SubmissionCard({ submission, onUpdate, onDelete, isSelec
 
         {/* Name & Age */}
         <div className="flex-1 min-w-0 pt-1">
-          <h3 className="text-lg font-bold text-white font-sans uppercase tracking-wide truncate pr-20">
-            {submission.name}
-          </h3>
+          {onNameClick && !forceExpanded ? (
+            <button
+              onClick={onNameClick}
+              className="text-left max-w-full"
+              title="View full actor details"
+            >
+              <h3 className="text-lg font-bold text-white font-sans uppercase tracking-wide truncate pr-20 hover:text-violet-300 transition-colors cursor-pointer">
+                {submission.name}
+              </h3>
+            </button>
+          ) : (
+            <h3 className="text-lg font-bold text-white font-sans uppercase tracking-wide truncate pr-20">
+              {submission.name}
+            </h3>
+          )}
           <div className="flex items-center gap-2 text-sm">
             {submission.age && (
               <span className="text-white/60">
@@ -394,29 +414,61 @@ export default function SubmissionCard({ submission, onUpdate, onDelete, isSelec
         </div>
       )}
 
-      {/* More Information - extra form fields beyond the defaults */}
-      {extraFields.length > 0 && (
+      {/* More Information - extra form fields + submitted video(s) */}
+      {hasMoreInfo && (
         <div className="mt-3 rounded-lg border border-white/10 overflow-hidden">
-          <button
-            onClick={() => setShowMoreInfo((v) => !v)}
-            className="w-full flex items-center justify-between px-3 py-2.5 bg-[#0f1f17] hover:bg-[#0f1f17]/70 transition-colors"
-            aria-expanded={showMoreInfo}
-          >
-            <span className="text-xs font-semibold text-white/60 uppercase tracking-wider">
-              More Information
-            </span>
-            <ChevronDown
-              className={`w-4 h-4 text-white/40 transition-transform ${showMoreInfo ? "rotate-180" : ""}`}
-            />
-          </button>
-          {showMoreInfo && (
-            <div className="px-3 py-3 bg-[#0f1f17] border-t border-white/10 space-y-2">
-              {extraFields.map((field) => (
-                <div key={field.key} className="flex items-start gap-2 text-sm">
-                  <span className="text-white/50 font-sans shrink-0">{field.label}:</span>
-                  <span className="text-white/80 font-sans break-words">{field.value}</span>
+          {forceExpanded ? (
+            <div className="w-full flex items-center px-3 py-2.5 bg-[#0f1f17]">
+              <span className="text-xs font-semibold text-white/60 uppercase tracking-wider">
+                More Information
+              </span>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowMoreInfo((v) => !v)}
+              className="w-full flex items-center justify-between px-3 py-2.5 bg-[#0f1f17] hover:bg-[#0f1f17]/70 transition-colors"
+              aria-expanded={moreInfoOpen}
+            >
+              <span className="text-xs font-semibold text-white/60 uppercase tracking-wider">
+                More Information
+              </span>
+              <ChevronDown
+                className={`w-4 h-4 text-white/40 transition-transform ${moreInfoOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+          )}
+          {moreInfoOpen && (
+            <div className="px-3 py-3 bg-[#0f1f17] border-t border-white/10 space-y-3">
+              {extraFields.length > 0 && (
+                <div className="space-y-2">
+                  {extraFields.map((field) => (
+                    <div key={field.key} className="flex items-start gap-2 text-sm">
+                      <span className="text-white/50 font-sans shrink-0">{field.label}:</span>
+                      <span className="text-white/80 font-sans break-words">{field.value}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
+              {submittedVideos.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">
+                    Videos
+                  </p>
+                  <div className="space-y-3">
+                    {submittedVideos.map((video, idx) => (
+                      <div key={idx} className="aspect-video w-full rounded-lg overflow-hidden border border-white/10">
+                        <iframe
+                          src={video.embedUrl}
+                          title={`${video.platform} video ${idx + 1}`}
+                          className="w-full h-full"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -438,28 +490,6 @@ export default function SubmissionCard({ submission, onUpdate, onDelete, isSelec
               >
                 <img src={img || "/placeholder.svg"} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
               </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Submitted Videos */}
-      {submittedVideos.length > 0 && (
-        <div className="mt-3 p-3 bg-[#0f1f17] rounded-lg">
-          <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">
-            Videos
-          </p>
-          <div className="space-y-3">
-            {submittedVideos.map((video, idx) => (
-              <div key={idx} className="aspect-video w-full rounded-lg overflow-hidden border border-white/10">
-                <iframe
-                  src={video.embedUrl}
-                  title={`${video.platform} video ${idx + 1}`}
-                  className="w-full h-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              </div>
             ))}
           </div>
         </div>

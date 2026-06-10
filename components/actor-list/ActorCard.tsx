@@ -10,6 +10,10 @@ interface ActorCardProps {
   actor: Actor
   onUpdate: (actor: Actor) => void
   onDelete: () => void
+  /** When true, the "More Information" panel is rendered fully expanded (used inside the detail modal). */
+  forceExpanded?: boolean
+  /** When provided (and not forceExpanded), clicking the actor name opens the detail modal. */
+  onNameClick?: () => void
 }
 
 // Helper to detect media platform from URL
@@ -28,7 +32,7 @@ function getMediaPlatform(url: string): { name: string; icon: "youtube" | "vimeo
   return { name: "Media Link", icon: "link" }
 }
 
-export default function ActorCard({ actor, onUpdate, onDelete }: ActorCardProps) {
+export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = false, onNameClick }: ActorCardProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editedActor, setEditedActor] = useState(actor)
   const [newFieldName, setNewFieldName] = useState("")
@@ -78,6 +82,12 @@ export default function ActorCard({ actor, onUpdate, onDelete }: ActorCardProps)
   }
 
   const mediaPlatform = getMediaPlatform(actor.mediaMaterial || "")
+
+  // The "More Information" panel holds extra custom fields and the submitted media/video.
+  const hasCustomFields = !!(actor.customFields && actor.customFields.length > 0)
+  const hasMedia = !!(actor.mediaMaterial && mediaPlatform)
+  const hasMoreInfo = hasCustomFields || hasMedia
+  const moreInfoOpen = forceExpanded || showMoreInfo
 
   // Edit Mode
   if (isEditing) {
@@ -322,9 +332,17 @@ export default function ActorCard({ actor, onUpdate, onDelete }: ActorCardProps)
           )}
         </button>
         <div className="min-w-0 pr-16">
-          <h3 className="text-lg font-bold text-white uppercase tracking-wide font-sans truncate">
-            {actor.name}
-          </h3>
+          {onNameClick && !forceExpanded ? (
+            <button onClick={onNameClick} className="text-left max-w-full" title="View full actor details">
+              <h3 className="text-lg font-bold text-white uppercase tracking-wide font-sans truncate hover:text-emerald-300 transition-colors cursor-pointer">
+                {actor.name}
+              </h3>
+            </button>
+          ) : (
+            <h3 className="text-lg font-bold text-white uppercase tracking-wide font-sans truncate">
+              {actor.name}
+            </h3>
+          )}
           <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#0f1f17] border border-white/10 text-xs font-sans">
               <span className="text-white/40">Age</span>
@@ -355,47 +373,57 @@ export default function ActorCard({ actor, onUpdate, onDelete }: ActorCardProps)
         </div>
       </div>
 
-      {/* Media Material */}
-      {actor.mediaMaterial && mediaPlatform && (
-        <div className="mb-4">
-          <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">
-            Media Material
-          </p>
-          <button
-            onClick={() => setShowMediaModal(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 rounded-lg text-sky-400 hover:text-sky-300 text-sm transition-colors group/link"
-            title="Click to play video"
-          >
-            <Video className="w-4 h-4" />
-            <span className="font-sans">{mediaPlatform.name}</span>
-            <ExternalLink className="w-3 h-3 opacity-60 group-hover/link:opacity-100 transition-opacity" />
-          </button>
-        </div>
-      )}
-
-      {/* More Information - extra submission fields */}
-      {actor.customFields && actor.customFields.length > 0 && (
+      {/* More Information - extra submission fields + media material */}
+      {hasMoreInfo && (
         <div className="mb-4 rounded-xl border border-white/10 overflow-hidden">
-          <button
-            onClick={() => setShowMoreInfo((v) => !v)}
-            className="w-full flex items-center justify-between px-3 py-2.5 bg-[#0f1f17] hover:bg-[#0f1f17]/70 transition-colors"
-            aria-expanded={showMoreInfo}
-          >
-            <span className="text-xs font-semibold text-white/40 uppercase tracking-wider">
-              More Information
-            </span>
-            <ChevronDown
-              className={`w-4 h-4 text-white/40 transition-transform ${showMoreInfo ? "rotate-180" : ""}`}
-            />
-          </button>
-          {showMoreInfo && (
-            <div className="px-3 py-3 bg-[#0f1f17] border-t border-white/10 space-y-1.5">
-              {actor.customFields.map((field) => (
-                <div key={field.id} className="flex items-start gap-2 text-sm">
-                  <span className="text-white/50 font-sans shrink-0">{field.name}:</span>
-                  <span className="text-white/80 font-sans break-words">{field.value || "-"}</span>
+          {forceExpanded ? (
+            <div className="w-full flex items-center px-3 py-2.5 bg-[#0f1f17]">
+              <span className="text-xs font-semibold text-white/40 uppercase tracking-wider">
+                More Information
+              </span>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowMoreInfo((v) => !v)}
+              className="w-full flex items-center justify-between px-3 py-2.5 bg-[#0f1f17] hover:bg-[#0f1f17]/70 transition-colors"
+              aria-expanded={moreInfoOpen}
+            >
+              <span className="text-xs font-semibold text-white/40 uppercase tracking-wider">
+                More Information
+              </span>
+              <ChevronDown
+                className={`w-4 h-4 text-white/40 transition-transform ${moreInfoOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+          )}
+          {moreInfoOpen && (
+            <div className="px-3 py-3 bg-[#0f1f17] border-t border-white/10 space-y-3">
+              {hasCustomFields && (
+                <div className="space-y-1.5">
+                  {actor.customFields!.map((field) => (
+                    <div key={field.id} className="flex items-start gap-2 text-sm">
+                      <span className="text-white/50 font-sans shrink-0">{field.name}:</span>
+                      <span className="text-white/80 font-sans break-words">{field.value || "-"}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
+              {hasMedia && (
+                <div>
+                  <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">
+                    Media Material
+                  </p>
+                  <button
+                    onClick={() => setShowMediaModal(true)}
+                    className="inline-flex items-center gap-2 px-3 py-2 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 rounded-lg text-sky-400 hover:text-sky-300 text-sm transition-colors group/link"
+                    title="Click to play video"
+                  >
+                    <Video className="w-4 h-4" />
+                    <span className="font-sans">{mediaPlatform!.name}</span>
+                    <ExternalLink className="w-3 h-3 opacity-60 group-hover/link:opacity-100 transition-opacity" />
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

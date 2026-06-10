@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { ArrowLeft, Trash2, Share2, Phone, Mail, ChevronDown } from "lucide-react"
+import { ArrowLeft, Trash2, Share2, Phone, Mail, ChevronDown, X } from "lucide-react"
 import { useActorList } from "./ActorListContext"
 import ActorCard from "./ActorCard"
 import { Actor, ActorGender } from "@/types/actor-list"
@@ -26,6 +26,7 @@ export default function ActorResultsView() {
   const [showShareModal, setShowShareModal] = useState(false)
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [newItemId, setNewItemId] = useState<string | null>(null)
+  const [detailActorId, setDetailActorId] = useState<string | null>(null)
   const gridRef = useRef<HTMLDivElement>(null)
 
   // Scroll to newly added item
@@ -220,6 +221,7 @@ export default function ActorResultsView() {
                   actor={actor}
                   onUpdate={updateActor}
                   onDelete={() => deleteActor(actor.id)}
+                  onNameClick={() => setDetailActorId(actor.id)}
                 />
               </div>
             ))}
@@ -255,7 +257,13 @@ export default function ActorResultsView() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-semibold text-white truncate">{actor.name}</h3>
+                    <button
+                      onClick={() => setDetailActorId(actor.id)}
+                      className="text-left max-w-full"
+                      title="View full actor details"
+                    >
+                      <h3 className="text-sm font-semibold text-white truncate hover:text-emerald-300 transition-colors cursor-pointer">{actor.name}</h3>
+                    </button>
                     <p className="text-xs text-white/50 truncate">
                       {actor.age ? `${actor.age}yo` : ""}
                       {actor.gender && actor.gender !== "Not-specified" ? ` • ${actor.gender}` : ""}
@@ -297,7 +305,13 @@ export default function ActorResultsView() {
                           )}
                         </div>
                         <div className="w-40 sm:w-48 md:w-56 min-w-0 flex-shrink-0">
-                          <h4 className="text-sm font-semibold text-white truncate">{actor.name}</h4>
+                          <button
+                            onClick={() => setDetailActorId(actor.id)}
+                            className="text-left max-w-full"
+                            title="View full actor details"
+                          >
+                            <h4 className="text-sm font-semibold text-white truncate hover:text-emerald-300 transition-colors cursor-pointer">{actor.name}</h4>
+                          </button>
                           <p className="text-xs text-white/50 truncate">
                             {actor.age ? `Age: ${actor.age}` : ""}
                             {actor.playingAge ? ` • Plays: ${actor.playingAge}` : ""}
@@ -341,6 +355,37 @@ export default function ActorResultsView() {
           </div>
         )}
       </div>
+
+      {/* Actor Detail Modal - full card, fully expanded */}
+      {detailActorId && (() => {
+        const detailActor = currentProject.actors.find((a) => a.id === detailActorId)
+        if (!detailActor) return null
+        return (
+          <div
+            className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 sm:p-8"
+            onClick={() => setDetailActorId(null)}
+          >
+            <div className="relative w-full max-w-xl my-auto" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={() => setDetailActorId(null)}
+                className="absolute -top-2 -right-2 z-10 p-2 bg-[#1a2e23] hover:bg-white/20 border border-white/10 rounded-full text-white/70 hover:text-white transition-colors"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <ActorCard
+                actor={detailActor}
+                onUpdate={updateActor}
+                onDelete={() => {
+                  deleteActor(detailActor.id)
+                  setDetailActorId(null)
+                }}
+                forceExpanded
+              />
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Share Modal */}
       {showShareModal && (

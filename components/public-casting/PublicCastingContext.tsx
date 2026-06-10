@@ -1,7 +1,8 @@
 "use client"
 
-import { createContext, useContext, useState, ReactNode, useCallback } from "react"
+import { createContext, useContext, useState, ReactNode, useCallback, useEffect } from "react"
 import { CastingCall, CastingCallField, CastingSubmission, PublicCastingProject } from "@/types/public-casting"
+import { loadDemoData, saveDemoData, DEMO_STORAGE_KEYS } from "@/utils/demoPersistence"
 
 interface PublicCastingState {
   projects: PublicCastingProject[]
@@ -384,12 +385,27 @@ const createDemoData = (): PublicCastingProject[] => {
 }
 
 export function PublicCastingProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<PublicCastingState>({
-    projects: createDemoData(),
-    currentProject: null,
-    currentCastingCall: null,
-    newSubmissionsCount: 16, // From demo data
+  const [state, setState] = useState<PublicCastingState>(() => {
+    const demo = createDemoData()
+    const persisted = loadDemoData<{ projects: PublicCastingProject[]; newSubmissionsCount: number } | null>(
+      DEMO_STORAGE_KEYS.publicCasting,
+      null
+    )
+    return {
+      projects: persisted?.projects ?? demo,
+      currentProject: null,
+      currentCastingCall: null,
+      newSubmissionsCount: persisted?.newSubmissionsCount ?? 16, // From demo data
+    }
   })
+
+  // Persist projects/submissions so they survive navigation/remounts when no backend is signed in.
+  useEffect(() => {
+    saveDemoData(DEMO_STORAGE_KEYS.publicCasting, {
+      projects: state.projects,
+      newSubmissionsCount: state.newSubmissionsCount,
+    })
+  }, [state.projects, state.newSubmissionsCount])
 
   const createProject = useCallback((name: string): PublicCastingProject => {
     const newProject: PublicCastingProject = {

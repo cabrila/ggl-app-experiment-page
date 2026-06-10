@@ -10,6 +10,7 @@ import {
   updateSceneProject as updateSceneProjectInFirestore,
   deleteSceneProject as deleteSceneProjectFromFirestore,
 } from "@/lib/firestore"
+import { loadDemoData, saveDemoData, DEMO_STORAGE_KEYS } from "@/utils/demoPersistence"
 
 type ViewState = "projects" | "upload" | "results"
 
@@ -277,17 +278,25 @@ const demoProjects: SceneProject[] = [
 ]
 
 export function SceneListProvider({ children }: { children: ReactNode }) {
-  const [projects, setProjects] = useState<SceneProject[]>(demoProjects)
+  const [projects, setProjects] = useState<SceneProject[]>(() =>
+    loadDemoData(DEMO_STORAGE_KEYS.sceneProjects, demoProjects)
+  )
   const [currentProject, setCurrentProject] = useState<SceneProject | null>(null)
   const [view, setView] = useState<ViewState>("projects")
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  // Persist demo-mode data so it survives navigation/remounts when no backend is signed in.
+  useEffect(() => {
+    if (user) return
+    saveDemoData(DEMO_STORAGE_KEYS.sceneProjects, projects)
+  }, [projects, user])
+
   useEffect(() => {
     const unsubscribe = subscribeToAuthStateChanges((authUser) => {
       setUser(authUser)
       if (!authUser) {
-        setProjects(demoProjects)
+        setProjects(loadDemoData(DEMO_STORAGE_KEYS.sceneProjects, demoProjects))
         setCurrentProject(null)
         setView("projects")
         setIsLoading(false)

@@ -10,6 +10,7 @@ import {
   updatePropProject as updatePropProjectInFirestore,
   deletePropProject as deletePropProjectFromFirestore,
 } from "@/lib/firestore"
+import { loadDemoData, saveDemoData, DEMO_STORAGE_KEYS } from "@/utils/demoPersistence"
 
 type ViewState = "projects" | "upload" | "results"
 
@@ -397,17 +398,25 @@ const demoProjects: PropProject[] = [
 ]
 
 export function PropListProvider({ children }: { children: ReactNode }) {
-  const [projects, setProjects] = useState<PropProject[]>(demoProjects)
+  const [projects, setProjects] = useState<PropProject[]>(() =>
+    loadDemoData(DEMO_STORAGE_KEYS.propProjects, demoProjects)
+  )
   const [currentProject, setCurrentProject] = useState<PropProject | null>(null)
   const [view, setView] = useState<ViewState>("projects")
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  // Persist demo-mode data so it survives navigation/remounts when no backend is signed in.
+  useEffect(() => {
+    if (user) return
+    saveDemoData(DEMO_STORAGE_KEYS.propProjects, projects)
+  }, [projects, user])
+
   useEffect(() => {
     const unsubscribe = subscribeToAuthStateChanges((authUser) => {
       setUser(authUser)
       if (!authUser) {
-        setProjects(demoProjects)
+        setProjects(loadDemoData(DEMO_STORAGE_KEYS.propProjects, demoProjects))
         setCurrentProject(null)
         setView("projects")
         setIsLoading(false)

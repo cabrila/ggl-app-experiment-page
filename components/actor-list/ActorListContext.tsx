@@ -13,6 +13,7 @@ import {
   saveStandaloneActor,
   deleteStandaloneActor,
 } from "@/lib/firestore"
+import { loadDemoData, saveDemoData, DEMO_STORAGE_KEYS } from "@/utils/demoPersistence"
 
 type ActorListView = "list" | "upload" | "results" | "all-actors"
 
@@ -270,22 +271,38 @@ const demoProjects: ActorListProject[] = [
 ]
 
 export function ActorListProvider({ children }: { children: ReactNode }) {
-  const [projects, setProjects] = useState<ActorListProject[]>(demoProjects)
+  const [projects, setProjects] = useState<ActorListProject[]>(() =>
+    loadDemoData(DEMO_STORAGE_KEYS.actorListProjects, demoProjects)
+  )
   const [currentProject, setCurrentProject] = useState<ActorListProject | null>(null)
   const [view, setView] = useState<ActorListView>("list")
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [standaloneActors, setStandaloneActors] = useState<Actor[]>([])
+  const [standaloneActors, setStandaloneActors] = useState<Actor[]>(() =>
+    loadDemoData(DEMO_STORAGE_KEYS.actorListStandalone, [] as Actor[])
+  )
   const [dismissedDuplicates, setDismissedDuplicates] = useState<Set<string>>(new Set())
+
+  // Persist demo-mode data so it survives navigation/remounts when there is no
+  // signed-in backend. Skipped while authenticated (Firestore is the source of truth).
+  useEffect(() => {
+    if (user) return
+    saveDemoData(DEMO_STORAGE_KEYS.actorListProjects, projects)
+  }, [projects, user])
+
+  useEffect(() => {
+    if (user) return
+    saveDemoData(DEMO_STORAGE_KEYS.actorListStandalone, standaloneActors)
+  }, [standaloneActors, user])
 
   // Subscribe to auth state changes
   useEffect(() => {
     const unsubscribe = subscribeToAuthStateChanges((authUser) => {
       setUser(authUser)
       if (!authUser) {
-        // User logged out, show demo data
-        setProjects(demoProjects)
-        setStandaloneActors([])
+        // User logged out (or no backend configured): show persisted demo data.
+        setProjects(loadDemoData(DEMO_STORAGE_KEYS.actorListProjects, demoProjects))
+        setStandaloneActors(loadDemoData(DEMO_STORAGE_KEYS.actorListStandalone, [] as Actor[]))
         setCurrentProject(null)
         setView("list")
         setIsLoading(false)

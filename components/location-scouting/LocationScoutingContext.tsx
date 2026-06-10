@@ -10,6 +10,7 @@ import {
   updateLocationProject as updateLocationProjectInFirestore,
   deleteLocationProject as deleteLocationProjectFromFirestore,
 } from "@/lib/firestore"
+import { loadDemoData, saveDemoData, DEMO_STORAGE_KEYS } from "@/utils/demoPersistence"
 
 type ViewState = "projects" | "upload" | "results"
 
@@ -217,19 +218,27 @@ const demoProjects: LocationProject[] = [
 ]
 
 export function LocationScoutingProvider({ children }: { children: ReactNode }) {
-  const [projects, setProjects] = useState<LocationProject[]>(demoProjects)
+  const [projects, setProjects] = useState<LocationProject[]>(() =>
+    loadDemoData(DEMO_STORAGE_KEYS.locationProjects, demoProjects)
+  )
   const [currentProject, setCurrentProject] = useState<LocationProject | null>(null)
   const [view, setView] = useState<ViewState>("projects")
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+
+  // Persist demo-mode data so it survives navigation/remounts when no backend is signed in.
+  useEffect(() => {
+    if (user) return
+    saveDemoData(DEMO_STORAGE_KEYS.locationProjects, projects)
+  }, [projects, user])
 
   // Subscribe to auth state changes
   useEffect(() => {
     const unsubscribe = subscribeToAuthStateChanges((authUser) => {
       setUser(authUser)
       if (!authUser) {
-        // User logged out, show demo data
-        setProjects(demoProjects)
+        // User logged out (or no backend configured): show persisted demo data.
+        setProjects(loadDemoData(DEMO_STORAGE_KEYS.locationProjects, demoProjects))
         setCurrentProject(null)
         setView("projects")
         setIsLoading(false)

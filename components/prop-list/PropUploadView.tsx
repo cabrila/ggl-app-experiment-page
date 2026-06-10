@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Upload, ArrowLeft, FileText, Loader2, X, AlertCircle, RefreshCw } from "lucide-react"
+import { Upload, ArrowLeft, FileText, Loader2, X, AlertCircle, RefreshCw, PenLine } from "lucide-react"
 import { usePropList } from "./PropListContext"
 import { Prop, PropCategory, PropProject } from "@/types/prop-list"
 import { useImportJob } from "@/hooks/useImportJob"
@@ -132,6 +132,19 @@ export default function PropUploadView() {
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
 
+  const handleCreateManually = () => {
+    const newProject: PropProject = {
+      id: crypto.randomUUID(),
+      name: "New Prop List",
+      props: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+    addProject(newProject)
+    setCurrentProject(newProject)
+    setView("results")
+  }
+
   return (
     <div className="flex flex-col h-full overflow-y-auto">
       <header className="flex items-center gap-4 px-6 py-4 border-b border-white/10">
@@ -237,6 +250,19 @@ export default function PropUploadView() {
                 onChange={handleFileSelect}
                 className="hidden"
               />
+            </div>
+          )}
+
+          {/* Manual Create Option */}
+          {!isProcessing && (
+            <div className="mt-8 pt-6 border-t border-white/10">
+              <button
+                onClick={handleCreateManually}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 hover:text-white rounded-xl transition-colors font-sans"
+              >
+                <PenLine className="w-4 h-4" />
+                Create Prop List Manually
+              </button>
             </div>
           )}
         </div>

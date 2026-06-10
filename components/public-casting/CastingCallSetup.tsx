@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { ArrowLeft, Plus, Trash2, GripVertical, Copy, Check, ExternalLink, Eye, X, ChevronDown } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { ArrowLeft, Plus, Trash2, GripVertical, Copy, Check, ExternalLink, Eye, X, ChevronDown, ImageIcon } from "lucide-react"
 import { usePublicCasting } from "./PublicCastingContext"
 import { CastingCallField, CastingCall, PublicCastingProject } from "@/types/public-casting"
 import CastingCallPreviewModal from "./CastingCallPreviewModal"
@@ -43,6 +43,7 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
   const [title, setTitle] = useState(editingCastingCall?.title || "")
   const [description, setDescription] = useState(editingCastingCall?.description || "")
   const [projectName, setProjectName] = useState(editingCastingCall?.projectName || editingProject?.name || "")
+  const [headerImageUrl, setHeaderImageUrl] = useState(editingCastingCall?.headerImageUrl || "")
   const [fields, setFields] = useState<CastingCallField[]>(editingCastingCall?.fields || defaultFields)
   const [createdLink, setCreatedLink] = useState(editingCastingCall?.shareableLink || "")
   const [copied, setCopied] = useState(false)
@@ -50,6 +51,17 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
   const [showTypePicker, setShowTypePicker] = useState(false)
+  const [isHeaderDragOver, setIsHeaderDragOver] = useState(false)
+  const headerImageInputRef = useRef<HTMLInputElement | null>(null)
+
+  const setHeaderImageFromFile = (file: File | undefined) => {
+    if (!file || !file.type.startsWith("image/")) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      setHeaderImageUrl(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
 
   // Create a preview casting call object for the modal
   const previewCastingCall: CastingCall = {
@@ -61,6 +73,7 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
     createdAt: editingCastingCall?.createdAt || new Date(),
     isActive: true,
     shareableLink: createdLink || "https://gogreenlight.ai/cast/preview",
+    headerImageUrl: headerImageUrl || undefined,
   }
 
   const addField = (type: CastingCallField["type"]) => {
@@ -129,6 +142,7 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
         description,
         projectName,
         fields,
+        headerImageUrl: headerImageUrl || undefined,
       })
       setCreatedLink(editingCastingCall.shareableLink)
       setStep("success")
@@ -139,7 +153,7 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
         project = createProject(projectName)
       }
 
-      const castingCall = createCastingCall(project.id, title, description, projectName, fields)
+      const castingCall = createCastingCall(project.id, title, description, projectName, fields, headerImageUrl || undefined)
       setCreatedLink(castingCall.shareableLink)
       setStep("success")
     }
@@ -284,6 +298,69 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
             <h2 className="text-lg font-semibold text-white mb-4 font-sans">Basic Information</h2>
             
             <div className="space-y-4">
+              {/* Header Image Upload */}
+              <div>
+                <label className="block text-xs font-semibold text-violet-400 uppercase tracking-wider mb-2">
+                  Header Image (Optional)
+                </label>
+                <div
+                  onClick={() => headerImageInputRef.current?.click()}
+                  onDragOver={(e) => {
+                    e.preventDefault()
+                    setIsHeaderDragOver(true)
+                  }}
+                  onDragLeave={() => setIsHeaderDragOver(false)}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    setIsHeaderDragOver(false)
+                    setHeaderImageFromFile(e.dataTransfer.files?.[0])
+                  }}
+                  className={`relative h-40 w-full rounded-lg overflow-hidden cursor-pointer border-2 border-dashed transition-colors group ${
+                    isHeaderDragOver
+                      ? "border-violet-500 bg-violet-500/10"
+                      : "border-white/15 hover:border-violet-500/50 bg-[#0f1f17]"
+                  }`}
+                  title="Click or drag an image to set the casting call header"
+                >
+                  {headerImageUrl ? (
+                    <>
+                      <img
+                        src={headerImageUrl || "/placeholder.svg"}
+                        alt="Casting call header"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                        <span className="opacity-0 group-hover:opacity-100 text-white text-sm font-sans transition-opacity">
+                          Click or drag to replace
+                        </span>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setHeaderImageUrl("")
+                        }}
+                        className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 rounded-lg text-white transition-colors"
+                        title="Remove image"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </>
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-white/40">
+                      <ImageIcon className="w-7 h-7" />
+                      <span className="text-sm font-sans">Click or drag an image to upload header</span>
+                    </div>
+                  )}
+                  <input
+                    ref={headerImageInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => setHeaderImageFromFile(e.target.files?.[0])}
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-semibold text-violet-400 uppercase tracking-wider mb-2">
                   Casting Call Title *
@@ -366,6 +443,19 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
             </div>
 
             <div className="space-y-3">
+              {/* Column Headings */}
+              {fields.length > 0 && (
+                <div className="hidden md:flex items-center gap-3 px-4">
+                  {/* Spacer to align with drag handle */}
+                  <div className="w-4 flex-shrink-0" />
+                  <div className="flex-1 grid grid-cols-4 gap-3">
+                    <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wider font-sans">Type</span>
+                    <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wider font-sans">Title</span>
+                    <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wider font-sans">Input field</span>
+                    <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wider font-sans">Options</span>
+                  </div>
+                </div>
+              )}
               {fields.map((field, index) => (
                 <div
                   key={field.id}
@@ -390,6 +480,13 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
 
                   {/* Field Config */}
                   <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div
+                      className="flex items-center px-3 py-2 bg-[#1a2e23] border border-white/10 rounded-lg text-white/60 text-sm font-sans"
+                      title="Field type cannot be changed after the field is added"
+                    >
+                      {fieldTypeOptions.find((opt) => opt.value === field.type)?.label || field.type}
+                    </div>
+
                     <input
                       type="text"
                       value={field.label}
@@ -397,13 +494,6 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
                       placeholder="Field label"
                       className="px-3 py-2 bg-[#1a2e23] border border-white/10 rounded-lg text-white text-sm placeholder-white/30 focus:border-violet-500/50 focus:outline-none font-sans"
                     />
-                    
-                    <div
-                      className="flex items-center px-3 py-2 bg-[#1a2e23] border border-white/10 rounded-lg text-white/60 text-sm font-sans"
-                      title="Field type cannot be changed after the field is added"
-                    >
-                      {fieldTypeOptions.find((opt) => opt.value === field.type)?.label || field.type}
-                    </div>
 
                     <input
                       type="text"

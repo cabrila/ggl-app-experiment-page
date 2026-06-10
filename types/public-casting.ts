@@ -16,6 +16,7 @@ export interface CastingCall {
   createdAt: Date
   isActive: boolean
   shareableLink: string
+  headerImageUrl?: string
 }
 
 export interface CastingSubmission {

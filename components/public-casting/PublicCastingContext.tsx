@@ -16,7 +16,7 @@ interface PublicCastingContextType {
   selectProject: (id: string) => void
   updateProject: (id: string, updates: Partial<PublicCastingProject>) => void
   deleteProject: (id: string) => void
-  createCastingCall: (projectId: string, title: string, description: string, projectName: string, fields: CastingCallField[]) => CastingCall
+  createCastingCall: (projectId: string, title: string, description: string, projectName: string, fields: CastingCallField[], headerImageUrl?: string) => CastingCall
   updateCastingCall: (projectId: string, castingCallId: string, updates: Partial<CastingCall>) => void
   deleteCastingCall: (projectId: string, castingCallId: string) => void
   selectCastingCall: (id: string) => void
@@ -201,7 +201,7 @@ export function PublicCastingProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const createCastingCall = useCallback(
-    (projectId: string, title: string, description: string, projectName: string, fields: CastingCallField[]): CastingCall => {
+    (projectId: string, title: string, description: string, projectName: string, fields: CastingCallField[], headerImageUrl?: string): CastingCall => {
       const newCastingCall: CastingCall = {
         id: `cc-${Date.now()}`,
         title,
@@ -211,6 +211,7 @@ export function PublicCastingProvider({ children }: { children: ReactNode }) {
         createdAt: new Date(),
         isActive: true,
         shareableLink: `https://gogreenlight.ai/cast/${Math.random().toString(36).substring(2, 8)}`,
+        headerImageUrl,
       }
       setState((prev) => ({
         ...prev,

@@ -160,6 +160,16 @@ export default function CastingCallPreviewModal({ castingCall, project, onClose 
           ) : (
             // Form State
             <form onSubmit={handleSubmit}>
+              {/* Header Image */}
+              {castingCall.headerImageUrl && (
+                <div className="w-full h-40 rounded-xl overflow-hidden mb-6">
+                  <img
+                    src={castingCall.headerImageUrl || "/placeholder.svg"}
+                    alt={`${castingCall.title} header`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
               {/* Form Header */}
               <div className="text-center mb-8">
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/20 rounded-full text-emerald-300 text-sm mb-4 font-sans font-medium">

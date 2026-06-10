@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone, ArrowRight, Package, Film, DollarSign, UserPlus } from "lucide-react"
+import { LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone, ArrowRight, Package, Film, DollarSign, UserPlus, Menu, X } from "lucide-react"
 import { useCasting } from "@/components/casting/CastingContext"
 import FeedbackModal from "@/components/modals/FeedbackModal"
 import FeedbackUserModal from "@/components/modals/FeedbackUserModal"
@@ -69,8 +69,11 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false)
   const [isFeedbackUserModalOpen, setIsFeedbackUserModalOpen] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const userButtonRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
+  const mobileMenuRef = useRef<HTMLDivElement>(null)
+  const mobileMenuButtonRef = useRef<HTMLButtonElement>(null)
   const { state } = useCasting()
   const fbUser = useFirebaseUser()
   void state // legacy CastingContext kept for other home features
@@ -101,6 +104,25 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
     }
   }, [isUserMenuOpen])
 
+  // Close mobile burger menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(event.target as Node) &&
+        mobileMenuButtonRef.current &&
+        !mobileMenuButtonRef.current.contains(event.target as Node)
+      ) {
+        setIsMobileMenuOpen(false)
+      }
+    }
+
+    if (isMobileMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside)
+      return () => document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [isMobileMenuOpen])
+
   return (
     <div
       className="h-full flex flex-col overflow-hidden"
@@ -110,30 +132,30 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
       }}
     >
       {/* Top Navigation Bar - Only Logo and User Avatar */}
-      <header className="relative flex justify-between items-center px-6 py-3 border-b border-white/10 shrink-0 z-20">
-        <div className="flex items-center gap-3">
+      <header className="relative flex justify-between items-center gap-3 px-6 py-3 border-b border-white/10 shrink-0 z-30">
+        <div className="flex items-center gap-3 min-w-0">
           <img
             src="/images/gogreenlight-logo.png"
             alt="GoGreenlight"
-            className="h-9 w-auto"
+            className="h-9 w-auto max-w-[150px] sm:max-w-none shrink"
           />
-          <span className="text-xl font-semibold text-white tracking-tight">Tools</span>
-          <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-white text-xs font-semibold uppercase tracking-wide">Beta</span>
+          <span className="hidden sm:inline text-xl font-semibold text-white tracking-tight">Tools</span>
+          <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-white text-xs font-semibold uppercase tracking-wide shrink-0">Beta</span>
         </div>
 
-        {/* Center - Join Feedback Community Button */}
+        {/* Center - Join Feedback Community Button (desktop only) */}
         <button
           onClick={() => setIsFeedbackUserModalOpen(true)}
-          className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white hover:bg-white/20 hover:border-emerald-500/40 transition-all duration-200"
+          className="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center gap-2 px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white hover:bg-white/20 hover:border-emerald-500/40 transition-all duration-200"
           title="Join our feedback community"
           aria-label="Sign up as feedback user"
         >
           <UserPlus className="w-4 h-4 text-emerald-400" />
-          <span className="text-sm font-medium font-sans hidden sm:inline">Join Feedback Community</span>
-          <span className="text-sm font-medium font-sans sm:hidden">Join</span>
+          <span className="text-sm font-medium font-sans">Join Feedback Community</span>
         </button>
 
-        <div className="flex items-center gap-2">
+        {/* Desktop action group */}
+        <div className="hidden lg:flex items-center gap-2">
           {/* Internal-only Usage & Cost button. Visibility-only gate; the
               /api/usage handler enforces the real access control. */}
           {fbUser.isInternal && (
@@ -163,7 +185,7 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
             aria-label="Open feedback form"
           >
             <MessageSquarePlus className="w-4 h-4" />
-            <span className="text-sm font-medium font-sans hidden sm:inline">Feedback</span>
+            <span className="text-sm font-medium font-sans">Feedback</span>
           </button>
 
           {/* User Avatar */}
@@ -210,6 +232,81 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
               </div>
             )}
           </div>
+        </div>
+
+        {/* Mobile/Tablet burger menu (below lg) */}
+        <div className="lg:hidden relative shrink-0">
+          <button
+            ref={mobileMenuButtonRef}
+            onClick={() => setIsMobileMenuOpen((v) => !v)}
+            className="flex items-center justify-center w-10 h-10 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-all duration-200"
+            aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={isMobileMenuOpen}
+            aria-haspopup="true"
+          >
+            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+
+          {isMobileMenuOpen && (
+            <div
+              ref={mobileMenuRef}
+              className="absolute right-0 top-full mt-2 w-64 bg-[#1a3a25] border border-white/15 rounded-lg shadow-xl overflow-hidden z-50"
+            >
+              {/* User Info */}
+              <div className="px-4 py-3 border-b border-white/10">
+                <p className="text-sm font-medium text-white truncate">{fbUser.displayName}</p>
+                <p className="text-xs text-white/50 truncate">{fbUser.email}</p>
+              </div>
+
+              <div className="py-1">
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false)
+                    setIsFeedbackUserModalOpen(true)
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white/80 hover:bg-white/5 transition-colors"
+                >
+                  <UserPlus className="w-4 h-4 text-emerald-400" />
+                  <span>Join Feedback Community</span>
+                </button>
+
+                {fbUser.isInternal && (
+                  <a
+                    href="/usage"
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white/80 hover:bg-white/5 transition-colors"
+                    aria-label="Usage and cost"
+                  >
+                    <DollarSign className="w-4 h-4" />
+                    <span>Usage &amp; Cost</span>
+                  </a>
+                )}
+
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false)
+                    setIsFeedbackModalOpen(true)
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white/80 hover:bg-white/5 transition-colors"
+                >
+                  <MessageSquarePlus className="w-4 h-4" />
+                  <span>Feedback &amp; Requests</span>
+                </button>
+              </div>
+
+              <div className="border-t border-white/10">
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false)
+                    handleSignOut()
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-white/5 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </header>
 

@@ -398,7 +398,7 @@ export default function CastingCallsList({
                 {/* Content Section - 2/3 width */}
                 <div className="flex-1 flex flex-col px-5 pb-5 pt-0">
                   {/* Reserved header strip for hover action icons (keeps content below them) */}
-                  <div className="relative h-7 flex-shrink-0">
+                  <div className="relative h-6 flex-shrink-0">
                     {hoveredProjectId === project.id && (
                       <div className="absolute top-0 right-0 flex items-center gap-1.5">
                         {hasCastingCall && (
@@ -407,7 +407,7 @@ export default function CastingCallsList({
                               e.stopPropagation()
                               setQrCodeCastingCall(castingCall)
                             }}
-                            className="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
+                            className="p-1 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
                             title="Generate QR Code"
                           >
                             <QrCode className="w-4 h-4" />
@@ -415,14 +415,14 @@ export default function CastingCallsList({
                         )}
                         <button
                           onClick={(e) => handleEditProject(e, project)}
-                          className="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
+                          className="p-1 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
                           title="Edit Project"
                         >
                           <FolderEdit className="w-4 h-4" />
                         </button>
                         <button
                           onClick={(e) => handleDeleteProject(e, project)}
-                          className="p-1.5 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-red-400 hover:text-red-300 transition-colors"
+                          className="p-1 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-red-400 hover:text-red-300 transition-colors"
                           title="Delete"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -467,7 +467,7 @@ export default function CastingCallsList({
 
                   {/* Submissions count */}
                   {project.submissions.length > 0 && (
-                    <div className="mb-7 flex items-center gap-1 text-xs text-violet-300">
+                    <div className="mb-6 flex items-center gap-1 text-xs text-violet-300">
                       <Users className="w-3 h-3" />
                       <button
                         type="button"

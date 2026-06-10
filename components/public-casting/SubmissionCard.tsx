@@ -289,7 +289,7 @@ export default function SubmissionCard({ submission, onUpdate, onDelete, isSelec
       )}
 
       {/* Header with Avatar */}
-      <div className="flex items-start gap-4 mb-4 pt-7">
+      <div className={`flex items-start gap-4 mb-4 pt-7 ${onToggleSelect ? "pl-8" : ""}`}>
         {/* Avatar - Clickable to open modal */}
         <button
           onClick={() => submission.headshot && setShowImageModal(true)}

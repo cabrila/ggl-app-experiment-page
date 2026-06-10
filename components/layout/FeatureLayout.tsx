@@ -38,16 +38,6 @@ const sidebarItems = [
     activeBg: "bg-sky-500/30",
     activeBorder: "border-sky-400",
   },
-  // Hidden for now — restore by uncommenting when Public Casting is ready.
-  {
-    id: "public-casting" as ActiveView,
-    title: "Public Casting",
-    icon: Megaphone,
-    iconBg: "bg-violet-500/20",
-    iconColor: "text-violet-400",
-    activeBg: "bg-violet-500/30",
-    activeBorder: "border-violet-400",
-  },
   {
     id: "prop-list" as ActiveView,
     title: "Prop List",
@@ -65,6 +55,15 @@ const sidebarItems = [
     iconColor: "text-teal-400",
     activeBg: "bg-teal-500/30",
     activeBorder: "border-teal-400",
+  },
+  {
+    id: "public-casting" as ActiveView,
+    title: "Public Casting",
+    icon: Megaphone,
+    iconBg: "bg-violet-500/20",
+    iconColor: "text-violet-400",
+    activeBg: "bg-violet-500/30",
+    activeBorder: "border-violet-400",
   },
 ]
 

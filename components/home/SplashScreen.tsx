@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone, ArrowRight, Package, Film, DollarSign, Download, UserPlus } from "lucide-react"
+import { LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone, ArrowRight, Package, Film, DollarSign, UserPlus } from "lucide-react"
 import { useCasting } from "@/components/casting/CastingContext"
 import FeedbackModal from "@/components/modals/FeedbackModal"
 import FeedbackUserModal from "@/components/modals/FeedbackUserModal"
@@ -57,14 +57,6 @@ const featureButtons = [
     icon: Film,
     iconBg: "bg-teal-500/20",
     iconColor: "text-teal-400",
-  },
-  {
-    id: "download-screenplay",
-    title: "Download Screenplay",
-    description: "You can test the tools with this screenplay. The material is not copyrighted and free to use.",
-    icon: Download,
-    iconBg: "bg-indigo-500/20",
-    iconColor: "text-indigo-400",
   },
 ]
 
@@ -244,17 +236,7 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
                   key={feature.id}
                   onClick={() => {
                     trackFeatureClick(feature.id as FeatureName)
-                    if (feature.id === "download-screenplay") {
-                      // Trigger download of the screenplay PDF
-                      const link = document.createElement("a")
-                      link.href = "/screenplays/A_Dinner_Party_screenplay.pdf"
-                      link.download = "A_Dinner_Party_screenplay.pdf"
-                      document.body.appendChild(link)
-                      link.click()
-                      document.body.removeChild(link)
-                    } else {
-                      onNavigate?.(feature.id)
-                    }
+                    onNavigate?.(feature.id)
                   }}
                   className="group relative flex flex-col items-start p-5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-emerald-500/30 transition-all duration-300 text-left"
                 >

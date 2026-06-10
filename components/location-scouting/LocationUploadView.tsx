@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Upload, ArrowLeft, FileText, Loader2, X, AlertCircle, RefreshCw, PenLine } from "lucide-react"
+import { Upload, ArrowLeft, FileText, Loader2, X, AlertCircle, RefreshCw, PenLine, Download } from "lucide-react"
 import { useLocationScouting } from "./LocationScoutingContext"
 import { Location, LocationProject } from "@/types/location-scouting"
 import { useImportJob } from "@/hooks/useImportJob"
@@ -146,6 +146,21 @@ export default function LocationUploadView() {
           <p className="text-white/60 text-center mb-8 font-sans">
             Upload your script (PDF or DOCX). AI will scan for scenes to create a detailed Location Scouting List.
           </p>
+
+          {/* Sample screenplay download */}
+          <div className="flex flex-col items-center -mt-4 mb-8">
+            <a
+              href="/screenplays/A_Dinner_Party_screenplay.pdf"
+              download="A_Dinner_Party_screenplay.pdf"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20 hover:text-amber-200 transition-colors font-sans text-sm"
+            >
+              <Download className="w-4 h-4 shrink-0" />
+              <span>Download a sample screenplay</span>
+            </a>
+            <p className="mt-2 text-white/40 text-xs font-sans text-center max-w-md">
+              No script handy? Test the tools with this screenplay — the material is not copyrighted and free to use.
+            </p>
+          </div>
 
           <div className="w-full h-px bg-white/10 mb-8" />
 

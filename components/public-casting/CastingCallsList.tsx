@@ -230,18 +230,28 @@ export default function CastingCallsList({
           )}
         </button>
 
-        {/* Create Casting Groups Button */}
+        {/* Selection Actions - Create Group + Clear (to the right of Submissions) */}
         {selectedProjectIds.length > 0 && (
-          <button
-            onClick={handleCreateGroups}
-            className="flex items-center gap-2 px-4 py-2.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 rounded-lg text-amber-300 transition-colors font-sans"
-          >
-            <FolderPlus className="w-4 h-4" />
-            <span>Create Casting Groups</span>
-            <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 bg-amber-500 text-white text-xs font-bold rounded-full">
-              {selectedProjectIds.length}
-            </span>
-          </button>
+          <>
+            <button
+              onClick={handleCreateGroups}
+              className="flex items-center gap-2 px-4 py-2.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 rounded-lg text-amber-300 transition-colors font-sans"
+            >
+              <FolderPlus className="w-4 h-4" />
+              <span>Create Casting Groups</span>
+              <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 bg-amber-500 text-white text-xs font-bold rounded-full">
+                {selectedProjectIds.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setSelectedProjectIds([])}
+              className="flex items-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/70 hover:text-white transition-colors font-sans"
+            >
+              <X className="w-4 h-4" />
+              <span>Clear</span>
+            </button>
+          </>
         )}
       </div>
 

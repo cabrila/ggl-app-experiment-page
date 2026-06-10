@@ -382,11 +382,11 @@ export default function CastingCallsList({
                 </div>
 
                 {/* Content Section - 2/3 width */}
-                <div className="flex-1 flex flex-col p-4">
+                <div className="flex-1 flex flex-col p-5">
                   {/* Reserved header strip for hover action icons (keeps content below them) */}
-                  <div className="relative h-8 mb-1 flex-shrink-0">
+                  <div className="relative h-9 mb-1 flex-shrink-0">
                     {hoveredProjectId === project.id && (
-                      <div className="absolute top-0 right-0 flex items-center gap-1">
+                      <div className="absolute top-0 right-0 flex items-center gap-1.5">
                         {hasCastingCall && (
                           <button
                             onClick={(e) => {

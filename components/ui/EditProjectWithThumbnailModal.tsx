@@ -1,19 +1,19 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { X, Check, Upload, Image as ImageIcon, Trash2, FileEdit } from "lucide-react"
+import { X, Check, Upload, Image as ImageIcon, Trash2 } from "lucide-react"
 
 interface EditProjectWithThumbnailModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (newName: string, thumbnailUrl?: string) => void
+  onSave: (newName: string, thumbnailUrl?: string, completed?: boolean) => void
   currentName: string
   currentThumbnail?: string
   title: string
   label?: string
   accentColor?: "emerald" | "sky" | "amber" | "violet" | "rose" | "teal"
-  onEditForm?: () => void
-  editFormLabel?: string
+  showCompleted?: boolean
+  currentCompleted?: boolean
 }
 
 export default function EditProjectWithThumbnailModal({
@@ -25,11 +25,12 @@ export default function EditProjectWithThumbnailModal({
   title,
   label = "Project Name",
   accentColor = "emerald",
-  onEditForm,
-  editFormLabel = "Edit Casting Call Form",
+  showCompleted = false,
+  currentCompleted = false,
 }: EditProjectWithThumbnailModalProps) {
   const [name, setName] = useState(currentName)
   const [thumbnail, setThumbnail] = useState<string | undefined>(currentThumbnail)
+  const [completed, setCompleted] = useState(currentCompleted)
   const [isDragging, setIsDragging] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -94,9 +95,10 @@ export default function EditProjectWithThumbnailModal({
     if (isOpen) {
       setName(currentName)
       setThumbnail(currentThumbnail)
+      setCompleted(currentCompleted)
       setTimeout(() => inputRef.current?.focus(), 50)
     }
-  }, [isOpen, currentName, currentThumbnail])
+  }, [isOpen, currentName, currentThumbnail, currentCompleted])
 
   // Close on Escape key
   useEffect(() => {
@@ -183,12 +185,13 @@ export default function EditProjectWithThumbnailModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (name.trim()) {
-      onSave(name.trim(), thumbnail)
+      onSave(name.trim(), thumbnail, completed)
       onClose()
     }
   }
 
-  const hasChanged = name.trim() !== currentName || thumbnail !== currentThumbnail
+  const hasChanged =
+    name.trim() !== currentName || thumbnail !== currentThumbnail || completed !== currentCompleted
 
   return (
     <div
@@ -314,20 +317,23 @@ export default function EditProjectWithThumbnailModal({
             />
           </div>
 
-          {/* Edit Casting Call Form Trigger */}
-          {onEditForm && (
+          {/* Completed Status */}
+          {showCompleted && (
             <div className="mb-6">
-              <button
-                type="button"
-                onClick={() => {
-                  onClose()
-                  onEditForm()
-                }}
-                className={`w-full flex items-center justify-center gap-2 py-3 ${colors.bg} ${colors.text} border ${colors.border} hover:bg-white/10 rounded-xl font-semibold transition-colors font-sans`}
-              >
-                <FileEdit className="w-4 h-4" />
-                {editFormLabel}
-              </button>
+              <label className="flex items-start gap-3 cursor-pointer p-3 bg-white/5 border border-white/10 rounded-xl hover:border-emerald-500/40 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={completed}
+                  onChange={(e) => setCompleted(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded border-white/30 bg-transparent text-emerald-500 focus:ring-emerald-500/50 focus:ring-offset-0 cursor-pointer"
+                />
+                <span className="flex flex-col">
+                  <span className="text-sm font-medium text-white font-sans">Completed</span>
+                  <span className="text-xs text-white/50 font-sans">
+                    Mark this casting call as completed. Completed casting calls stop accepting new submissions until unchecked.
+                  </span>
+                </span>
+              </label>
             </div>
           )}
 

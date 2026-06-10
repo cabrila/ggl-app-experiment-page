@@ -1,9 +1,10 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { X, ExternalLink, Send, CheckCircle, ImagePlus } from "lucide-react"
+import { X, ExternalLink, Send, CheckCircle, ImagePlus, Plus, Trash2 } from "lucide-react"
 import { CastingCall, PublicCastingProject } from "@/types/public-casting"
 import { usePublicCasting } from "./PublicCastingContext"
+import { splitMultiValue, joinMultiValue, getVideoEmbed } from "@/utils/mediaEmbed"
 
 interface CastingCallPreviewModalProps {
   castingCall: CastingCall
@@ -14,6 +15,8 @@ interface CastingCallPreviewModalProps {
 export default function CastingCallPreviewModal({ castingCall, project, onClose }: CastingCallPreviewModalProps) {
   const { addSubmission } = usePublicCasting()
   const [formData, setFormData] = useState<Record<string, string>>({})
+  // Per-URL-field row state so empty inputs persist while typing/adding.
+  const [urlRows, setUrlRows] = useState<Record<string, string[]>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [errors, setErrors] = useState<Record<string, boolean>>({})
@@ -50,6 +53,51 @@ export default function CastingCallPreviewModal({ castingCall, project, onClose 
     if (errors[fieldLabel]) {
       setErrors(prev => ({ ...prev, [fieldLabel]: false }))
     }
+  }
+
+  // Update one entry within a multi-value (newline-separated) field
+  // Add a blank entry to a multi-value field
+  const handleAddMultiValue = (fieldLabel: string, value = "") => {
+    const values = splitMultiValue(formData[fieldLabel])
+    values.push(value)
+    handleInputChange(fieldLabel, joinMultiValue(values))
+  }
+
+  // Remove one entry from a multi-value field
+  const handleRemoveMultiValue = (fieldLabel: string, index: number) => {
+    const values = splitMultiValue(formData[fieldLabel])
+    values.splice(index, 1)
+    handleInputChange(fieldLabel, joinMultiValue(values))
+  }
+
+  // --- URL field rows (kept in dedicated state so empty rows persist) ---
+  const getUrlRows = (fieldLabel: string): string[] => {
+    return urlRows[fieldLabel] ?? splitMultiValue(formData[fieldLabel])
+  }
+
+  // Sync a URL field's rows into both urlRows and formData (non-empty only)
+  const syncUrlRows = (fieldLabel: string, rows: string[]) => {
+    setUrlRows((prev) => ({ ...prev, [fieldLabel]: rows }))
+    handleInputChange(fieldLabel, joinMultiValue(rows.filter((r) => r.trim() !== "")))
+  }
+
+  const handleUrlChange = (fieldLabel: string, index: number, value: string) => {
+    const rows = [...getUrlRows(fieldLabel)]
+    while (rows.length <= index) rows.push("")
+    rows[index] = value
+    syncUrlRows(fieldLabel, rows)
+  }
+
+  const handleAddUrl = (fieldLabel: string) => {
+    const rows = [...getUrlRows(fieldLabel)]
+    rows.push("")
+    syncUrlRows(fieldLabel, rows)
+  }
+
+  const handleRemoveUrl = (fieldLabel: string, index: number) => {
+    const rows = [...getUrlRows(fieldLabel)]
+    rows.splice(index, 1)
+    syncUrlRows(fieldLabel, rows)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -89,6 +137,7 @@ export default function CastingCallPreviewModal({ castingCall, project, onClose 
       initialData[field.label] = ""
     })
     setFormData(initialData)
+    setUrlRows({})
     setIsSubmitted(false)
     setErrors({})
   }
@@ -217,31 +266,96 @@ export default function CastingCallPreviewModal({ castingCall, project, onClose 
                         ))}
                       </select>
                     ) : field.type === "image" ? (
-                      <div
-                        className={`w-full flex flex-col items-center justify-center gap-2 px-4 py-6 bg-white/5 border border-dashed rounded-xl text-white/50 cursor-pointer hover:bg-white/10 hover:border-white/30 transition-all font-sans text-sm ${
-                          errors[field.label] ? "border-red-500/50" : "border-white/20"
-                        }`}
-                        onClick={() => {
-                          // Simulate image upload
-                          const fakeImageUrl = `https://picsum.photos/seed/${Date.now()}/200/200`
-                          handleInputChange(field.label, fakeImageUrl)
-                        }}
-                      >
-                        {formData[field.label] ? (
-                          <div className="flex items-center gap-3">
-                            <img 
-                              src={formData[field.label]} 
-                              alt="Uploaded" 
-                              className="w-16 h-16 rounded-lg object-cover"
-                            />
-                            <span className="text-emerald-400">Image uploaded</span>
+                      <div className="space-y-2">
+                        {/* Existing uploaded images */}
+                        {splitMultiValue(formData[field.label]).length > 0 && (
+                          <div className="grid grid-cols-3 gap-2">
+                            {splitMultiValue(formData[field.label]).map((img, idx) => (
+                              <div key={idx} className="relative group/img">
+                                <img
+                                  src={img || "/placeholder.svg"}
+                                  alt={`Upload ${idx + 1}`}
+                                  className="w-full h-20 rounded-lg object-cover border border-white/10"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveMultiValue(field.label, idx)}
+                                  className="absolute top-1 right-1 p-1 bg-black/60 hover:bg-red-500/80 rounded-md text-white opacity-0 group-hover/img:opacity-100 transition-opacity"
+                                  title="Remove image"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
                           </div>
-                        ) : (
-                          <>
-                            <ImagePlus className="w-6 h-6" />
-                            <span>{field.placeholder || "Click to upload an image"}</span>
-                          </>
                         )}
+                        {/* Add image button (simulated upload) */}
+                        <div
+                          className={`w-full flex flex-col items-center justify-center gap-2 px-4 py-6 bg-white/5 border border-dashed rounded-xl text-white/50 cursor-pointer hover:bg-white/10 hover:border-white/30 transition-all font-sans text-sm ${
+                            errors[field.label] ? "border-red-500/50" : "border-white/20"
+                          }`}
+                          onClick={() => {
+                            const fakeImageUrl = `https://picsum.photos/seed/${Date.now()}/200/200`
+                            handleAddMultiValue(field.label, fakeImageUrl)
+                          }}
+                        >
+                          <ImagePlus className="w-6 h-6" />
+                          <span>{field.placeholder || "Click to add an image"}</span>
+                        </div>
+                      </div>
+                    ) : field.type === "url" ? (
+                      <div className="space-y-2">
+                        {(() => {
+                          const urls = getUrlRows(field.label)
+                          const rows = urls.length > 0 ? urls : [""]
+                          return rows.map((url, idx) => {
+                            const embed = getVideoEmbed(url)
+                            return (
+                              <div key={idx} className="space-y-1.5">
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="url"
+                                    placeholder={field.placeholder || "Paste a YouTube or Vimeo link"}
+                                    value={url}
+                                    onChange={(e) => handleUrlChange(field.label, idx, e.target.value)}
+                                    className={`flex-1 px-4 py-2.5 bg-white/5 border rounded-xl text-white placeholder-white/30 font-sans focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all ${
+                                      errors[field.label] ? "border-red-500/50" : "border-white/10"
+                                    }`}
+                                  />
+                                  {rows.length > 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveUrl(field.label, idx)}
+                                      className="p-2.5 bg-white/5 hover:bg-red-500/20 border border-white/10 rounded-xl text-white/50 hover:text-red-400 transition-colors"
+                                      title="Remove link"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  )}
+                                </div>
+                                {embed && (
+                                  <div className="aspect-video w-full rounded-lg overflow-hidden border border-white/10">
+                                    <iframe
+                                      src={embed.embedUrl}
+                                      title={`Video preview ${idx + 1}`}
+                                      className="w-full h-full"
+                                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                      allowFullScreen
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })
+                        })()}
+                        <button
+                          type="button"
+                          onClick={() => handleAddUrl(field.label)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/70 hover:text-white text-sm transition-colors font-sans"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Add another link
+                        </button>
                       </div>
                     ) : (
                       <input

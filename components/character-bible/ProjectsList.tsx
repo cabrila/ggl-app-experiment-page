@@ -140,12 +140,12 @@ export default function ProjectsList() {
               )}
 
               {/* Project Name */}
-              <div className="flex items-center gap-2 mb-2 pr-16">
-                <h3 className="text-base font-semibold text-white font-sans line-clamp-1">
+              <div className="flex items-start gap-2 mb-2 pr-16">
+                <h3 className="text-base font-semibold text-white font-sans leading-snug break-words line-clamp-2">
                   {bible.name}
                 </h3>
                 {bible.isDemo && (
-                  <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px] px-1.5 py-0">
+                  <Badge className="flex-shrink-0 mt-0.5 bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px] px-1.5 py-0">
                     Demo
                   </Badge>
                 )}

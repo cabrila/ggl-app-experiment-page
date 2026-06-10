@@ -263,9 +263,20 @@ const createDemoData = (): PublicCastingProject[] => {
     },
   ]
 
+  const cc1Names = [
+    "Isabella Moreno", "Chloe Bennett", "Ava Richardson", "Mia Castellano", "Sophia Lang",
+    "Amelia Hart", "Charlotte Vega", "Layla Brooks", "Ruby Ellison", "Scarlett Nolan", "Penelope Shaw",
+  ]
+  const cc2Names = [
+    "Frank Delgado", "Marcus Boone", "Trevor Nash", "Hank Whitmore", "Carl Petersen",
+    "Roland Estes", "Bruno Salas", "Dwight Carver", "Lou Ferraro", "Sid Halloran", "Mickey Doyle",
+  ]
   const cc3Names = [
     "Vincent Marlowe", "Adrian Cole", "Theo Sandoval", "Damien Hart", "Lucas Renn",
     "Sebastian Vance", "Marcus Webb", "Julian Frost", "Gideon Pierce", "Nathaniel Stone", "Felix Drake",
+    "Roman Vasquez", "Caleb Mercer", "Dominic Vale", "Ezra Lockwood", "Silas Crane",
+    "Victor Hale", "Maxim Orlov", "Ronan Briggs", "Cassius Dunn", "Leon Pratt",
+    "Ambrose Kent", "Magnus Reyes", "Dorian Slade", "Hugo Vance", "Tobias Quint",
   ]
   const cc4Names = [
     "Riley Quinn", "Maya Brennan", "Jasmine Lee", "Cody Alvarez", "Harper Quinn",
@@ -274,6 +285,9 @@ const createDemoData = (): PublicCastingProject[] => {
   const cc5Names = [
     "Olivia Grant", "Priya Nair", "Sofia Ruiz", "Hannah Cole", "Grace Lin",
     "Bianca Ferro", "Naomi Reed", "Chloe Banks", "Aria Mendez", "Lila Cross", "Zoe Hart", "Maddie Vaughn",
+    "Elena Sorka", "Tessa Vaughn", "Nadia Khan", "Camila Ortiz", "Freya Bishop",
+    "Daria Volkov", "Selena Cruz", "Wren Halloway", "Iris Caldwell", "Mira Solano",
+    "Talia Reyes", "Eden Marsh", "Juno Castellanos", "Vera Lindqvist",
   ]
   const cc6Names = [
     "Gregory Pike", "Rosalind Vane", "Desmond Clay", "Imogen Frost", "Walter Boyd",
@@ -285,6 +299,25 @@ const createDemoData = (): PublicCastingProject[] => {
   ]
 
   const extraSubmissions: CastingSubmission[] = [
+    ...cc1Names.map((name, i) =>
+      buildSubmission("cc1", i + 1, "cc-1", "Lead Role - Sarah", {
+        name,
+        email: `${name.toLowerCase().replace(/\s+/g, ".")}@email.com`,
+        phone: `+1-555-1${String(100 + i).padStart(3, "0")}`,
+        age: String(25 + (i % 10)),
+        playingAge: `${24 + (i % 4)}-${33 + (i % 4)}`,
+        headshot: headshotPool[i % headshotPool.length],
+        notes: i % 2 === 0 ? "Lead experience in indie features and theater." : "Strong dramatic range; available for callbacks.",
+      }, 4 + i * 5, i < 3),
+    ),
+    ...cc2Names.map((name, i) =>
+      buildSubmission("cc2", i + 1, "cc-2", "Supporting Role - Detective", {
+        name,
+        email: `${name.toLowerCase().replace(/\s+/g, ".")}@email.com`,
+        phone: `+1-555-2${String(100 + i).padStart(3, "0")}`,
+        experience: i % 2 === 0 ? "Years of procedural and crime-drama credits." : "Character actor with stage and screen background.",
+      }, 5 + i * 6, i < 2),
+    ),
     ...cc3Names.map((name, i) =>
       buildSubmission("cc3", i + 1, "cc-3", "Antagonist - The Collector", {
         name,
@@ -351,7 +384,7 @@ export function PublicCastingProvider({ children }: { children: ReactNode }) {
     projects: createDemoData(),
     currentProject: null,
     currentCastingCall: null,
-    newSubmissionsCount: 11, // From demo data
+    newSubmissionsCount: 16, // From demo data
   })
 
   const createProject = useCallback((name: string): PublicCastingProject => {

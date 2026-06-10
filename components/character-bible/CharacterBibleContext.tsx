@@ -158,9 +158,15 @@ const demoBibles: CharacterBible[] = [
   {
     id: "demo-1",
     name: "Bluff Final",
-    characters: Array.from({ length: 21 }, (_, i) => ({
+    characters: [
+      "Eleanor Whitmore", "Marcus Bellamy", "Sophia Castellanos", "Declan Ross", "Vivian Hale",
+      "Julian Crane", "Beatrice Lowell", "Nathaniel Pierce", "Camille Devereaux", "Sebastian Vaughn",
+      "Adelaide Sinclair", "Oscar Mendoza", "Genevieve Holt", "Rafael Ortega", "Cordelia Banks",
+      "Theodore Marsh", "Isadora Quinn", "Lucian Fairfax", "Margot Ellison", "Gideon Thorne",
+      "Rosalind Carver",
+    ].map((name, i) => ({
       id: `char-${i + 1}`,
-      name: `Character ${i + 1}`,
+      name,
       aliases: [],
       gender: i % 2 === 0 ? "Male" : "Female",
       ageRange: "30s",

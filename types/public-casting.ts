@@ -17,6 +17,7 @@ export interface CastingCall {
   isActive: boolean
   shareableLink: string
   headerImageUrl?: string
+  isCompleted?: boolean
 }
 
 export interface CastingSubmission {

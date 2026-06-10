@@ -101,7 +101,12 @@ export default function CastingCallPreviewModal({ castingCall, project, onClose 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
+    // Completed casting calls do not accept new submissions
+    if (castingCall.isCompleted) {
+      return
+    }
+
     // Validate required fields
     const newErrors: Record<string, boolean> = {}
     let hasErrors = false
@@ -204,6 +209,25 @@ export default function CastingCallPreviewModal({ castingCall, project, onClose 
                   Close Preview
                 </button>
               </div>
+            </div>
+          ) : castingCall.isCompleted ? (
+            // Closed State - completed casting calls do not accept submissions
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mb-4">
+                <CheckCircle className="w-8 h-8 text-emerald-400" />
+              </div>
+              <h2 className="text-xl font-bold text-white mb-2 font-sans">
+                This Casting Call is Completed
+              </h2>
+              <p className="text-white/60 font-sans max-w-sm mb-6">
+                {castingCall.title} is no longer accepting new submissions. Uncheck &quot;Completed&quot; in the casting call settings to reopen it.
+              </p>
+              <button
+                onClick={onClose}
+                className="px-4 py-2 bg-white/10 hover:bg-white/15 border border-white/10 rounded-xl text-white font-medium text-sm transition-all font-sans"
+              >
+                Close Preview
+              </button>
             </div>
           ) : (
             // Form State

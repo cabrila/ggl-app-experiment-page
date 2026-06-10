@@ -44,6 +44,7 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
   const [description, setDescription] = useState(editingCastingCall?.description || "")
   const [projectName, setProjectName] = useState(editingCastingCall?.projectName || editingProject?.name || "")
   const [headerImageUrl, setHeaderImageUrl] = useState(editingCastingCall?.headerImageUrl || "")
+  const [isCompleted, setIsCompleted] = useState(editingCastingCall?.isCompleted || false)
   const [fields, setFields] = useState<CastingCallField[]>(editingCastingCall?.fields || defaultFields)
   const [createdLink, setCreatedLink] = useState(editingCastingCall?.shareableLink || "")
   const [copied, setCopied] = useState(false)
@@ -74,6 +75,7 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
     isActive: true,
     shareableLink: createdLink || "https://gogreenlight.ai/cast/preview",
     headerImageUrl: headerImageUrl || undefined,
+    isCompleted,
   }
 
   const addField = (type: CastingCallField["type"]) => {
@@ -143,6 +145,7 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
         projectName,
         fields,
         headerImageUrl: headerImageUrl || undefined,
+        isCompleted,
       })
       setCreatedLink(editingCastingCall.shareableLink)
       setStep("success")
@@ -410,6 +413,26 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
                   className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-violet-500/50 focus:outline-none transition-colors font-sans resize-none"
                 />
               </div>
+
+              {/* Completed Status - only when editing an existing casting call */}
+              {isEditing && (
+                <div>
+                  <label className="flex items-start gap-3 cursor-pointer p-3 bg-[#0f1f17] border border-white/10 rounded-lg hover:border-emerald-500/40 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={isCompleted}
+                      onChange={(e) => setIsCompleted(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 rounded border-white/30 bg-transparent text-emerald-500 focus:ring-emerald-500/50 focus:ring-offset-0 cursor-pointer"
+                    />
+                    <span className="flex flex-col">
+                      <span className="text-sm font-medium text-white font-sans">Completed</span>
+                      <span className="text-xs text-white/50 font-sans">
+                        Mark this casting call as completed. Completed casting calls stop accepting new submissions until unchecked.
+                      </span>
+                    </span>
+                  </label>
+                </div>
+              )}
             </div>
           </div>
 

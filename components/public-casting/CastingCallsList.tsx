@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useRef, useState } from "react"
-import { Plus, Megaphone, Calendar, Users, Trash2, Link, Eye, FileEdit, FolderEdit, QrCode, Search, SlidersHorizontal, ChevronDown, Filter, FolderPlus, ChevronRight, ImageIcon, X } from "lucide-react"
+import { Plus, Megaphone, Calendar, Users, Trash2, Link, Eye, FileEdit, FolderEdit, QrCode, Search, SlidersHorizontal, ChevronDown, Filter, FolderPlus, ChevronRight, ImageIcon, X, Check } from "lucide-react"
 import { usePublicCasting } from "./PublicCastingContext"
 import { CastingCall, PublicCastingProject } from "@/types/public-casting"
 import CastingCallPreviewModal from "./CastingCallPreviewModal"
@@ -437,6 +437,16 @@ export default function CastingCallsList({
                     <p className="text-xs text-white/50 mb-2 font-sans truncate">
                       {castingCall.title}
                     </p>
+                  )}
+
+                  {/* Completed Status Label */}
+                  {hasCastingCall && castingCall.isCompleted && (
+                    <div className="mb-2">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-[11px] font-semibold rounded-full font-sans">
+                        <Check className="w-3 h-3" />
+                        Completed
+                      </span>
+                    </div>
                   )}
 
                   {/* Meta Info */}

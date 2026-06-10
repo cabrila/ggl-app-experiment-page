@@ -595,7 +595,23 @@ function ActorFullCard({
         selected ? "border-sky-500/50 ring-2 ring-sky-500/20" : "border-white/10 hover:border-white/20"
       }`}
     >
-      <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      {/* Selection checkbox - Upper Left Corner (absolute so it never overlaps the headshot) */}
+      <button
+        onClick={onToggle}
+        className={`absolute top-4 left-4 z-10 w-5 h-5 rounded border-2 flex items-center justify-center transition-all flex-shrink-0 ${
+          selected ? "bg-sky-500 border-sky-500 text-white" : "border-white/30 hover:border-sky-400 bg-[#1a2e23]"
+        }`}
+        title={selected ? "Deselect" : "Select"}
+      >
+        {selected && (
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+          </svg>
+        )}
+      </button>
+
+      {/* Action Icons - Upper Right Corner */}
+      <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <button onClick={onEdit} className="p-1.5 bg-white/10 hover:bg-white/20 rounded text-white/60 hover:text-white transition-colors" title="Edit">
           <Pencil className="w-4 h-4" />
         </button>
@@ -604,18 +620,8 @@ function ActorFullCard({
         </button>
       </div>
 
-      {actor.isDuplicate && (
-        <div className="flex items-center gap-1.5 mb-3 px-2 py-1 bg-amber-500/15 border border-amber-500/30 rounded-lg w-fit">
-          <AlertTriangle className="w-3 h-3 text-amber-400" />
-          <span className="text-[11px] text-amber-300 font-sans">Possible duplicate</span>
-          <button onClick={onDismissDuplicate} className="ml-1 text-amber-400/60 hover:text-amber-300" title="Dismiss">
-            <X className="w-3 h-3" />
-          </button>
-        </div>
-      )}
-
-      <div className="flex items-start gap-3">
-        <Checkbox checked={selected} onClick={onToggle} />
+      {/* Header with Avatar + Name/Age/Plays/Gender (padded to clear the checkbox) */}
+      <div className="flex items-start gap-3 pt-7 pl-8">
         <Avatar actor={actor} onClick={onViewHeadshot} />
         <div className="flex-1 min-w-0">
           <h3 className="text-base font-semibold text-white truncate font-sans">{actor.name}</h3>
@@ -627,15 +633,17 @@ function ActorFullCard({
         </div>
       </div>
 
-      <div className="mt-3 space-y-1.5 text-xs text-white/60 font-sans">
-        {actor.phone && (
-          <p className="flex items-center gap-1.5"><Phone className="w-3 h-3" /> {actor.phone}</p>
-        )}
-        {actor.email && (
-          <p className="flex items-center gap-1.5 truncate"><Mail className="w-3 h-3" /> {actor.email}</p>
-        )}
-      </div>
+      {actor.isDuplicate && (
+        <div className="flex items-center gap-1.5 mt-3 px-2 py-1 bg-amber-500/15 border border-amber-500/30 rounded-lg w-fit">
+          <AlertTriangle className="w-3 h-3 text-amber-400" />
+          <span className="text-[11px] text-amber-300 font-sans">Possible duplicate</span>
+          <button onClick={onDismissDuplicate} className="ml-1 text-amber-400/60 hover:text-amber-300" title="Dismiss">
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      )}
 
+      {/* Source Lists Tag - between name area and contact details (mirrors Submissions card) */}
       {actor.sourceListNames.length > 0 && (
         <div className="mt-3 flex flex-wrap items-center gap-1.5">
           <Users className="w-3 h-3 text-white/30" />
@@ -646,6 +654,15 @@ function ActorFullCard({
           ))}
         </div>
       )}
+
+      <div className="mt-3 space-y-1.5 text-xs text-white/60 font-sans">
+        {actor.phone && (
+          <p className="flex items-center gap-1.5"><Phone className="w-3 h-3" /> {actor.phone}</p>
+        )}
+        {actor.email && (
+          <p className="flex items-center gap-1.5 truncate"><Mail className="w-3 h-3" /> {actor.email}</p>
+        )}
+      </div>
 
       {actor.notes && (
         <p className="mt-3 text-xs text-white/40 line-clamp-2 font-sans">{actor.notes}</p>

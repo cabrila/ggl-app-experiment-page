@@ -16,6 +16,12 @@ interface ActorCardProps {
   forceExpanded?: boolean
   /** When provided (and not forceExpanded), clicking the actor name opens the detail modal. */
   onNameClick?: () => void
+  /**
+   * Optional content rendered in the source-label field position (directly below the
+   * header, above Contact Details) — mirrors the Submissions card's "Form Source Label".
+   * Opt-in: consumers that don't pass it (e.g. My Actors → Actor cards) render unchanged.
+   */
+  sourceLabel?: React.ReactNode
 }
 
 // Helper to detect media platform from URL
@@ -34,7 +40,7 @@ function getMediaPlatform(url: string): { name: string; icon: "youtube" | "vimeo
   return { name: "Media Link", icon: "link" }
 }
 
-export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = false, onNameClick }: ActorCardProps) {
+export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = false, onNameClick, sourceLabel }: ActorCardProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editedActor, setEditedActor] = useState(actor)
   const [newFieldName, setNewFieldName] = useState("")
@@ -483,6 +489,9 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
           </div>
         </div>
       </div>
+
+      {/* Source Label - optional, opt-in slot (mirrors Submissions card's Form Source Label placement) */}
+      {sourceLabel}
 
       {/* Contact Details */}
       <div className="p-3 bg-[#0f1f17] rounded-lg mb-4">

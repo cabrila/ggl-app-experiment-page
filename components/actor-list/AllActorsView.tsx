@@ -15,32 +15,56 @@ import {
   Search,
   SlidersHorizontal,
   ChevronDown,
+  Tag,
+  Users,
 } from "lucide-react"
 import { useActorList } from "./ActorListContext"
-import { Actor, ActorAssociation, ActorGender, AggregatedActor } from "@/types/actor-list"
+import { Actor, ActorGender, AggregatedActor } from "@/types/actor-list"
 import ViewModeToggle, { ViewMode } from "@/components/ui/ViewModeToggle"
 import ImageModal from "@/components/ui/ImageModal"
 import ActorCard from "./ActorCard"
 
 const GENDER_GROUPS: ActorGender[] = ["Male", "Female", "Other", "Not-specified"]
 
-// Presentation for the actor's association (which collections it belongs to).
-const ASSOCIATION_META: Record<ActorAssociation, { label: string; className: string }> = {
-  both: { label: "Submissions + Actor cards", className: "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" },
-  "actor-cards": { label: "Actor cards", className: "bg-sky-500/20 text-sky-300 border border-sky-500/30" },
-  submissions: { label: "Submissions", className: "bg-violet-500/20 text-violet-300 border border-violet-500/30" },
-  none: { label: "Unassociated", className: "bg-white/10 text-white/50 border border-white/15" },
-}
+// Source-representation label for the aggregated "All Actors" cards.
+// Mirrors the Submissions card's "Form Source Label" field: a tinted pill row
+// placed directly below the header. Derived entirely from the existing
+// `association` property and `sourceListNames` — no new actor properties.
+function SourceLabel({ actor }: { actor: AggregatedActor }) {
+  // Whether the actor is represented as a casting submission.
+  const inSubmissions = actor.association === "submissions" || actor.association === "both"
+  // Each individual My Actors list the actor card appears in (never collapsed).
+  const myActorsLists = actor.sourceListNames
 
-function AssociationBadge({ association }: { association: ActorAssociation }) {
-  const meta = ASSOCIATION_META[association]
+  // Unassociated: nothing to represent.
+  if (!inSubmissions && myActorsLists.length === 0) {
+    return (
+      <div className="flex items-center gap-2 mb-4 px-3 py-2 bg-white/5 rounded-lg">
+        <Tag className="w-3.5 h-3.5 text-white/30" />
+        <span className="text-sm text-white/40 font-sans">Not in any list</span>
+      </div>
+    )
+  }
+
   return (
-    <span
-      className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-sans whitespace-nowrap ${meta.className}`}
-      title={`Associated with: ${meta.label}`}
-    >
-      {meta.label}
-    </span>
+    <div className="flex flex-wrap items-center gap-2 mb-4 px-3 py-2 bg-sky-500/10 rounded-lg">
+      <Users className="w-3.5 h-3.5 text-sky-400 flex-shrink-0" />
+      {inSubmissions && (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-violet-500/20 rounded text-xs text-violet-300 font-sans">
+          <Tag className="w-3 h-3" />
+          Submissions
+        </span>
+      )}
+      {myActorsLists.map((name, idx) => (
+        <span
+          key={idx}
+          className="inline-flex items-center px-2 py-0.5 bg-sky-500/20 rounded text-xs text-sky-300 font-sans truncate max-w-[160px]"
+          title={name}
+        >
+          {name}
+        </span>
+      ))}
+    </div>
   )
 }
 
@@ -536,9 +560,14 @@ export default function AllActorsView() {
                           )}
                         </div>
                         <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
-                          <AssociationBadge association={actor.association} />
+                          {(actor.association === "submissions" || actor.association === "both") && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-violet-500/20 rounded text-xs text-violet-300">
+                              <Tag className="w-3 h-3" />
+                              Submissions
+                            </span>
+                          )}
                           {actor.sourceListNames.slice(0, 2).map((name, idx) => (
-                            <span key={idx} className="px-2.5 py-1 bg-sky-500/20 rounded text-xs text-sky-300 truncate max-w-[120px]">
+                            <span key={idx} className="px-2.5 py-1 bg-sky-500/20 rounded text-xs text-sky-300 truncate max-w-[120px]" title={name}>
                               {name}
                             </span>
                           ))}
@@ -796,12 +825,14 @@ function ActorFullCard({
         selected ? "ring-2 ring-sky-500/40 ring-offset-2 ring-offset-[#0f1f17]" : ""
       }`}
     >
-      {/* Canonical actor card - identical UI/behavior to My Actors → Actor cards and Submissions */}
+      {/* Canonical actor card - identical UI/behavior to My Actors → Actor cards and Submissions.
+          The source-representation label is injected into the same field position as the Submissions card. */}
       <ActorCard
         actor={stripAggregate(actor)}
         onUpdate={onUpdate}
         onDelete={onDelete}
         onNameClick={onNameClick}
+        sourceLabel={<SourceLabel actor={actor} />}
       />
 
       {/* Selection checkbox overlay - All Actors only (preserves Add-to-List workflow) */}
@@ -819,10 +850,9 @@ function ActorFullCard({
         )}
       </button>
 
-      {/* Association + duplicate overlay - All Actors only */}
-      <div className="absolute bottom-3 left-3 right-3 z-20 flex flex-wrap items-center gap-1.5 pointer-events-none">
-        <AssociationBadge association={actor.association} />
-        {actor.isDuplicate && (
+      {/* Duplicate overlay - All Actors only */}
+      {actor.isDuplicate && (
+        <div className="absolute bottom-3 left-3 right-3 z-20 flex flex-wrap items-center gap-1.5 pointer-events-none">
           <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/15 border border-amber-500/30 rounded text-[11px] text-amber-300 font-sans pointer-events-auto">
             <AlertTriangle className="w-3 h-3 text-amber-400" />
             Duplicate
@@ -830,8 +860,8 @@ function ActorFullCard({
               <X className="w-3 h-3" />
             </button>
           </span>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

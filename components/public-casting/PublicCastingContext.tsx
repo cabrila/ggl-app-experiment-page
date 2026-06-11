@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, ReactNode, useCallback, useEffect } from "react"
 import { CastingCall, CastingCallField, CastingSubmission, PublicCastingProject } from "@/types/public-casting"
 import { loadDemoData, saveDemoData, DEMO_STORAGE_KEYS } from "@/utils/demoPersistence"
+import { getProfilePictureFromData } from "@/utils/profilePicture"
 
 interface PublicCastingState {
   projects: PublicCastingProject[]
@@ -527,7 +528,7 @@ export function PublicCastingProvider({ children }: { children: ReactNode }) {
         phone: data.phone || data["Phone"],
         age: data.age || data["Age"],
         playingAge: data.playingAge || data["Playing Age Range"],
-        headshot: data.headshot || data["Headshot URL"],
+        headshot: getProfilePictureFromData(data) || data.headshot || data["Headshot URL"],
         notes: data.notes || data["Additional Notes"],
       }
 

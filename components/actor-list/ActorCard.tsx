@@ -5,6 +5,7 @@ import { Pencil, Trash2, Phone, Mail, X, Save, Plus, Video, ExternalLink, Chevro
 import { Actor, CustomField } from "@/types/actor-list"
 import ImageModal from "@/components/ui/ImageModal"
 import MediaModal from "@/components/ui/MediaModal"
+import ProfilePictureField from "@/components/ui/ProfilePictureField"
 import { getVideoEmbed } from "@/utils/mediaEmbed"
 
 interface ActorCardProps {
@@ -204,6 +205,19 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
             value={editedActor.email}
             onChange={(e) => setEditedActor({ ...editedActor, email: e.target.value })}
             className="w-full px-4 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans focus:outline-none focus:border-emerald-500/50"
+          />
+        </div>
+
+        {/* Profile Picture (Photo) */}
+        <div className="mb-4">
+          <label className="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-2">
+            Profile Picture
+          </label>
+          <ProfilePictureField
+            value={editedActor.headshotUrl}
+            onChange={(val) => setEditedActor({ ...editedActor, headshotUrl: val })}
+            accent="emerald"
+            placeholder="Click or drag to upload a profile picture"
           />
         </div>
 

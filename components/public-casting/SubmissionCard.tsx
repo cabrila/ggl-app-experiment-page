@@ -5,8 +5,10 @@ import { Phone, Mail, Pencil, Trash2, X, Save, Tag, Star, ChevronDown } from "lu
 import { CastingSubmission } from "@/types/public-casting"
 import Image from "next/image"
 import ImageModal from "@/components/ui/ImageModal"
+import ProfilePictureField from "@/components/ui/ProfilePictureField"
 import { getVideoEmbed, isImageValue, splitMultiValue } from "@/utils/mediaEmbed"
 import { getExtraSubmissionFields } from "@/utils/submissionFields"
+import { PROFILE_PICTURE_LABEL } from "@/utils/profilePicture"
 
 interface SubmissionCardProps {
   submission: CastingSubmission
@@ -34,9 +36,22 @@ export default function SubmissionCard({ submission, onUpdate, onDelete, isSelec
     playingAge: submission.playingAge || "",
     notes: submission.notes || "",
     grade: submission.grade || 0,
+    headshot: submission.headshot || "",
   })
 
   const handleSave = () => {
+    // Keep the underlying form data's profile-picture field in sync so the
+    // image survives any later re-mapping (e.g. transfer to My Actors).
+    const nextData = { ...(submission.data || {}) }
+    for (const key of Object.keys(nextData)) {
+      if (key.toLowerCase().replace(/[\s_-]+/g, "") === "profilepicture") {
+        nextData[key] = editData.headshot
+      }
+    }
+    if (!Object.keys(nextData).some((k) => k.toLowerCase().replace(/[\s_-]+/g, "") === "profilepicture") && editData.headshot) {
+      nextData[PROFILE_PICTURE_LABEL] = editData.headshot
+    }
+
     onUpdate({
       name: editData.name,
       email: editData.email,
@@ -45,6 +60,8 @@ export default function SubmissionCard({ submission, onUpdate, onDelete, isSelec
       playingAge: editData.playingAge,
       notes: editData.notes,
       grade: editData.grade || undefined,
+      headshot: editData.headshot,
+      data: nextData,
     })
     setIsEditing(false)
     setFocusGrade(false)
@@ -96,6 +113,19 @@ export default function SubmissionCard({ submission, onUpdate, onDelete, isSelec
         <div className="flex items-center gap-2 mb-4 text-xs">
           <Tag className="w-3 h-3 text-violet-400" />
           <span className="text-violet-400 font-sans">{submission.castingCallTitle}</span>
+        </div>
+
+        {/* Profile Picture */}
+        <div className="mb-4">
+          <label className="block text-xs font-semibold text-violet-400 uppercase tracking-wider mb-2">
+            Profile Picture
+          </label>
+          <ProfilePictureField
+            value={editData.headshot}
+            onChange={(val) => setEditData({ ...editData, headshot: val })}
+            accent="violet"
+            placeholder="Click or drag to upload a profile picture"
+          />
         </div>
 
         {/* Actor Name */}

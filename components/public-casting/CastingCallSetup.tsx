@@ -25,6 +25,7 @@ const fieldTypeOptions = [
 ]
 
 const defaultFields: CastingCallField[] = [
+  { id: "f0", label: "Profile picture", type: "image", required: false, placeholder: "Click or drag to upload a profile picture" },
   { id: "f1", label: "Full Name", type: "text", required: true, placeholder: "Enter your full name" },
   { id: "f2", label: "Email", type: "email", required: true, placeholder: "your@email.com" },
   { id: "f3", label: "Phone", type: "phone", required: false, placeholder: "+1-555-0000" },

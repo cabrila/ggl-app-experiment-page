@@ -5,6 +5,8 @@ import { X, ExternalLink, Send, CheckCircle, ImagePlus, Plus, Trash2 } from "luc
 import { CastingCall, PublicCastingProject } from "@/types/public-casting"
 import { usePublicCasting } from "./PublicCastingContext"
 import { splitMultiValue, joinMultiValue, getVideoEmbed } from "@/utils/mediaEmbed"
+import { isProfilePictureField } from "@/utils/profilePicture"
+import ProfilePictureField from "@/components/ui/ProfilePictureField"
 
 interface CastingCallPreviewModalProps {
   castingCall: CastingCall
@@ -68,6 +70,18 @@ export default function CastingCallPreviewModal({ castingCall, project, onClose 
     const values = splitMultiValue(formData[fieldLabel])
     values.splice(index, 1)
     handleInputChange(fieldLabel, joinMultiValue(values))
+  }
+
+  // Read selected image files as data URLs and append them to a multi-value field.
+  const handleImageFiles = (fieldLabel: string, files: FileList | null) => {
+    if (!files) return
+    Array.from(files)
+      .filter((file) => file.type.startsWith("image/"))
+      .forEach((file) => {
+        const reader = new FileReader()
+        reader.onload = () => handleAddMultiValue(fieldLabel, reader.result as string)
+        reader.readAsDataURL(file)
+      })
   }
 
   // --- URL field rows (kept in dedicated state so empty rows persist) ---
@@ -294,43 +308,62 @@ export default function CastingCallPreviewModal({ castingCall, project, onClose 
                         ))}
                       </select>
                     ) : field.type === "image" ? (
-                      <div className="space-y-2">
-                        {/* Existing uploaded images */}
-                        {splitMultiValue(formData[field.label]).length > 0 && (
-                          <div className="grid grid-cols-3 gap-2">
-                            {splitMultiValue(formData[field.label]).map((img, idx) => (
-                              <div key={idx} className="relative group/img">
-                                <img
-                                  src={img || "/placeholder.svg"}
-                                  alt={`Upload ${idx + 1}`}
-                                  className="w-full h-20 rounded-lg object-cover border border-white/10"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveMultiValue(field.label, idx)}
-                                  className="absolute top-1 right-1 p-1 bg-black/60 hover:bg-red-500/80 rounded-md text-white opacity-0 group-hover/img:opacity-100 transition-opacity"
-                                  title="Remove image"
-                                >
-                                  <X className="w-3 h-3" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        {/* Add image button (simulated upload) */}
-                        <div
-                          className={`w-full flex flex-col items-center justify-center gap-2 px-4 py-6 bg-white/5 border border-dashed rounded-xl text-white/50 cursor-pointer hover:bg-white/10 hover:border-white/30 transition-all font-sans text-sm ${
-                            errors[field.label] ? "border-red-500/50" : "border-white/20"
-                          }`}
-                          onClick={() => {
-                            const fakeImageUrl = `https://picsum.photos/seed/${Date.now()}/200/200`
-                            handleAddMultiValue(field.label, fakeImageUrl)
-                          }}
-                        >
-                          <ImagePlus className="w-6 h-6" />
-                          <span>{field.placeholder || "Click to add an image"}</span>
+                      isProfilePictureField(field) ? (
+                        // Standard single profile picture: click-to-upload or drag & drop
+                        <ProfilePictureField
+                          value={formData[field.label] || ""}
+                          onChange={(val) => handleInputChange(field.label, val)}
+                          accent="emerald"
+                          error={errors[field.label]}
+                          placeholder={field.placeholder || "Click or drag to upload a profile picture"}
+                        />
+                      ) : (
+                        <div className="space-y-2">
+                          {/* Existing uploaded images */}
+                          {splitMultiValue(formData[field.label]).length > 0 && (
+                            <div className="grid grid-cols-3 gap-2">
+                              {splitMultiValue(formData[field.label]).map((img, idx) => (
+                                <div key={idx} className="relative group/img">
+                                  <img
+                                    src={img || "/placeholder.svg"}
+                                    alt={`Upload ${idx + 1}`}
+                                    className="w-full h-20 rounded-lg object-cover border border-white/10"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveMultiValue(field.label, idx)}
+                                    className="absolute top-1 right-1 p-1 bg-black/60 hover:bg-red-500/80 rounded-md text-white opacity-0 group-hover/img:opacity-100 transition-opacity"
+                                    title="Remove image"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {/* Real image upload (click or drag and drop) */}
+                          <label
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => {
+                              e.preventDefault()
+                              handleImageFiles(field.label, e.dataTransfer.files)
+                            }}
+                            className={`w-full flex flex-col items-center justify-center gap-2 px-4 py-6 bg-white/5 border border-dashed rounded-xl text-white/50 cursor-pointer hover:bg-white/10 hover:border-white/30 transition-all font-sans text-sm ${
+                              errors[field.label] ? "border-red-500/50" : "border-white/20"
+                            }`}
+                          >
+                            <ImagePlus className="w-6 h-6" />
+                            <span>{field.placeholder || "Click or drag images to upload"}</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              className="hidden"
+                              onChange={(e) => handleImageFiles(field.label, e.target.files)}
+                            />
+                          </label>
                         </div>
-                      </div>
+                      )
                     ) : field.type === "url" ? (
                       <div className="space-y-2">
                         {(() => {

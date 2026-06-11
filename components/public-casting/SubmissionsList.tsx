@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react"
 import Image from "next/image"
-import { ArrowLeft, Search, SlidersHorizontal, ChevronDown, FileJson, FileSpreadsheet, Download, ListPlus, Plus, X, Phone, Mail, Star, Filter } from "lucide-react"
+import { ArrowLeft, Search, SlidersHorizontal, ChevronDown, ListPlus, Plus, X, Phone, Mail, Star, Filter } from "lucide-react"
 import { usePublicCasting } from "./PublicCastingContext"
 import SubmissionCard from "./SubmissionCard"
 import { CastingSubmission } from "@/types/public-casting"
@@ -12,6 +12,7 @@ import { Actor, ActorGender } from "@/types/actor-list"
 import { getExtraSubmissionFields } from "@/utils/submissionFields"
 import { getVideoEmbed, isImageValue, splitMultiValue } from "@/utils/mediaEmbed"
 import ViewModeToggle, { ViewMode } from "@/components/ui/ViewModeToggle"
+import DownloadDropdown from "@/components/ui/DownloadDropdown"
 
 const ACTOR_GENDERS: ActorGender[] = ["Male", "Female", "Other", "Not-specified"]
 
@@ -354,33 +355,13 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
                 </button>
               )}
               <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
-              <button
-                onClick={handleExportJSON}
-                disabled={filteredSubmissions.length === 0}
-                className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Export as JSON"
-              >
-                <FileJson className="w-4 h-4" />
-                <span className="font-sans text-sm hidden sm:inline">JSON</span>
-              </button>
-              <button
-                onClick={handleExportExcel}
-                disabled={filteredSubmissions.length === 0}
-                className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Export as Excel"
-              >
-                <FileSpreadsheet className="w-4 h-4" />
-                <span className="font-sans text-sm hidden sm:inline">Excel</span>
-              </button>
-              <button
-                onClick={handleExportPDF}
-                disabled={filteredSubmissions.length === 0}
-                className="flex items-center gap-2 px-3 py-2 bg-violet-500 hover:bg-violet-400 rounded-lg text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Export as PDF"
-              >
-                <Download className="w-4 h-4" />
-                <span className="font-sans text-sm hidden sm:inline">PDF</span>
-              </button>
+              {filteredSubmissions.length > 0 && (
+                <DownloadDropdown
+                  onDownloadJSON={handleExportJSON}
+                  onDownloadExcel={handleExportExcel}
+                  onDownloadPDF={handleExportPDF}
+                />
+              )}
             </div>
           </div>
 

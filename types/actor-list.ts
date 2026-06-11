@@ -35,6 +35,15 @@ export interface ActorListProject {
 }
 
 /**
+ * Indicates which collections an aggregated actor is associated with:
+ * - "submissions": exists as a casting submission but is not in a My Actors list
+ * - "actor-cards": belongs to one or more My Actors → Actor cards lists
+ * - "both": is in a My Actors list and also matches a casting submission
+ * - "none": a standalone actor with no list and no matching submission
+ */
+export type ActorAssociation = "submissions" | "actor-cards" | "both" | "none"
+
+/**
  * An actor flattened across every list, annotated with which lists it
  * belongs to. Powers the aggregated "All Actors" view.
  */
@@ -43,4 +52,6 @@ export interface AggregatedActor extends Actor {
   sourceListNames: string[]
   isDuplicate: boolean
   duplicateDismissed: boolean
+  /** Which collections this actor is associated with (Submissions, Actor cards, both, or none). */
+  association: ActorAssociation
 }

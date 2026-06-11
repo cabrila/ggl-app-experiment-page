@@ -19,11 +19,31 @@ import {
   ChevronDown,
 } from "lucide-react"
 import { useActorList } from "./ActorListContext"
-import { Actor, ActorGender, AggregatedActor } from "@/types/actor-list"
+import { Actor, ActorAssociation, ActorGender, AggregatedActor } from "@/types/actor-list"
 import ViewModeToggle, { ViewMode } from "@/components/ui/ViewModeToggle"
 import ImageModal from "@/components/ui/ImageModal"
 
 const GENDER_GROUPS: ActorGender[] = ["Male", "Female", "Other", "Not-specified"]
+
+// Presentation for the actor's association (which collections it belongs to).
+const ASSOCIATION_META: Record<ActorAssociation, { label: string; className: string }> = {
+  both: { label: "Submissions + Actor cards", className: "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" },
+  "actor-cards": { label: "Actor cards", className: "bg-sky-500/20 text-sky-300 border border-sky-500/30" },
+  submissions: { label: "Submissions", className: "bg-violet-500/20 text-violet-300 border border-violet-500/30" },
+  none: { label: "Unassociated", className: "bg-white/10 text-white/50 border border-white/15" },
+}
+
+function AssociationBadge({ association }: { association: ActorAssociation }) {
+  const meta = ASSOCIATION_META[association]
+  return (
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-sans whitespace-nowrap ${meta.className}`}
+      title={`Associated with: ${meta.label}`}
+    >
+      {meta.label}
+    </span>
+  )
+}
 
 type ActorSortOption = "name-asc" | "name-desc" | "age-asc" | "age-desc"
 
@@ -509,18 +529,17 @@ export default function AllActorsView() {
                             </span>
                           )}
                         </div>
-                        {actor.sourceListNames.length > 0 && (
-                          <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
-                            {actor.sourceListNames.slice(0, 2).map((name, idx) => (
-                              <span key={idx} className="px-2.5 py-1 bg-sky-500/20 rounded text-xs text-sky-300 truncate max-w-[120px]">
-                                {name}
-                              </span>
-                            ))}
-                            {actor.sourceListNames.length > 2 && (
-                              <span className="text-xs text-white/40">+{actor.sourceListNames.length - 2}</span>
-                            )}
-                          </div>
-                        )}
+                        <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
+                          <AssociationBadge association={actor.association} />
+                          {actor.sourceListNames.slice(0, 2).map((name, idx) => (
+                            <span key={idx} className="px-2.5 py-1 bg-sky-500/20 rounded text-xs text-sky-300 truncate max-w-[120px]">
+                              {name}
+                            </span>
+                          ))}
+                          {actor.sourceListNames.length > 2 && (
+                            <span className="text-xs text-white/40">+{actor.sourceListNames.length - 2}</span>
+                          )}
+                        </div>
                         <div className="flex items-center gap-1 flex-shrink-0">
                           <button onClick={() => setEditActor(stripAggregate(actor))} className="p-1.5 bg-white/5 hover:bg-white/10 rounded text-white/60 hover:text-white transition-colors" title="Edit">
                             <Pencil className="w-4 h-4" />
@@ -803,17 +822,20 @@ function ActorFullCard({
         </div>
       )}
 
-      {/* Source Lists Tag - between name area and contact details (mirrors Submissions card) */}
-      {actor.sourceListNames.length > 0 && (
-        <div className="mt-3 flex flex-wrap items-center gap-1.5">
-          <Users className="w-3 h-3 text-white/30" />
-          {actor.sourceListNames.map((name, idx) => (
-            <span key={idx} className="px-2 py-0.5 bg-sky-500/20 rounded text-[11px] text-sky-300 truncate max-w-[140px]">
-              {name}
-            </span>
-          ))}
-        </div>
-      )}
+      {/* Association + Source Lists Tag - between name area and contact details (mirrors Submissions card) */}
+      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+        <AssociationBadge association={actor.association} />
+        {actor.sourceListNames.length > 0 && (
+          <>
+            <Users className="w-3 h-3 text-white/30" />
+            {actor.sourceListNames.map((name, idx) => (
+              <span key={idx} className="px-2 py-0.5 bg-sky-500/20 rounded text-[11px] text-sky-300 truncate max-w-[140px]">
+                {name}
+              </span>
+            ))}
+          </>
+        )}
+      </div>
 
       <div className="mt-3 space-y-1.5 text-xs text-white/60 font-sans">
         {actor.phone && (

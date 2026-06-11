@@ -14,6 +14,7 @@ import {
   deleteStandaloneActor,
 } from "@/lib/firestore"
 import { loadDemoData, saveDemoData, DEMO_STORAGE_KEYS } from "@/utils/demoPersistence"
+import { getSubmissionIdentities, matchesSubmission } from "@/utils/actorAssociation"
 
 type ActorListView = "list" | "upload" | "results" | "all-actors"
 
@@ -357,6 +358,10 @@ export function ActorListProvider({ children }: { children: ReactNode }) {
     const actorMap = new Map<string, AggregatedActor>()
     const nameCounts = new Map<string, number>()
 
+    // Identities of actors that exist as casting submissions, used to annotate
+    // each aggregated actor with its association (Submissions / Actor cards / both / none).
+    const submissionIdentities = getSubmissionIdentities()
+
     const countName = (name: string) => {
       const n = name.toLowerCase().trim()
       nameCounts.set(n, (nameCounts.get(n) || 0) + 1)
@@ -377,12 +382,15 @@ export function ActorListProvider({ children }: { children: ReactNode }) {
             existing.sourceListNames.push(project.name)
           }
         } else {
+          // Belongs to a My Actors list; "both" if it also matches a submission.
+          const inSubmissions = matchesSubmission(submissionIdentities, actor.email, actor.name)
           actorMap.set(key, {
             ...actor,
             sourceListIds: [project.id],
             sourceListNames: [project.name],
             isDuplicate: isDuplicate && !dismissedDuplicates.has(normalizedName),
             duplicateDismissed: dismissedDuplicates.has(normalizedName),
+            association: inSubmissions ? "both" : "actor-cards",
           })
         }
       })
@@ -393,12 +401,15 @@ export function ActorListProvider({ children }: { children: ReactNode }) {
       const normalizedName = actor.name.toLowerCase().trim()
       const isDuplicate = (nameCounts.get(normalizedName) || 0) > 1
       if (!actorMap.has(key)) {
+        // No My Actors list; "submissions" if it matches a submission, else "none".
+        const inSubmissions = matchesSubmission(submissionIdentities, actor.email, actor.name)
         actorMap.set(key, {
           ...actor,
           sourceListIds: [],
           sourceListNames: [],
           isDuplicate: isDuplicate && !dismissedDuplicates.has(normalizedName),
           duplicateDismissed: dismissedDuplicates.has(normalizedName),
+          association: inSubmissions ? "submissions" : "none",
         })
       }
     })

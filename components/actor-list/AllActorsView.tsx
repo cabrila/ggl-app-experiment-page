@@ -686,6 +686,8 @@ function stripAggregate(a: Actor): Actor {
     headshotUrl: a.headshotUrl,
     notes: a.notes,
     mediaMaterial: a.mediaMaterial,
+    videos: a.videos,
+    photos: a.photos,
     customFields: a.customFields,
   }
 }

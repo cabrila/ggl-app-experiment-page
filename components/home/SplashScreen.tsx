@@ -137,7 +137,7 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
           <img
             src="/images/gogreenlight-logo.png"
             alt="GoGreenlight"
-            className="h-9 w-auto max-w-[150px] sm:max-w-none shrink"
+            className="h-7 sm:h-9 w-auto shrink-0"
           />
           <span className="hidden sm:inline text-xl font-semibold text-white tracking-tight">Tools</span>
           <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-white text-xs font-semibold uppercase tracking-wide shrink-0">Beta</span>

@@ -586,6 +586,8 @@ export function ActorListProvider({ children }: { children: ReactNode }) {
     headshotUrl: actor.headshotUrl,
     notes: actor.notes,
     mediaMaterial: actor.mediaMaterial,
+    videos: actor.videos,
+    photos: actor.photos,
     customFields: actor.customFields,
   })
 

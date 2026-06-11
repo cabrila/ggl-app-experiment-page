@@ -17,6 +17,10 @@ export interface Actor {
   headshotUrl: string
   notes: string
   mediaMaterial?: string
+  /** Embedded video/link URLs (e.g. YouTube/Vimeo), carried over from form submissions. */
+  videos?: string[]
+  /** Uploaded image URLs beyond the main headshot, carried over from form submissions. */
+  photos?: string[]
   customFields?: CustomField[]
 }
 

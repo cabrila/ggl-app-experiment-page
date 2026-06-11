@@ -151,7 +151,7 @@ export default function FeatureLayout({ children, onBack, onSignOut, activeView,
             <img
               src="/images/gogreenlight-logo.png"
               alt="GoGreenlight"
-              className="h-9 w-auto max-w-[150px] sm:max-w-none shrink"
+              className="h-7 sm:h-9 w-auto shrink-0"
             />
             <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-white text-xs font-semibold uppercase tracking-wide shrink-0">Beta</span>
           </button>

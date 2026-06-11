@@ -5,6 +5,7 @@ import { Pencil, Trash2, Phone, Mail, X, Save, Plus, Video, ExternalLink, Chevro
 import { Actor, CustomField } from "@/types/actor-list"
 import ImageModal from "@/components/ui/ImageModal"
 import MediaModal from "@/components/ui/MediaModal"
+import { getVideoEmbed } from "@/utils/mediaEmbed"
 
 interface ActorCardProps {
   actor: Actor
@@ -37,11 +38,18 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
   const [editedActor, setEditedActor] = useState(actor)
   const [newFieldName, setNewFieldName] = useState("")
   const [showImageModal, setShowImageModal] = useState(false)
+  const [activeImage, setActiveImage] = useState<string | undefined>(undefined)
   const [showMediaModal, setShowMediaModal] = useState(false)
   const [showMoreInfo, setShowMoreInfo] = useState(false)
 
   const handleSave = () => {
-    onUpdate(editedActor)
+    const cleanedVideos = (editedActor.videos || []).map((v) => v.trim()).filter(Boolean)
+    const cleanedPhotos = (editedActor.photos || []).map((p) => p.trim()).filter(Boolean)
+    onUpdate({
+      ...editedActor,
+      videos: cleanedVideos.length > 0 ? cleanedVideos : undefined,
+      photos: cleanedPhotos.length > 0 ? cleanedPhotos : undefined,
+    })
     setIsEditing(false)
   }
 
@@ -81,12 +89,53 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
     })
   }
 
+  const handleUpdateVideo = (index: number, value: string) => {
+    setEditedActor({
+      ...editedActor,
+      videos: (editedActor.videos || []).map((v, i) => (i === index ? value : v)),
+    })
+  }
+
+  const handleRemoveVideo = (index: number) => {
+    setEditedActor({
+      ...editedActor,
+      videos: (editedActor.videos || []).filter((_, i) => i !== index),
+    })
+  }
+
+  const handleAddVideo = () => {
+    setEditedActor({
+      ...editedActor,
+      videos: [...(editedActor.videos || []), ""],
+    })
+  }
+
+  const handleUpdatePhoto = (index: number, value: string) => {
+    setEditedActor({
+      ...editedActor,
+      photos: (editedActor.photos || []).map((p, i) => (i === index ? value : p)),
+    })
+  }
+
+  const handleRemovePhoto = (index: number) => {
+    setEditedActor({
+      ...editedActor,
+      photos: (editedActor.photos || []).filter((_, i) => i !== index),
+    })
+  }
+
   const mediaPlatform = getMediaPlatform(actor.mediaMaterial || "")
 
-  // The "More Information" panel holds extra custom fields and the submitted media/video.
+  // The "More Information" panel holds extra custom fields, the submitted
+  // media link/video, embedded videos and uploaded photos carried over from
+  // casting submissions.
+  const actorVideos = actor.videos || []
+  const actorPhotos = actor.photos || []
   const hasCustomFields = !!(actor.customFields && actor.customFields.length > 0)
   const hasMedia = !!(actor.mediaMaterial && mediaPlatform)
-  const hasMoreInfo = hasCustomFields || hasMedia
+  const hasVideos = actorVideos.length > 0
+  const hasPhotos = actorPhotos.length > 0
+  const hasMoreInfo = hasCustomFields || hasMedia || hasVideos || hasPhotos
   const moreInfoOpen = forceExpanded || showMoreInfo
 
   // Edit Mode
@@ -187,6 +236,64 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
             />
           </div>
         </div>
+
+        {/* Embedded Videos / Links */}
+        <div className="mb-4">
+          <label className="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-2">
+            Embedded Videos / Links
+          </label>
+          {(editedActor.videos || []).map((video, index) => (
+            <div key={index} className="flex items-center gap-2 mb-2">
+              <div className="relative flex-1">
+                <Video className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                <input
+                  type="url"
+                  value={video}
+                  onChange={(e) => handleUpdateVideo(index, e.target.value)}
+                  placeholder="https://youtube.com/watch?v=..."
+                  className="w-full pl-10 pr-4 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans focus:outline-none focus:border-emerald-500/50 text-sm"
+                />
+              </div>
+              <button
+                onClick={() => handleRemoveVideo(index)}
+                className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
+                title="Remove video"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+          <button
+            onClick={handleAddVideo}
+            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 rounded-lg text-emerald-400 text-sm transition-colors mt-1"
+          >
+            <Plus className="w-4 h-4" />
+            Add Video / Link
+          </button>
+        </div>
+
+        {/* Uploaded Photos */}
+        {(editedActor.photos || []).length > 0 && (
+          <div className="mb-4">
+            <label className="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-2">
+              Uploaded Photos
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {(editedActor.photos || []).map((photo, index) => (
+                <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-white/10 group/photo">
+                  <img src={photo || "/placeholder.svg"} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
+                  <button
+                    onClick={() => handleRemovePhoto(index)}
+                    className="absolute top-1 right-1 p-1 bg-red-500/80 hover:bg-red-500 rounded-md text-white opacity-0 group-hover/photo:opacity-100 transition-opacity"
+                    title="Delete image"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Notes */}
         <div className="mb-4">
@@ -445,6 +552,59 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
                   </button>
                 </div>
               )}
+              {hasVideos && (
+                <div>
+                  <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">
+                    Videos
+                  </p>
+                  <div className="space-y-3">
+                    {actorVideos.map((video, idx) => {
+                      const embed = getVideoEmbed(video)
+                      return embed ? (
+                        <div key={idx} className="aspect-video w-full rounded-lg overflow-hidden border border-white/10">
+                          <iframe
+                            src={embed.embedUrl}
+                            title={`${embed.platform} video ${idx + 1}`}
+                            className="w-full h-full"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          />
+                        </div>
+                      ) : (
+                        <a
+                          key={idx}
+                          href={video}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-3 py-2 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 rounded-lg text-sky-400 hover:text-sky-300 text-sm transition-colors group/link break-all"
+                        >
+                          <ExternalLink className="w-4 h-4 shrink-0" />
+                          <span className="font-sans">{video}</span>
+                        </a>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+              {hasPhotos && (
+                <div>
+                  <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">
+                    Photos
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {actorPhotos.map((img, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => { setActiveImage(img); setShowImageModal(true) }}
+                        className="relative aspect-square rounded-lg overflow-hidden border border-white/10 hover:ring-2 hover:ring-emerald-500/50 transition-all"
+                        title="Click to view full image"
+                      >
+                        <img src={img || "/placeholder.svg"} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -453,8 +613,8 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
       {/* Image Modal */}
       <ImageModal
         isOpen={showImageModal}
-        onClose={() => setShowImageModal(false)}
-        src={actor.headshotUrl}
+        onClose={() => { setShowImageModal(false); setActiveImage(undefined) }}
+        src={activeImage || actor.headshotUrl}
         alt={actor.name}
       />
 

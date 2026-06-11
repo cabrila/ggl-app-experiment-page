@@ -10,6 +10,7 @@ import { exportSubmissionsAsJSON, exportSubmissionsAsPDF, exportSubmissionsAsExc
 import { useActorListSafe } from "@/components/actor-list/ActorListContext"
 import { Actor, ActorGender } from "@/types/actor-list"
 import { getExtraSubmissionFields } from "@/utils/submissionFields"
+import { getVideoEmbed, isImageValue, splitMultiValue } from "@/utils/mediaEmbed"
 import ViewModeToggle, { ViewMode } from "@/components/ui/ViewModeToggle"
 
 const ACTOR_GENDERS: ActorGender[] = ["Male", "Female", "Other", "Not-specified"]
@@ -34,6 +35,21 @@ function submissionToActor(submission: CastingSubmission): Actor {
     value: field.value,
   }))
 
+  // Derive submitted videos and uploaded images from the submission data the
+  // same way SubmissionCard does, so no media is lost on transfer to My Actors.
+  const dataValues = Object.values(submission.data || {})
+  const videos = dataValues
+    .flatMap((value) => splitMultiValue(value))
+    .map((entry) => getVideoEmbed(entry))
+    .filter((v): v is NonNullable<typeof v> => v !== null)
+    .map((v) => v.originalUrl)
+
+  const photos = dataValues
+    .flatMap((value) => splitMultiValue(value))
+    .filter((entry) => isImageValue(entry))
+    // Avoid duplicating the headshot already shown in the avatar
+    .filter((entry) => entry !== submission.headshot)
+
   return {
     id: crypto.randomUUID(),
     name: submission.name,
@@ -44,6 +60,8 @@ function submissionToActor(submission: CastingSubmission): Actor {
     email: submission.email,
     headshotUrl: submission.headshot || "",
     notes: submission.notes || "",
+    videos: videos.length > 0 ? videos : undefined,
+    photos: photos.length > 0 ? photos : undefined,
     customFields: customFields.length > 0 ? customFields : undefined,
   }
 }

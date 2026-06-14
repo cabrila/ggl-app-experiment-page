@@ -30,15 +30,6 @@ const sidebarItems = [
     activeBorder: "border-amber-400",
   },
   {
-    id: "actor-database" as ActiveView,
-    title: "Actor List",
-    icon: Users,
-    iconBg: "bg-sky-500/20",
-    iconColor: "text-sky-400",
-    activeBg: "bg-sky-500/30",
-    activeBorder: "border-sky-400",
-  },
-  {
     id: "prop-list" as ActiveView,
     title: "Prop List",
     icon: Package,
@@ -55,6 +46,15 @@ const sidebarItems = [
     iconColor: "text-teal-400",
     activeBg: "bg-teal-500/30",
     activeBorder: "border-teal-400",
+  },
+  {
+    id: "actor-database" as ActiveView,
+    title: "Actor List",
+    icon: Users,
+    iconBg: "bg-sky-500/20",
+    iconColor: "text-sky-400",
+    activeBg: "bg-sky-500/30",
+    activeBorder: "border-sky-400",
   },
   {
     id: "public-casting" as ActiveView,

@@ -466,9 +466,9 @@ export default function ActorResultsView() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <button
-                      onClick={() => setDetailActorId(actor.id)}
-                      className="text-left max-w-full"
-                      title="View full actor details"
+                    onClick={() => openActorDetail(actor.id)}
+                    className="text-left max-w-full"
+                    title="View full actor details"
                     >
                       <h3 className="text-sm font-semibold text-white truncate hover:text-emerald-300 transition-colors cursor-pointer">{actor.name}</h3>
                     </button>
@@ -537,13 +537,22 @@ export default function ActorResultsView() {
                             {actor.email}
                           </span>
                         </div>
-                        <button
-                          onClick={() => deleteActor(actor.id)}
-                          className="p-1.5 bg-red-500/10 hover:bg-red-500/20 rounded text-red-400 hover:text-red-300 transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-1.5 ml-auto">
+                          <button
+                            onClick={() => openActorEdit(actor.id)}
+                            className="p-1.5 bg-white/10 hover:bg-white/20 rounded text-white/70 hover:text-white transition-colors"
+                            title="Edit"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => deleteActor(actor.id)}
+                            className="p-1.5 bg-red-500/10 hover:bg-red-500/20 rounded text-red-400 hover:text-red-300 transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -571,24 +580,26 @@ export default function ActorResultsView() {
         return (
           <div
             className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 sm:p-8"
-            onClick={() => setDetailActorId(null)}
+            onClick={closeActorDetail}
           >
             <div className="relative w-full max-w-xl my-auto" onClick={(e) => e.stopPropagation()}>
               <button
-                onClick={() => setDetailActorId(null)}
+                onClick={closeActorDetail}
                 className="absolute -top-2 -right-2 z-10 p-2 bg-[#1a2e23] hover:bg-white/20 border border-white/10 rounded-full text-white/70 hover:text-white transition-colors"
                 title="Close"
               >
                 <X className="w-5 h-5" />
               </button>
               <ActorCard
+                key={`${detailActor.id}-${detailEdit}`}
                 actor={detailActor}
                 onUpdate={updateActor}
                 onDelete={() => {
                   deleteActor(detailActor.id)
-                  setDetailActorId(null)
+                  closeActorDetail()
                 }}
                 forceExpanded
+                startInEdit={detailEdit}
               />
             </div>
           </div>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { ArrowLeft, Plus, Trash2, Share2, User } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Share2, User, Pencil, X } from "lucide-react"
 import { useCharacterBible } from "./CharacterBibleContext"
 import CharacterCard from "./CharacterCard"
 import { Character } from "@/types/character-bible"
@@ -36,7 +36,22 @@ export default function ResultsView() {
   const [searchQuery, setSearchQuery] = useState("")
   const [genderFilter, setGenderFilter] = useState<"all" | (typeof GENDER_GROUPS)[number]>("all")
   const [viewMode, setViewMode] = useState<ViewMode>("full")
+  const [detailId, setDetailId] = useState<string | null>(null)
+  const [detailEdit, setDetailEdit] = useState(false)
   const gridRef = useRef<HTMLDivElement>(null)
+
+  const openDetail = (id: string) => {
+    setDetailId(id)
+    setDetailEdit(false)
+  }
+  const openEdit = (id: string) => {
+    setDetailId(id)
+    setDetailEdit(true)
+  }
+  const closeDetail = () => {
+    setDetailId(null)
+    setDetailEdit(false)
+  }
 
   // Scroll to newly added item
   useEffect(() => {
@@ -247,6 +262,8 @@ export default function ResultsView() {
                   character={character}
                   onUpdate={(updates) => updateCharacter(currentBible.id, character.id, updates)}
                   onDelete={() => deleteCharacter(currentBible.id, character.id)}
+                  onNameClick={() => openDetail(character.id)}
+                  onEditClick={() => openEdit(character.id)}
                 />
               </div>
             ))}
@@ -264,6 +281,13 @@ export default function ResultsView() {
               >
                 <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
+                    onClick={() => openEdit(character.id)}
+                    className="p-1 bg-white/10 hover:bg-white/20 rounded text-white/70 hover:text-white transition-colors"
+                    title="Edit"
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </button>
+                  <button
                     onClick={() => deleteCharacter(currentBible.id, character.id)}
                     className="p-1 bg-red-500/20 hover:bg-red-500/30 rounded text-red-400 hover:text-red-300 transition-colors"
                     title="Delete"
@@ -276,7 +300,9 @@ export default function ResultsView() {
                     <User className="w-5 h-5 text-emerald-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-semibold text-white truncate">{character.name}</h3>
+                    <button onClick={() => openDetail(character.id)} className="text-left max-w-full" title="View full character details">
+                      <h3 className="text-sm font-semibold text-white truncate hover:text-emerald-300 transition-colors cursor-pointer">{character.name}</h3>
+                    </button>
                     <p className="text-xs text-white/50 truncate">
                       {character.ageRange && character.ageRange !== "unknown" ? character.ageRange : ""}
                       {character.gender && character.gender !== "unknown" ? ` • ${character.gender}` : ""}
@@ -312,7 +338,9 @@ export default function ResultsView() {
                           <User className="w-5 h-5 text-emerald-400" />
                         </div>
                         <div className="w-40 sm:w-48 md:w-56 min-w-0 flex-shrink-0">
-                          <h4 className="text-sm font-semibold text-white truncate">{character.name}</h4>
+                          <button onClick={() => openDetail(character.id)} className="text-left max-w-full" title="View full character details">
+                            <h4 className="text-sm font-semibold text-white truncate hover:text-emerald-300 transition-colors cursor-pointer">{character.name}</h4>
+                          </button>
                           <p className="text-xs text-white/50 truncate">
                             {character.ageRange && character.ageRange !== "unknown" ? `Age: ${character.ageRange}` : ""}
                           </p>
@@ -322,13 +350,22 @@ export default function ResultsView() {
                             {character.description}
                           </div>
                         )}
-                        <button
-                          onClick={() => deleteCharacter(currentBible.id, character.id)}
-                          className="p-1.5 bg-red-500/10 hover:bg-red-500/20 rounded text-red-400 hover:text-red-300 transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-1.5 ml-auto">
+                          <button
+                            onClick={() => openEdit(character.id)}
+                            className="p-1.5 bg-white/10 hover:bg-white/20 rounded text-white/70 hover:text-white transition-colors"
+                            title="Edit"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => deleteCharacter(currentBible.id, character.id)}
+                            className="p-1.5 bg-red-500/10 hover:bg-red-500/20 rounded text-red-400 hover:text-red-300 transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -355,6 +392,39 @@ export default function ResultsView() {
           </div>
         )}
       </div>
+
+      {/* Character Detail Modal - full card, fully expanded */}
+      {detailId && (() => {
+        const detailCharacter = currentBible.characters.find((c) => c.id === detailId)
+        if (!detailCharacter) return null
+        return (
+          <div
+            className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 sm:p-8"
+            onClick={closeDetail}
+          >
+            <div className="relative w-full max-w-xl my-auto" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={closeDetail}
+                className="absolute -top-2 -right-2 z-10 p-2 bg-[#1a2e23] hover:bg-white/20 border border-white/10 rounded-full text-white/70 hover:text-white transition-colors"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <CharacterCard
+                key={`${detailCharacter.id}-${detailEdit}`}
+                character={detailCharacter}
+                onUpdate={(updates) => updateCharacter(currentBible.id, detailCharacter.id, updates)}
+                onDelete={() => {
+                  deleteCharacter(currentBible.id, detailCharacter.id)
+                  closeDetail()
+                }}
+                forceExpanded
+                startInEdit={detailEdit}
+              />
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (

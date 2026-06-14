@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { ArrowLeft, Plus, Trash2, Share2 } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Share2, Pencil, X } from "lucide-react"
 import { useSceneList } from "./SceneListContext"
 import SceneCard from "./SceneCard"
 import { Scene } from "@/types/scene-list"
@@ -22,7 +22,22 @@ export default function SceneResultsView() {
   const [showShareModal, setShowShareModal] = useState(false)
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [newItemId, setNewItemId] = useState<string | null>(null)
+  const [detailId, setDetailId] = useState<string | null>(null)
+  const [detailEdit, setDetailEdit] = useState(false)
   const gridRef = useRef<HTMLDivElement>(null)
+
+  const openDetail = (id: string) => {
+    setDetailId(id)
+    setDetailEdit(false)
+  }
+  const openEdit = (id: string) => {
+    setDetailId(id)
+    setDetailEdit(true)
+  }
+  const closeDetail = () => {
+    setDetailId(null)
+    setDetailEdit(false)
+  }
 
   useEffect(() => {
     if (newItemId && gridRef.current) {
@@ -198,6 +213,8 @@ export default function SceneResultsView() {
                   scene={scene}
                   onUpdate={(updated) => updateScene(currentProject.id, updated)}
                   onDelete={() => deleteScene(currentProject.id, scene.id)}
+                  onNameClick={() => openDetail(scene.id)}
+                  onEditClick={() => openEdit(scene.id)}
                 />
               </div>
             ))}
@@ -215,6 +232,13 @@ export default function SceneResultsView() {
               >
                 <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
+                    onClick={() => openEdit(scene.id)}
+                    className="p-1 bg-white/10 hover:bg-white/20 rounded text-white/70 hover:text-white transition-colors"
+                    title="Edit"
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </button>
+                  <button
                     onClick={() => deleteScene(currentProject.id, scene.id)}
                     className="p-1 bg-red-500/20 hover:bg-red-500/30 rounded text-red-400 hover:text-red-300 transition-colors"
                     title="Delete"
@@ -227,7 +251,9 @@ export default function SceneResultsView() {
                     <span className="text-xs font-bold text-teal-400">{scene.sceneNumber}</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-semibold text-white truncate">{scene.sceneHeading}</h3>
+                    <button onClick={() => openDetail(scene.id)} className="text-left max-w-full" title="View full scene details">
+                      <h3 className="text-sm font-semibold text-white truncate hover:text-teal-300 transition-colors cursor-pointer">{scene.sceneHeading}</h3>
+                    </button>
                     <p className="text-xs text-white/50 truncate">
                       {[scene.location, scene.timeOfDay].filter(Boolean).join(" • ")}
                     </p>
@@ -252,7 +278,9 @@ export default function SceneResultsView() {
                     <span className="text-xs font-bold text-teal-400">{scene.sceneNumber}</span>
                   </div>
                   <div className="w-44 sm:w-56 md:w-64 min-w-0 flex-shrink-0">
-                    <h4 className="text-sm font-semibold text-white truncate">{scene.sceneHeading}</h4>
+                    <button onClick={() => openDetail(scene.id)} className="text-left max-w-full" title="View full scene details">
+                      <h4 className="text-sm font-semibold text-white truncate hover:text-teal-300 transition-colors cursor-pointer">{scene.sceneHeading}</h4>
+                    </button>
                     <p className="text-xs text-white/50 truncate">
                       {[scene.location, scene.timeOfDay].filter(Boolean).join(" • ")}
                     </p>
@@ -262,13 +290,22 @@ export default function SceneResultsView() {
                       {scene.rawText}
                     </div>
                   )}
-                  <button
-                    onClick={() => deleteScene(currentProject.id, scene.id)}
-                    className="p-1.5 bg-red-500/10 hover:bg-red-500/20 rounded text-red-400 hover:text-red-300 transition-colors"
-                    title="Delete"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center gap-1.5 ml-auto">
+                    <button
+                      onClick={() => openEdit(scene.id)}
+                      className="p-1.5 bg-white/10 hover:bg-white/20 rounded text-white/70 hover:text-white transition-colors"
+                      title="Edit"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => deleteScene(currentProject.id, scene.id)}
+                      className="p-1.5 bg-red-500/10 hover:bg-red-500/20 rounded text-red-400 hover:text-red-300 transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -292,6 +329,39 @@ export default function SceneResultsView() {
           </div>
         )}
       </div>
+
+      {/* Scene Detail Modal - full card, fully expanded */}
+      {detailId && (() => {
+        const detailScene = currentProject.scenes.find((s) => s.id === detailId)
+        if (!detailScene) return null
+        return (
+          <div
+            className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 sm:p-8"
+            onClick={closeDetail}
+          >
+            <div className="relative w-full max-w-xl my-auto" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={closeDetail}
+                className="absolute -top-2 -right-2 z-10 p-2 bg-[#1a2e23] hover:bg-white/20 border border-white/10 rounded-full text-white/70 hover:text-white transition-colors"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <SceneCard
+                key={`${detailScene.id}-${detailEdit}`}
+                scene={detailScene}
+                onUpdate={(updated) => updateScene(currentProject.id, updated)}
+                onDelete={() => {
+                  deleteScene(currentProject.id, detailScene.id)
+                  closeDetail()
+                }}
+                forceExpanded
+                startInEdit={detailEdit}
+              />
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Share Modal */}
       {showShareModal && (

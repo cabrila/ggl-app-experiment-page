@@ -8,10 +8,26 @@ interface SceneCardProps {
   scene: Scene
   onUpdate: (scene: Scene) => void
   onDelete: () => void
+  /** When true, collapsible sections are rendered fully expanded (used inside the detail modal). */
+  forceExpanded?: boolean
+  /** When provided (and not forceExpanded), clicking the scene heading opens the detail modal. */
+  onNameClick?: () => void
+  /** When provided (and not forceExpanded), clicking the edit button opens the detail modal in edit mode. */
+  onEditClick?: () => void
+  /** When true, the card mounts directly in edit mode (used by the modal's edit flow). */
+  startInEdit?: boolean
 }
 
-export default function SceneCard({ scene, onUpdate, onDelete }: SceneCardProps) {
-  const [isEditing, setIsEditing] = useState(false)
+export default function SceneCard({
+  scene,
+  onUpdate,
+  onDelete,
+  forceExpanded = false,
+  onNameClick,
+  onEditClick,
+  startInEdit = false,
+}: SceneCardProps) {
+  const [isEditing, setIsEditing] = useState(startInEdit)
   const [editData, setEditData] = useState<Scene>(scene)
   const [isExpanded, setIsExpanded] = useState(false)
 
@@ -130,7 +146,7 @@ export default function SceneCard({ scene, onUpdate, onDelete }: SceneCardProps)
     <div className="group relative p-5 rounded-xl border border-white/10 bg-[#1a2e23] hover:border-white/20 transition-colors">
       <div className="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
-          onClick={() => setIsEditing(true)}
+          onClick={() => (onEditClick && !forceExpanded ? onEditClick() : setIsEditing(true))}
           className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
           title="Edit scene"
         >
@@ -151,9 +167,17 @@ export default function SceneCard({ scene, onUpdate, onDelete }: SceneCardProps)
           <span className="text-xs font-mono text-teal-300 leading-none">{scene.sceneNumber}</span>
         </div>
         <div className="flex-1 min-w-0 pr-16">
-          <h3 className="text-base font-bold text-white font-mono uppercase leading-tight tracking-wide">
-            {scene.sceneHeading}
-          </h3>
+          {onNameClick && !forceExpanded ? (
+            <button onClick={onNameClick} className="text-left max-w-full" title="View full scene details">
+              <h3 className="text-base font-bold text-white font-mono uppercase leading-tight tracking-wide hover:text-teal-300 transition-colors cursor-pointer">
+                {scene.sceneHeading}
+              </h3>
+            </button>
+          ) : (
+            <h3 className="text-base font-bold text-white font-mono uppercase leading-tight tracking-wide">
+              {scene.sceneHeading}
+            </h3>
+          )}
           <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-white/50">
             {scene.location && (
               <span className="flex items-center gap-1">
@@ -180,15 +204,17 @@ export default function SceneCard({ scene, onUpdate, onDelete }: SceneCardProps)
 
       {scene.rawText && (
         <div className="mt-3">
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="flex items-center gap-2 text-sm text-white/50 hover:text-white/70 transition-colors w-full"
-          >
-            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            <span className="font-sans">{isExpanded ? "Hide raw text" : "Show raw text"}</span>
-          </button>
+          {!forceExpanded && (
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="flex items-center gap-2 text-sm text-white/50 hover:text-white/70 transition-colors w-full"
+            >
+              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              <span className="font-sans">{isExpanded ? "Hide raw text" : "Show raw text"}</span>
+            </button>
+          )}
 
-          {isExpanded && (
+          {(forceExpanded || isExpanded) && (
             <div className="mt-3 p-3 bg-[#0f1f17] rounded-lg">
               <p className="text-sm text-white/70 font-sans leading-relaxed whitespace-pre-wrap">
                 {scene.rawText}

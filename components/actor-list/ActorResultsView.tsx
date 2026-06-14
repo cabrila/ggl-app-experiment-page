@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { ArrowLeft, Trash2, Share2, Phone, Mail, ChevronDown, X, Search, SlidersHorizontal, Filter } from "lucide-react"
+import { ArrowLeft, Trash2, Share2, Phone, Mail, ChevronDown, X, Search, SlidersHorizontal, Filter, Pencil } from "lucide-react"
 import { useActorList } from "./ActorListContext"
 import ActorCard from "./ActorCard"
 import { Actor, ActorGender } from "@/types/actor-list"
@@ -43,6 +43,7 @@ export default function ActorResultsView() {
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [newItemId, setNewItemId] = useState<string | null>(null)
   const [detailActorId, setDetailActorId] = useState<string | null>(null)
+  const [detailEdit, setDetailEdit] = useState(false)
   const [sortBy, setSortBy] = useState<ActorSortOption>("name-asc")
   const [showSortDropdown, setShowSortDropdown] = useState(false)
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
@@ -65,6 +66,19 @@ export default function ActorResultsView() {
     setGenderFilter("all")
     setFilterByLocation("")
     setFilterByAvailability("")
+  }
+
+  const openActorDetail = (id: string) => {
+    setDetailActorId(id)
+    setDetailEdit(false)
+  }
+  const openActorEdit = (id: string) => {
+    setDetailActorId(id)
+    setDetailEdit(true)
+  }
+  const closeActorDetail = () => {
+    setDetailActorId(null)
+    setDetailEdit(false)
   }
 
   // Scroll to newly added item
@@ -407,7 +421,8 @@ export default function ActorResultsView() {
                   actor={actor}
                   onUpdate={updateActor}
                   onDelete={() => deleteActor(actor.id)}
-                  onNameClick={() => setDetailActorId(actor.id)}
+                  onNameClick={() => openActorDetail(actor.id)}
+                  onEditClick={() => openActorEdit(actor.id)}
                 />
               </div>
             ))}
@@ -424,6 +439,13 @@ export default function ActorResultsView() {
                 className="group relative p-3 rounded-lg border border-white/10 bg-[#1a2e23] hover:border-white/20 transition-colors"
               >
                 <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => openActorEdit(actor.id)}
+                    className="p-1 bg-white/10 hover:bg-white/20 rounded text-white/70 hover:text-white transition-colors"
+                    title="Edit"
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </button>
                   <button
                     onClick={() => deleteActor(actor.id)}
                     className="p-1 bg-red-500/20 hover:bg-red-500/30 rounded text-red-400 hover:text-red-300 transition-colors"
@@ -492,7 +514,7 @@ export default function ActorResultsView() {
                         </div>
                         <div className="w-40 sm:w-48 md:w-56 min-w-0 flex-shrink-0">
                           <button
-                            onClick={() => setDetailActorId(actor.id)}
+                    onClick={() => openActorDetail(actor.id)}
                             className="text-left max-w-full"
                             title="View full actor details"
                           >

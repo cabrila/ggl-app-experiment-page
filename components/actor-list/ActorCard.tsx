@@ -16,6 +16,10 @@ interface ActorCardProps {
   forceExpanded?: boolean
   /** When provided (and not forceExpanded), clicking the actor name opens the detail modal. */
   onNameClick?: () => void
+  /** When provided (and not forceExpanded), clicking the edit button opens the detail modal in edit mode. */
+  onEditClick?: () => void
+  /** When true, the card mounts directly in edit mode (used by the modal's edit flow). */
+  startInEdit?: boolean
   /**
    * Optional content rendered in the source-label field position (directly below the
    * header, above Contact Details) — mirrors the Submissions card's "Form Source Label".
@@ -40,8 +44,8 @@ function getMediaPlatform(url: string): { name: string; icon: "youtube" | "vimeo
   return { name: "Media Link", icon: "link" }
 }
 
-export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = false, onNameClick, sourceLabel }: ActorCardProps) {
-  const [isEditing, setIsEditing] = useState(false)
+export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = false, onNameClick, onEditClick, startInEdit = false, sourceLabel }: ActorCardProps) {
+  const [isEditing, setIsEditing] = useState(startInEdit)
   const [editedActor, setEditedActor] = useState(actor)
   const [newFieldName, setNewFieldName] = useState("")
   const [showImageModal, setShowImageModal] = useState(false)
@@ -421,7 +425,7 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
       {/* Action Icons - Upper Right Corner */}
       <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
-          onClick={() => setIsEditing(true)}
+          onClick={() => (onEditClick && !forceExpanded ? onEditClick() : setIsEditing(true))}
           className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
           title="Edit actor"
         >

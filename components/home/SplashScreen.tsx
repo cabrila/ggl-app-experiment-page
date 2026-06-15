@@ -320,7 +320,7 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
             </h1>
             <p className="text-base md:text-lg text-white/60 max-w-2xl mx-auto text-pretty">
               Upload your script. Get detailed breakdowns, cast actors, and manage
-              your production — all in one place.
+              your production - all in one place.
             </p>
           </div>
 

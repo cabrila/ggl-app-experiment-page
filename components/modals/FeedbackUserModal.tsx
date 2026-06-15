@@ -83,7 +83,7 @@ export default function FeedbackUserModal({ onClose }: FeedbackUserModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
           <h2 className="text-lg font-semibold text-white font-sans">
-            Join Our Feedback Community
+            Join Our Community
           </h2>
           <button
             onClick={onClose}
@@ -112,7 +112,7 @@ export default function FeedbackUserModal({ onClose }: FeedbackUserModalProps) {
             {/* Description */}
             <div className="px-4 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
               <p className="text-sm text-emerald-200/80 font-sans">
-                We&apos;d love your input! You may receive occasional emails about feedback sessions and workshops. Unsubscribe anytime — completely optional.
+                We&apos;d love your input! You may receive occasional emails about feedback sessions and workshops. Unsubscribe anytime - completely optional.
               </p>
             </div>
 

@@ -1,21 +1,33 @@
 "use client"
 
 import { useState } from "react"
-import { Phone, Mail, Pencil, Trash2, X, Save, Tag, Star } from "lucide-react"
+import { Phone, Mail, Pencil, Trash2, X, Save, Tag, Star, ChevronDown } from "lucide-react"
 import { CastingSubmission } from "@/types/public-casting"
 import Image from "next/image"
 import ImageModal from "@/components/ui/ImageModal"
+import ProfilePictureField from "@/components/ui/ProfilePictureField"
+import { getVideoEmbed, isImageValue, splitMultiValue } from "@/utils/mediaEmbed"
+import { getExtraSubmissionFields } from "@/utils/submissionFields"
+import { PROFILE_PICTURE_LABEL } from "@/utils/profilePicture"
 
 interface SubmissionCardProps {
   submission: CastingSubmission
   onUpdate: (updates: Partial<CastingSubmission>) => void
   onDelete: () => void
+  isSelected?: boolean
+  onToggleSelect?: () => void
+  /** When true, the "More Information" panel is rendered fully expanded (used inside the detail modal). */
+  forceExpanded?: boolean
+  /** When provided (and not forceExpanded), clicking the actor name opens the detail modal. */
+  onNameClick?: () => void
 }
 
-export default function SubmissionCard({ submission, onUpdate, onDelete }: SubmissionCardProps) {
+export default function SubmissionCard({ submission, onUpdate, onDelete, isSelected, onToggleSelect, forceExpanded = false, onNameClick }: SubmissionCardProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [focusGrade, setFocusGrade] = useState(false)
   const [showImageModal, setShowImageModal] = useState(false)
+  const [activeImage, setActiveImage] = useState<string | undefined>(undefined)
+  const [showMoreInfo, setShowMoreInfo] = useState(false)
   const [editData, setEditData] = useState({
     name: submission.name,
     email: submission.email,
@@ -24,9 +36,22 @@ export default function SubmissionCard({ submission, onUpdate, onDelete }: Submi
     playingAge: submission.playingAge || "",
     notes: submission.notes || "",
     grade: submission.grade || 0,
+    headshot: submission.headshot || "",
   })
 
   const handleSave = () => {
+    // Keep the underlying form data's profile-picture field in sync so the
+    // image survives any later re-mapping (e.g. transfer to My Actors).
+    const nextData = { ...(submission.data || {}) }
+    for (const key of Object.keys(nextData)) {
+      if (key.toLowerCase().replace(/[\s_-]+/g, "") === "profilepicture") {
+        nextData[key] = editData.headshot
+      }
+    }
+    if (!Object.keys(nextData).some((k) => k.toLowerCase().replace(/[\s_-]+/g, "") === "profilepicture") && editData.headshot) {
+      nextData[PROFILE_PICTURE_LABEL] = editData.headshot
+    }
+
     onUpdate({
       name: editData.name,
       email: editData.email,
@@ -35,6 +60,8 @@ export default function SubmissionCard({ submission, onUpdate, onDelete }: Submi
       playingAge: editData.playingAge,
       notes: editData.notes,
       grade: editData.grade || undefined,
+      headshot: editData.headshot,
+      data: nextData,
     })
     setIsEditing(false)
     setFocusGrade(false)
@@ -57,6 +84,27 @@ export default function SubmissionCard({ submission, onUpdate, onDelete }: Submi
     return "text-red-400 bg-red-500/20 border-red-500/30"
   }
 
+  // Derive submitted videos and images from the submission data.
+  // Multiple URLs/images are stored newline-separated within a single field value.
+  const dataValues = Object.values(submission.data || {})
+  const submittedVideos = dataValues
+    .flatMap((value) => splitMultiValue(value))
+    .map((entry) => getVideoEmbed(entry))
+    .filter((v): v is NonNullable<typeof v> => v !== null)
+
+  const submittedImages = dataValues
+    .flatMap((value) => splitMultiValue(value))
+    .filter((entry) => isImageValue(entry))
+    // Avoid duplicating the headshot already shown in the avatar
+    .filter((entry) => entry !== submission.headshot)
+
+  // Any form fields beyond the defaults shown above go into "More Information".
+  const extraFields = getExtraSubmissionFields(submission.data)
+
+  // The "More Information" panel holds extra fields and the submitted video(s).
+  const hasMoreInfo = extraFields.length > 0 || submittedVideos.length > 0
+  const moreInfoOpen = forceExpanded || showMoreInfo
+
   // Edit Mode
   if (isEditing) {
     return (
@@ -65,6 +113,19 @@ export default function SubmissionCard({ submission, onUpdate, onDelete }: Submi
         <div className="flex items-center gap-2 mb-4 text-xs">
           <Tag className="w-3 h-3 text-violet-400" />
           <span className="text-violet-400 font-sans">{submission.castingCallTitle}</span>
+        </div>
+
+        {/* Profile Picture */}
+        <div className="mb-4">
+          <label className="block text-xs font-semibold text-violet-400 uppercase tracking-wider mb-2">
+            Profile Picture
+          </label>
+          <ProfilePictureField
+            value={editData.headshot}
+            onChange={(val) => setEditData({ ...editData, headshot: val })}
+            accent="violet"
+            placeholder="Click or drag to upload a profile picture"
+          />
         </div>
 
         {/* Actor Name */}
@@ -220,7 +281,26 @@ export default function SubmissionCard({ submission, onUpdate, onDelete }: Submi
 
   // View Mode
   return (
-    <div className="group relative p-5 rounded-xl border border-white/10 bg-[#1a2e23] hover:border-white/20 transition-colors">
+    <div className={`group relative p-5 rounded-xl border bg-[#1a2e23] transition-colors ${
+      isSelected ? "border-violet-500/50 ring-2 ring-violet-500/20" : "border-white/10 hover:border-white/20"
+    }`}>
+      {/* Selection checkbox - Upper Left Corner */}
+      {onToggleSelect && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onToggleSelect() }}
+          className={`absolute top-4 left-4 z-10 w-5 h-5 rounded border-2 flex items-center justify-center transition-all flex-shrink-0 ${
+            isSelected ? "bg-violet-500 border-violet-500 text-white" : "border-white/30 hover:border-violet-400 bg-[#1a2e23]"
+          }`}
+          title={isSelected ? "Deselect" : "Select"}
+        >
+          {isSelected && (
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+            </svg>
+          )}
+        </button>
+      )}
+
       {/* Action Icons - Upper Right Corner */}
       <div className="absolute top-4 right-4 flex items-center gap-1">
         {/* Edit & Delete - Show on hover */}
@@ -262,16 +342,16 @@ export default function SubmissionCard({ submission, onUpdate, onDelete }: Submi
 
       {/* New Badge */}
       {submission.isNew && (
-        <span className="absolute top-4 left-4 px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-xs font-semibold rounded">
+        <span className="absolute top-4 left-12 px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-xs font-semibold rounded">
           NEW
         </span>
       )}
 
       {/* Header with Avatar */}
-      <div className="flex items-start gap-4 mb-4">
+      <div className={`flex items-start gap-4 mb-4 pt-7 ${onToggleSelect ? "pl-8" : ""}`}>
         {/* Avatar - Clickable to open modal */}
         <button
-          onClick={() => submission.headshot && setShowImageModal(true)}
+          onClick={() => submission.headshot && (setActiveImage(submission.headshot), setShowImageModal(true))}
           className={`w-14 h-14 rounded-full overflow-hidden bg-violet-500/20 flex-shrink-0 transition-all ${
             submission.headshot 
               ? "cursor-pointer hover:ring-2 hover:ring-violet-500/50 hover:ring-offset-2 hover:ring-offset-[#1a2e23]" 
@@ -297,9 +377,21 @@ export default function SubmissionCard({ submission, onUpdate, onDelete }: Submi
 
         {/* Name & Age */}
         <div className="flex-1 min-w-0 pt-1">
-          <h3 className="text-lg font-bold text-white font-sans uppercase tracking-wide truncate pr-20">
-            {submission.name}
-          </h3>
+          {onNameClick && !forceExpanded ? (
+            <button
+              onClick={onNameClick}
+              className="text-left max-w-full"
+              title="View full actor details"
+            >
+              <h3 className="text-lg font-bold text-white font-sans uppercase tracking-wide truncate pr-20 hover:text-violet-300 transition-colors cursor-pointer">
+                {submission.name}
+              </h3>
+            </button>
+          ) : (
+            <h3 className="text-lg font-bold text-white font-sans uppercase tracking-wide truncate pr-20">
+              {submission.name}
+            </h3>
+          )}
           <div className="flex items-center gap-2 text-sm">
             {submission.age && (
               <span className="text-white/60">
@@ -352,6 +444,87 @@ export default function SubmissionCard({ submission, onUpdate, onDelete }: Submi
         </div>
       )}
 
+      {/* More Information - extra form fields + submitted video(s) */}
+      {hasMoreInfo && (
+        <div className="mt-3 rounded-lg border border-white/10 overflow-hidden">
+          {forceExpanded ? (
+            <div className="w-full flex items-center px-3 py-2.5 bg-[#0f1f17]">
+              <span className="text-xs font-semibold text-white/60 uppercase tracking-wider">
+                More Information
+              </span>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowMoreInfo((v) => !v)}
+              className="w-full flex items-center justify-between px-3 py-2.5 bg-[#0f1f17] hover:bg-[#0f1f17]/70 transition-colors"
+              aria-expanded={moreInfoOpen}
+            >
+              <span className="text-xs font-semibold text-white/60 uppercase tracking-wider">
+                More Information
+              </span>
+              <ChevronDown
+                className={`w-4 h-4 text-white/40 transition-transform ${moreInfoOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+          )}
+          {moreInfoOpen && (
+            <div className="px-3 py-3 bg-[#0f1f17] border-t border-white/10 space-y-3">
+              {extraFields.length > 0 && (
+                <div className="space-y-2">
+                  {extraFields.map((field) => (
+                    <div key={field.key} className="flex items-start gap-2 text-sm">
+                      <span className="text-white/50 font-sans shrink-0">{field.label}:</span>
+                      <span className="text-white/80 font-sans break-words">{field.value}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {submittedVideos.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">
+                    Videos
+                  </p>
+                  <div className="space-y-3">
+                    {submittedVideos.map((video, idx) => (
+                      <div key={idx} className="aspect-video w-full rounded-lg overflow-hidden border border-white/10">
+                        <iframe
+                          src={video.embedUrl}
+                          title={`${video.platform} video ${idx + 1}`}
+                          className="w-full h-full"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Submitted Images */}
+      {submittedImages.length > 0 && (
+        <div className="mt-3 p-3 bg-[#0f1f17] rounded-lg">
+          <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">
+            Photos
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {submittedImages.map((img, idx) => (
+              <button
+                key={idx}
+                onClick={() => { setActiveImage(img); setShowImageModal(true) }}
+                className="relative aspect-square rounded-lg overflow-hidden border border-white/10 hover:ring-2 hover:ring-violet-500/50 transition-all"
+                title="Click to view full image"
+              >
+                <img src={img || "/placeholder.svg"} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Submission Time */}
       <div className="mt-3 text-xs text-white/40 font-sans">
         Submitted {submission.submittedAt.toLocaleDateString()} at{" "}
@@ -362,7 +535,7 @@ export default function SubmissionCard({ submission, onUpdate, onDelete }: Submi
       <ImageModal
         isOpen={showImageModal}
         onClose={() => setShowImageModal(false)}
-        src={submission.headshot}
+        src={activeImage || submission.headshot || ""}
         alt={submission.name}
       />
     </div>

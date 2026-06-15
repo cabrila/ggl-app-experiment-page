@@ -35,7 +35,7 @@ export default function TopMenuBar() {
             aria-label="Sign up as feedback user"
           >
             <UserPlus className="w-4 h-4 text-emerald-500 group-hover:text-emerald-600 transition-colors" />
-            <span className="hidden lg:inline">Join Feedback Community</span>
+            <span className="hidden lg:inline">Join Our Community</span>
           </button>
 
           {/* Center Menu */}

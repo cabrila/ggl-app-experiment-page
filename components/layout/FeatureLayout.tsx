@@ -1,9 +1,10 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Home, LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone, Package, Film, DollarSign } from "lucide-react"
+import { Home, LogOut, MessageSquarePlus, BookUser, MapPin, Users, Package, Film, DollarSign, Menu, X, HelpCircle } from "lucide-react"
 import { useCasting } from "@/components/casting/CastingContext"
 import FeedbackModal from "@/components/modals/FeedbackModal"
+import OnboardingModal from "@/components/modals/OnboardingModal"
 import { trackFeatureClick, type FeatureName } from "@/lib/analytics"
 import { useFirebaseUser } from "@/hooks/useFirebaseUser"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -30,25 +31,6 @@ const sidebarItems = [
     activeBorder: "border-amber-400",
   },
   {
-    id: "actor-database" as ActiveView,
-    title: "Actor List",
-    icon: Users,
-    iconBg: "bg-sky-500/20",
-    iconColor: "text-sky-400",
-    activeBg: "bg-sky-500/30",
-    activeBorder: "border-sky-400",
-  },
-  // Hidden for now — restore by uncommenting when Public Casting is ready.
-  // {
-  //   id: "public-casting" as ActiveView,
-  //   title: "Public Casting",
-  //   icon: Megaphone,
-  //   iconBg: "bg-violet-500/20",
-  //   iconColor: "text-violet-400",
-  //   activeBg: "bg-violet-500/30",
-  //   activeBorder: "border-violet-400",
-  // },
-  {
     id: "prop-list" as ActiveView,
     title: "Prop List",
     icon: Package,
@@ -66,6 +48,26 @@ const sidebarItems = [
     activeBg: "bg-teal-500/30",
     activeBorder: "border-teal-400",
   },
+  {
+    id: "actor-database" as ActiveView,
+    title: "Actor List",
+    icon: Users,
+    iconBg: "bg-sky-500/20",
+    iconColor: "text-sky-400",
+    activeBg: "bg-sky-500/30",
+    activeBorder: "border-sky-400",
+  },
+  // Public Casting hidden until its backend ships (see TODO.md Phase 2).
+  // Restore this entry to bring the side-menu button back.
+  // {
+  //   id: "public-casting" as ActiveView,
+  //   title: "Public Casting",
+  //   icon: Megaphone,
+  //   iconBg: "bg-violet-500/20",
+  //   iconColor: "text-violet-400",
+  //   activeBg: "bg-violet-500/30",
+  //   activeBorder: "border-violet-400",
+  // },
 ]
 
 interface FeatureLayoutProps {
@@ -79,8 +81,12 @@ interface FeatureLayoutProps {
 export default function FeatureLayout({ children, onBack, onSignOut, activeView, onNavigate }: FeatureLayoutProps) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false)
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const userButtonRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
+  const mobileMenuRef = useRef<HTMLDivElement>(null)
+  const mobileMenuButtonRef = useRef<HTMLButtonElement>(null)
   const { state } = useCasting()
 
   // Real Firebase user — drives the avatar/menu and gates the Usage button.
@@ -114,6 +120,25 @@ export default function FeatureLayout({ children, onBack, onSignOut, activeView,
     }
   }, [isUserMenuOpen])
 
+  // Close mobile burger menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(event.target as Node) &&
+        mobileMenuButtonRef.current &&
+        !mobileMenuButtonRef.current.contains(event.target as Node)
+      ) {
+        setIsMobileMenuOpen(false)
+      }
+    }
+
+    if (isMobileMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside)
+      return () => document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [isMobileMenuOpen])
+
   return (
     <div
       className="h-full flex flex-col overflow-hidden"
@@ -123,21 +148,21 @@ export default function FeatureLayout({ children, onBack, onSignOut, activeView,
       }}
     >
       {/* Top Navigation Bar - Logo, Back Button, Feedback, and User Avatar */}
-      <header className="relative flex justify-between items-center px-6 py-3 border-b border-white/10 shrink-0 z-20">
+      <header className="relative flex justify-between items-center gap-3 px-6 py-3 border-b border-white/10 shrink-0 z-30">
         {/* Left side - Logo and Home Button */}
-        <div className="flex items-center gap-3">
-          <button onClick={onBack} className="flex items-center gap-2">
+        <div className="flex items-center gap-3 min-w-0">
+          <button onClick={onBack} className="flex items-center gap-2 min-w-0">
             <img
               src="/images/gogreenlight-logo.png"
               alt="GoGreenlight"
-              className="h-9 w-auto"
+              className="h-7 sm:h-9 w-auto shrink-0"
             />
-            <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-white text-xs font-semibold uppercase tracking-wide">Beta</span>
+            <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-white text-xs font-semibold uppercase tracking-wide shrink-0">Beta</span>
           </button>
-          <div className="h-6 w-px bg-white/20" />
+          <div className="hidden lg:block h-6 w-px bg-white/20" />
           <button
             onClick={onBack}
-            className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all"
+            className="hidden lg:block p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all"
             title="Go to Home"
             aria-label="Go to Home"
           >
@@ -149,7 +174,7 @@ export default function FeatureLayout({ children, onBack, onSignOut, activeView,
                 <TooltipTrigger asChild>
                   <a
                     href="/usage"
-                    className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all"
+                    className="hidden lg:block p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all"
                     aria-label="Usage and cost"
                   >
                     <DollarSign className="w-5 h-5" />
@@ -163,8 +188,8 @@ export default function FeatureLayout({ children, onBack, onSignOut, activeView,
           )}
         </div>
 
-        {/* Right side - Feedback and User Avatar */}
-        <div className="flex items-center gap-2">
+        {/* Right side - Feedback and User Avatar (desktop) */}
+        <div className="hidden lg:flex items-center gap-2">
           {/* Feedback & Requests Button */}
           <button
             onClick={() => setIsFeedbackModalOpen(true)}
@@ -173,7 +198,7 @@ export default function FeatureLayout({ children, onBack, onSignOut, activeView,
             aria-label="Open feedback form"
           >
             <MessageSquarePlus className="w-4 h-4" />
-            <span className="text-sm font-medium font-sans hidden sm:inline">Feedback</span>
+            <span className="text-sm font-medium font-sans">Feedback</span>
           </button>
 
           {/* User Avatar */}
@@ -221,6 +246,81 @@ export default function FeatureLayout({ children, onBack, onSignOut, activeView,
             )}
           </div>
         </div>
+
+        {/* Mobile/Tablet burger menu (below lg) */}
+        <div className="lg:hidden relative shrink-0">
+          <button
+            ref={mobileMenuButtonRef}
+            onClick={() => setIsMobileMenuOpen((v) => !v)}
+            className="flex items-center justify-center w-10 h-10 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-all duration-200"
+            aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={isMobileMenuOpen}
+            aria-haspopup="true"
+          >
+            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+
+          {isMobileMenuOpen && (
+            <div
+              ref={mobileMenuRef}
+              className="absolute right-0 top-full mt-2 w-64 bg-[#1a3a25] border border-white/15 rounded-lg shadow-xl overflow-hidden z-50"
+            >
+              {/* User Info */}
+              <div className="px-4 py-3 border-b border-white/10">
+                <p className="text-sm font-medium text-white truncate">{fbUser.displayName}</p>
+                <p className="text-xs text-white/50 truncate">{fbUser.email}</p>
+              </div>
+
+              <div className="py-1">
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false)
+                    onBack()
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white/80 hover:bg-white/5 transition-colors"
+                >
+                  <Home className="w-4 h-4" />
+                  <span>Home</span>
+                </button>
+
+                {fbUser.isInternal && (
+                  <a
+                    href="/usage"
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white/80 hover:bg-white/5 transition-colors"
+                    aria-label="Usage and cost"
+                  >
+                    <DollarSign className="w-4 h-4" />
+                    <span>Usage &amp; Cost</span>
+                  </a>
+                )}
+
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false)
+                    setIsFeedbackModalOpen(true)
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white/80 hover:bg-white/5 transition-colors"
+                >
+                  <MessageSquarePlus className="w-4 h-4" />
+                  <span>Feedback &amp; Requests</span>
+                </button>
+              </div>
+
+              <div className="border-t border-white/10">
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false)
+                    handleSignOut()
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-white/5 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </header>
 
       {/* Main Content Area with Sidebar */}
@@ -228,7 +328,7 @@ export default function FeatureLayout({ children, onBack, onSignOut, activeView,
         <div className="flex-1 flex overflow-hidden">
         {/* Left Sidebar - Hidden on mobile */}
         <aside className="hidden md:flex flex-col w-16 border-r border-white/10 py-4 shrink-0">
-          <nav className="flex flex-col items-center gap-2">
+          <nav className="flex-1 flex flex-col items-center gap-2">
             {sidebarItems.map((item) => {
               const IconComponent = item.icon
               const isActive = activeView === item.id
@@ -259,6 +359,18 @@ export default function FeatureLayout({ children, onBack, onSignOut, activeView,
               )
             })}
           </nav>
+
+          {/* Help / Onboarding tour - bottom left of the main menu */}
+          <div className="flex justify-center mt-2">
+            <button
+              onClick={() => setIsOnboardingOpen(true)}
+              className="w-9 h-9 rounded-full flex items-center justify-center bg-white/5 border border-white/15 text-white/60 hover:text-white hover:bg-white/15 hover:border-white/30 transition-all"
+              title="How it works"
+              aria-label="Open the getting started guide"
+            >
+              <HelpCircle className="w-5 h-5" />
+            </button>
+          </div>
         </aside>
 
         {/* Main Content */}
@@ -286,6 +398,11 @@ export default function FeatureLayout({ children, onBack, onSignOut, activeView,
       {/* Feedback Modal */}
       {isFeedbackModalOpen && (
         <FeedbackModal onClose={() => setIsFeedbackModalOpen(false)} />
+      )}
+
+      {/* Onboarding / Getting Started Modal */}
+      {isOnboardingOpen && (
+        <OnboardingModal onClose={() => setIsOnboardingOpen(false)} />
       )}
     </div>
   )

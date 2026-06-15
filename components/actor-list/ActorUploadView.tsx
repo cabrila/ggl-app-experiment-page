@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Upload, ArrowLeft, FileText, X, Loader2, AlertCircle, RefreshCw } from "lucide-react"
+import { Upload, ArrowLeft, FileText, X, Loader2, AlertCircle, RefreshCw, PenLine } from "lucide-react"
 import { useActorList } from "./ActorListContext"
 import { Actor } from "@/types/actor-list"
 import { useImportJob } from "@/hooks/useImportJob"
@@ -13,6 +13,10 @@ export default function ActorUploadView() {
   const [isDragging, setIsDragging] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // Guard so a completed extraction creates its project exactly ONCE. Without
+  // this, createProject's changing identity re-fires the effect (each create →
+  // Firestore write → re-render → new createProject), spawning duplicate lists.
+  const createdRef = useRef(false)
 
   // Use the AI service integration hook
   const { status, message, result, error, run, reset } = useImportJob<ActorExtractResult>("actor-extract")
@@ -69,7 +73,8 @@ export default function ActorUploadView() {
 
   // Handle successful extraction - use useEffect to avoid setState during render
   useEffect(() => {
-    if (status === "complete" && result && file) {
+    if (status === "complete" && result && file && !createdRef.current) {
+      createdRef.current = true
       // Map AI service result to our Actor type
       const actors: Actor[] = result.actors.map((actor, index) => ({
         id: `${Date.now()}-${index}`,
@@ -91,6 +96,7 @@ export default function ActorUploadView() {
 
   const handleRetry = () => {
     reset()
+    createdRef.current = false
     setFile(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
@@ -100,6 +106,7 @@ export default function ActorUploadView() {
   const removeFile = () => {
     setFile(null)
     reset()
+    createdRef.current = false
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
@@ -114,7 +121,7 @@ export default function ActorUploadView() {
           className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span className="text-sm font-sans">Back to Projects</span>
+          <span className="text-sm font-sans">Back to My Actors</span>
         </button>
       </div>
 
@@ -227,6 +234,19 @@ export default function ActorUploadView() {
                 onChange={handleFileSelect}
                 className="hidden"
               />
+            </div>
+          )}
+
+          {/* Manual Create Option */}
+          {!isProcessing && (
+            <div className="mt-8 pt-6 border-t border-white/10">
+              <button
+                onClick={() => createProject("New Actor List", [])}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 hover:text-white rounded-xl transition-colors font-sans"
+              >
+                <PenLine className="w-4 h-4" />
+                Create Actor List Manually
+              </button>
             </div>
           )}
         </div>

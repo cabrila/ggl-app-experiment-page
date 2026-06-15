@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Upload, ArrowLeft, Loader2, FileText, X, AlertCircle, RefreshCw } from "lucide-react"
+import { Upload, ArrowLeft, Loader2, FileText, X, AlertCircle, RefreshCw, PenLine, Download } from "lucide-react"
 import { useCharacterBible } from "./CharacterBibleContext"
 import { Character, CharacterBible } from "@/types/character-bible"
 import { useImportJob } from "@/hooks/useImportJob"
@@ -13,6 +13,9 @@ export default function UploadView() {
   const [isDragging, setIsDragging] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // Guard so a completed extraction creates its bible exactly ONCE (the
+  // completion effect re-fires as addBible's identity changes on re-render).
+  const createdRef = useRef(false)
 
   // Use the AI service integration hook
   const { status, message, result, error, run, reset } = useImportJob<CharacterExtractResult>("character-extract")
@@ -70,7 +73,8 @@ export default function UploadView() {
 
   // Handle successful extraction - use useEffect to avoid setState during render
   useEffect(() => {
-    if (status === "complete" && result) {
+    if (status === "complete" && result && !createdRef.current) {
+      createdRef.current = true
       const scriptName = file?.name.replace(/\.(pdf|docx)$/i, "").toUpperCase() || "SCRIPT"
 
       // Map AI service result to our Character type. The skill returns
@@ -107,10 +111,24 @@ export default function UploadView() {
 
   const handleRetry = () => {
     reset()
+    createdRef.current = false
     setFile(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
+  }
+
+  const handleCreateManually = () => {
+    const newBible: CharacterBible = {
+      id: crypto.randomUUID(),
+      name: "New Character Bible",
+      characters: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+    addBible(newBible)
+    setCurrentBible(newBible)
+    setView("results")
   }
 
   return (
@@ -122,7 +140,7 @@ export default function UploadView() {
           className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span className="text-sm font-sans">Back to Projects</span>
+          <span className="text-sm font-sans">Back to My Characters</span>
         </button>
       </div>
 
@@ -136,6 +154,19 @@ export default function UploadView() {
             </h1>
             <p className="text-white/60 text-base font-sans max-w-lg mx-auto">
               Upload your film or TV script (PDF or DOCX). AI will analyze the text to extract characters and casting notes.
+            </p>
+
+            {/* Sample screenplay download */}
+            <a
+              href="/screenplays/A_Dinner_Party_screenplay.pdf"
+              download="A_Dinner_Party_screenplay.pdf"
+              className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20 hover:text-emerald-200 transition-colors font-sans text-sm"
+            >
+              <Download className="w-4 h-4 shrink-0" />
+              <span>Download a sample screenplay</span>
+            </a>
+            <p className="mt-2 text-white/40 text-xs font-sans max-w-md mx-auto">
+              No script handy? Test the tools with this screenplay — the material is not copyrighted and free to use.
             </p>
           </div>
 
@@ -226,6 +257,17 @@ export default function UploadView() {
                   Extract Characters
                 </button>
               )}
+
+              {/* Manual Create Option */}
+              <div className="mt-8 pt-6 border-t border-white/10">
+                <button
+                  onClick={handleCreateManually}
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 hover:text-white rounded-xl transition-colors font-sans"
+                >
+                  <PenLine className="w-4 h-4" />
+                  Create Character Bible Manually
+                </button>
+              </div>
             </>
           ) : (
             /* Processing State */

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Upload, ArrowLeft, FileText, Loader2, X, AlertCircle, RefreshCw } from "lucide-react"
+import { Upload, ArrowLeft, FileText, Loader2, X, AlertCircle, RefreshCw, PenLine, Download } from "lucide-react"
 import { useSceneList } from "./SceneListContext"
 import { Scene, SceneProject } from "@/types/scene-list"
 import { useImportJob } from "@/hooks/useImportJob"
@@ -13,6 +13,9 @@ export default function SceneUploadView() {
   const [isDragging, setIsDragging] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // Guard so a completed extraction creates its project exactly ONCE (the
+  // completion effect re-fires as addProject's identity changes on re-render).
+  const createdRef = useRef(false)
 
   // Same upstream AI service as Character Bible — see `useImportJob` and
   // `app/api/import/[taskType]/route.ts`. No direct Gemini call.
@@ -88,7 +91,8 @@ export default function SceneUploadView() {
 
   // Map upstream result -> Scene[] -> new project (same pattern as Character Bible)
   useEffect(() => {
-    if (status !== "complete" || !result || !file) return
+    if (status !== "complete" || !result || !file || createdRef.current) return
+    createdRef.current = true
 
     const incoming = Array.isArray(result.scenes) ? result.scenes : []
     const scenes: Scene[] = incoming.map((s, i) => ({
@@ -100,7 +104,13 @@ export default function SceneUploadView() {
           : `Scene ${i + 1}`,
       location: typeof s.location === "string" ? s.location : "",
       timeOfDay: typeof s.time_of_day === "string" ? s.time_of_day : "",
-      rawText: typeof s.raw_text === "string" ? s.raw_text : "",
+      // The scene-extract skill returns `summary`; fall back to `raw_text` for older payloads.
+      rawText:
+        typeof s.summary === "string" && s.summary
+          ? s.summary
+          : typeof s.raw_text === "string"
+          ? s.raw_text
+          : "",
     }))
 
     const scriptName =
@@ -120,6 +130,7 @@ export default function SceneUploadView() {
 
   const handleRetry = () => {
     reset()
+    createdRef.current = false
     setFile(null)
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
@@ -127,7 +138,21 @@ export default function SceneUploadView() {
   const removeFile = () => {
     setFile(null)
     reset()
+    createdRef.current = false
     if (fileInputRef.current) fileInputRef.current.value = ""
+  }
+
+  const handleCreateManually = () => {
+    const newProject: SceneProject = {
+      id: crypto.randomUUID(),
+      name: "New Scene List",
+      scenes: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+    addProject(newProject)
+    setCurrentProject(newProject)
+    setView("results")
   }
 
   return (
@@ -138,7 +163,7 @@ export default function SceneUploadView() {
           className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span className="text-sm font-sans">Back to Projects</span>
+          <span className="text-sm font-sans">Back to My Scenes</span>
         </button>
       </header>
 
@@ -150,6 +175,21 @@ export default function SceneUploadView() {
           <p className="text-white/60 text-center mb-8 font-sans">
             Upload your script (PDF or DOCX). AI will parse it into scenes with headings, locations, and time of day.
           </p>
+
+          {/* Sample screenplay download */}
+          <div className="flex flex-col items-center -mt-4 mb-8">
+            <a
+              href="/screenplays/A_Dinner_Party_screenplay.pdf"
+              download="A_Dinner_Party_screenplay.pdf"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-500/10 border border-teal-500/30 text-teal-300 hover:bg-teal-500/20 hover:text-teal-200 transition-colors font-sans text-sm"
+            >
+              <Download className="w-4 h-4 shrink-0" />
+              <span>Download a sample screenplay</span>
+            </a>
+            <p className="mt-2 text-white/40 text-xs font-sans text-center max-w-md">
+              No script handy? Test the tools with this screenplay — the material is not copyrighted and free to use.
+            </p>
+          </div>
 
           <div className="w-full h-px bg-white/10 mb-8" />
 
@@ -270,6 +310,19 @@ export default function SceneUploadView() {
                 onChange={handleFileSelect}
                 className="hidden"
               />
+            </div>
+          )}
+
+          {/* Manual Create Option */}
+          {!isProcessing && (
+            <div className="mt-8 pt-6 border-t border-white/10">
+              <button
+                onClick={handleCreateManually}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 hover:text-white rounded-xl transition-colors font-sans"
+              >
+                <PenLine className="w-4 h-4" />
+                Create Scene List Manually
+              </button>
             </div>
           )}
         </div>

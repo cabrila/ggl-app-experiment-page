@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone, ArrowRight, Package, Film, DollarSign, Download, UserPlus } from "lucide-react"
+import { LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone, ArrowRight, Package, Film, DollarSign, UserPlus, Menu, X, HelpCircle } from "lucide-react"
 import { useCasting } from "@/components/casting/CastingContext"
 import FeedbackModal from "@/components/modals/FeedbackModal"
 import FeedbackUserModal from "@/components/modals/FeedbackUserModal"
+import OnboardingModal from "@/components/modals/OnboardingModal"
 import { trackFeatureClick, type FeatureName } from "@/lib/analytics"
 import { useFirebaseUser } from "@/hooks/useFirebaseUser"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -27,23 +28,6 @@ const featureButtons = [
     iconColor: "text-amber-400",
   },
   {
-    id: "actor-database",
-    title: "Actor List",
-    description: "Create and manage an easily navigable list of actors for your production.",
-    icon: Users,
-    iconBg: "bg-sky-500/20",
-    iconColor: "text-sky-400",
-  },
-  // Hidden for now — restore by uncommenting when Public Casting is ready.
-  // {
-  //   id: "public-casting",
-  //   title: "Public Casting",
-  //   description: "Share a simple casting form for actors to submit themselves for roles in your project.",
-  //   icon: Megaphone,
-  //   iconBg: "bg-violet-500/20",
-  //   iconColor: "text-violet-400",
-  // },
-  {
     id: "prop-list",
     title: "Prop List",
     description: "Extract every prop and set dressing item from your script with scene-by-scene appearances.",
@@ -60,13 +44,25 @@ const featureButtons = [
     iconColor: "text-teal-400",
   },
   {
-    id: "download-screenplay",
-    title: "Download Screenplay",
-    description: "You can test the tools with this screenplay. The material is not copyrighted and free to use.",
-    icon: Download,
-    iconBg: "bg-indigo-500/20",
-    iconColor: "text-indigo-400",
+    id: "actor-database",
+    title: "Actor Management",
+    description: "Create and manage easily navigable list and databases of actors for your productions.",
+    icon: Users,
+    iconBg: "bg-sky-500/20",
+    iconColor: "text-sky-400",
   },
+  // Hidden until the Street/Public Casting backend is built (see TODO.md, Phase 2).
+  // The screen, routing and submissions UI all exist, but casting forms and
+  // submissions are not yet persisted server-side, so the entry point is hidden
+  // for the initial deploy. Restore by uncommenting once Phase 2 ships.
+  // {
+  //   id: "public-casting",
+  //   title: "Public Casting",
+  //   description: "Share a simple casting form for actors to submit themselves for roles in your project.",
+  //   icon: Megaphone,
+  //   iconBg: "bg-violet-500/20",
+  //   iconColor: "text-violet-400",
+  // },
 ]
 
 interface SplashScreenProps {
@@ -78,8 +74,12 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false)
   const [isFeedbackUserModalOpen, setIsFeedbackUserModalOpen] = useState(false)
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const userButtonRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
+  const mobileMenuRef = useRef<HTMLDivElement>(null)
+  const mobileMenuButtonRef = useRef<HTMLButtonElement>(null)
   const { state } = useCasting()
   const fbUser = useFirebaseUser()
   void state // legacy CastingContext kept for other home features
@@ -110,6 +110,25 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
     }
   }, [isUserMenuOpen])
 
+  // Close mobile burger menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(event.target as Node) &&
+        mobileMenuButtonRef.current &&
+        !mobileMenuButtonRef.current.contains(event.target as Node)
+      ) {
+        setIsMobileMenuOpen(false)
+      }
+    }
+
+    if (isMobileMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside)
+      return () => document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [isMobileMenuOpen])
+
   return (
     <div
       className="h-full flex flex-col overflow-hidden"
@@ -119,30 +138,30 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
       }}
     >
       {/* Top Navigation Bar - Only Logo and User Avatar */}
-      <header className="relative flex justify-between items-center px-6 py-3 border-b border-white/10 shrink-0 z-20">
-        <div className="flex items-center gap-3">
+      <header className="relative flex justify-between items-center gap-3 px-6 py-3 border-b border-white/10 shrink-0 z-30">
+        <div className="flex items-center gap-3 min-w-0">
           <img
             src="/images/gogreenlight-logo.png"
             alt="GoGreenlight"
-            className="h-9 w-auto"
+            className="h-7 sm:h-9 w-auto shrink-0"
           />
-          <span className="text-xl font-semibold text-white tracking-tight">Tools</span>
-          <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-white text-xs font-semibold uppercase tracking-wide">Beta</span>
+          <span className="hidden sm:inline text-xl font-semibold text-white tracking-tight">Tools</span>
+          <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-white text-xs font-semibold uppercase tracking-wide shrink-0">Beta</span>
         </div>
 
-        {/* Center - Join Feedback Community Button */}
+        {/* Center - Join Feedback Community Button (desktop only) */}
         <button
           onClick={() => setIsFeedbackUserModalOpen(true)}
-          className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white hover:bg-white/20 hover:border-emerald-500/40 transition-all duration-200"
+          className="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center gap-2 px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white hover:bg-white/20 hover:border-emerald-500/40 transition-all duration-200"
           title="Join our feedback community"
           aria-label="Sign up as feedback user"
         >
           <UserPlus className="w-4 h-4 text-emerald-400" />
-          <span className="text-sm font-medium font-sans hidden sm:inline">Join Feedback Community</span>
-          <span className="text-sm font-medium font-sans sm:hidden">Join</span>
+          <span className="text-sm font-medium font-sans">Join Feedback Community</span>
         </button>
 
-        <div className="flex items-center gap-2">
+        {/* Desktop action group */}
+        <div className="hidden lg:flex items-center gap-2">
           {/* Internal-only Usage & Cost button. Visibility-only gate; the
               /api/usage handler enforces the real access control. */}
           {fbUser.isInternal && (
@@ -172,7 +191,7 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
             aria-label="Open feedback form"
           >
             <MessageSquarePlus className="w-4 h-4" />
-            <span className="text-sm font-medium font-sans hidden sm:inline">Feedback</span>
+            <span className="text-sm font-medium font-sans">Feedback</span>
           </button>
 
           {/* User Avatar */}
@@ -220,6 +239,81 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
             )}
           </div>
         </div>
+
+        {/* Mobile/Tablet burger menu (below lg) */}
+        <div className="lg:hidden relative shrink-0">
+          <button
+            ref={mobileMenuButtonRef}
+            onClick={() => setIsMobileMenuOpen((v) => !v)}
+            className="flex items-center justify-center w-10 h-10 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-all duration-200"
+            aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={isMobileMenuOpen}
+            aria-haspopup="true"
+          >
+            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+
+          {isMobileMenuOpen && (
+            <div
+              ref={mobileMenuRef}
+              className="absolute right-0 top-full mt-2 w-64 bg-[#1a3a25] border border-white/15 rounded-lg shadow-xl overflow-hidden z-50"
+            >
+              {/* User Info */}
+              <div className="px-4 py-3 border-b border-white/10">
+                <p className="text-sm font-medium text-white truncate">{fbUser.displayName}</p>
+                <p className="text-xs text-white/50 truncate">{fbUser.email}</p>
+              </div>
+
+              <div className="py-1">
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false)
+                    setIsFeedbackUserModalOpen(true)
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white/80 hover:bg-white/5 transition-colors"
+                >
+                  <UserPlus className="w-4 h-4 text-emerald-400" />
+                  <span>Join Feedback Community</span>
+                </button>
+
+                {fbUser.isInternal && (
+                  <a
+                    href="/usage"
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white/80 hover:bg-white/5 transition-colors"
+                    aria-label="Usage and cost"
+                  >
+                    <DollarSign className="w-4 h-4" />
+                    <span>Usage &amp; Cost</span>
+                  </a>
+                )}
+
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false)
+                    setIsFeedbackModalOpen(true)
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white/80 hover:bg-white/5 transition-colors"
+                >
+                  <MessageSquarePlus className="w-4 h-4" />
+                  <span>Feedback &amp; Requests</span>
+                </button>
+              </div>
+
+              <div className="border-t border-white/10">
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false)
+                    handleSignOut()
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-white/5 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </header>
 
       {/* Main Content - Hero and Feature Buttons */}
@@ -232,7 +326,7 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
             </h1>
             <p className="text-base md:text-lg text-white/60 max-w-2xl mx-auto text-pretty">
               Upload your script. Get detailed breakdowns, cast actors, and manage
-              your production — all in one place.
+              your production - all in one place.
             </p>
           </div>
 
@@ -245,17 +339,7 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
                   key={feature.id}
                   onClick={() => {
                     trackFeatureClick(feature.id as FeatureName)
-                    if (feature.id === "download-screenplay") {
-                      // Trigger download of the screenplay PDF
-                      const link = document.createElement("a")
-                      link.href = "/screenplays/A_Dinner_Party_screenplay.pdf"
-                      link.download = "A_Dinner_Party_screenplay.pdf"
-                      document.body.appendChild(link)
-                      link.click()
-                      document.body.removeChild(link)
-                    } else {
-                      onNavigate?.(feature.id)
-                    }
+                    onNavigate?.(feature.id)
                   }}
                   className="group relative flex flex-col items-start p-5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-emerald-500/30 transition-all duration-300 text-left"
                 >
@@ -292,6 +376,18 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
           </div>
         </div>
       </main>
+
+      {/* Help / Onboarding tour - bottom left, just above the footer */}
+      <div className="shrink-0 px-6 pb-2 flex justify-start">
+        <button
+          onClick={() => setIsOnboardingOpen(true)}
+          className="w-9 h-9 rounded-full flex items-center justify-center bg-white/5 border border-white/15 text-white/60 hover:text-white hover:bg-white/15 hover:border-white/30 transition-all"
+          title="How it works"
+          aria-label="Open the getting started guide"
+        >
+          <HelpCircle className="w-5 h-5" />
+        </button>
+      </div>
 
       {/* Bottom tagline */}
       <footer className="py-3 px-6 shrink-0 border-t border-white/10">
@@ -343,6 +439,11 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
       {/* Feedback User Sign-up Modal */}
       {isFeedbackUserModalOpen && (
         <FeedbackUserModal onClose={() => setIsFeedbackUserModalOpen(false)} />
+      )}
+
+      {/* Onboarding / Getting Started Modal */}
+      {isOnboardingOpen && (
+        <OnboardingModal onClose={() => setIsOnboardingOpen(false)} />
       )}
     </div>
   )

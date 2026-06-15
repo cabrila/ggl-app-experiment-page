@@ -29,13 +29,144 @@ interface CharacterBibleContextType {
 const CharacterBibleContext = createContext<CharacterBibleContextType | undefined>(undefined)
 
 // Demo data - shown when user is not logged in
+
+// Helper: build described characters for a demo bible from compact tuples.
+// Tuple shape: [name, gender, ageRange, description]
+const buildCharacters = (
+  bibleKey: string,
+  rows: [string, string, string, string][]
+): Character[] =>
+  rows.map(([name, gender, ageRange, description], i) => ({
+    id: `${bibleKey}-char-${i + 1}`,
+    name,
+    aliases: [],
+    gender,
+    ageRange,
+    description,
+    sceneAppearances: [],
+  }))
+
+const extraDemoBibles: CharacterBible[] = [
+  {
+    id: "demo-bible-lighthouse",
+    name: "The Last Lighthouse",
+    createdAt: new Date("2026-05-02"),
+    updatedAt: new Date("2026-05-02"),
+    isDemo: true,
+    characters: buildCharacters("lh", [
+      ["Maren Hølt", "Female", "50s", "The widowed lighthouse keeper who refuses to abandon her post even as the coast erodes beneath her."],
+      ["Elias Voss", "Male", "30s", "A shipwreck survivor washed ashore with no memory of the night that brought him there."],
+      ["Greta Lund", "Female", "60s", "Maren's sharp-tongued sister who runs the village's only general store and knows everyone's secrets."],
+      ["Tobias Reyne", "Male", "40s", "A maritime inspector sent to decommission the lighthouse, torn between duty and conscience."],
+      ["Saoirse Mhic", "Female", "20s", "A folklore student recording the dying legends of the coastal town."],
+      ["Captain Ford", "Male", "60s", "A retired trawler captain haunted by the crew he lost in a storm decades ago."],
+      ["Lena Park", "Female", "30s", "The town doctor stretched thin across a hundred miles of scattered fishing hamlets."],
+      ["Niall Brennan", "Male", "teens", "A restless local boy who dreams of leaving on the next supply ferry."],
+      ["Edith Calloway", "Female", "70s", "The keeper of the church records, the last person alive who remembers the old wreck."],
+      ["Rurik Sand", "Male", "40s", "A salvage diver who profits from the very disasters the lighthouse exists to prevent."],
+      ["Imogen Ash", "Female", "30s", "A painter who arrived for a week and never left, obsessed with the light's rhythm."],
+      ["Samuel Crow", "Male", "50s", "The ferry operator and unofficial messenger between the island and the mainland."],
+    ]),
+  },
+  {
+    id: "demo-bible-neon",
+    name: "Neon Syndicate",
+    createdAt: new Date("2026-05-03"),
+    updatedAt: new Date("2026-05-03"),
+    isDemo: true,
+    characters: buildCharacters("ns", [
+      ["Kazimir Vale", "Male", "40s", "A syndicate fixer who launders memories instead of money in the city's data underworld."],
+      ["Juno Tan", "Female", "20s", "A street-level netrunner with a stolen neural deck and a target on her back."],
+      ["Director Okonkwo", "Male", "50s", "The corporate head of security who built the surveillance grid he now fears."],
+      ["Mira Solis", "Female", "30s", "A defected biohacker selling black-market upgrades from a noodle bar back room."],
+      ["The Cardinal", "Male", "60s", "An ageing crime lord who communicates only through proxies and prophecy."],
+      ["Dex Holloway", "Male", "30s", "A burnt-out enforcer trying to buy his way out of the life with one last job."],
+      ["Ada Quist", "Female", "40s", "An investigative journalist chasing the story that already killed two colleagues."],
+      ["Pulse", "Female", "20s", "A rogue AI wearing a synthetic body, learning what it means to want."],
+      ["Renzo Vex", "Male", "30s", "A nightclub owner whose VIP lounge is the syndicate's real boardroom."],
+      ["Officer Bly", "Female", "30s", "An honest cop in a precinct where honesty is a liability."],
+      ["Grandmother Yi", "Female", "70s", "A tenement matriarch who shelters runaways and trades in forbidden paper books."],
+      ["Silas Mott", "Male", "40s", "A ripperdoc whose clinic stitches up everyone the hospitals turn away."],
+    ]),
+  },
+  {
+    id: "demo-bible-harvest",
+    name: "Harvest Moon County",
+    createdAt: new Date("2026-05-04"),
+    updatedAt: new Date("2026-05-04"),
+    isDemo: true,
+    characters: buildCharacters("hm", [
+      ["Wade Calhoun", "Male", "50s", "A third-generation farmer fighting to keep the family land out of corporate hands."],
+      ["Ruth Calhoun", "Female", "50s", "Wade's wife and the steady accountant of a farm that no longer adds up."],
+      ["Jesse Calhoun", "Male", "20s", "The prodigal son returning from the city with a business degree and a secret."],
+      ["Darlene Webb", "Female", "40s", "The diner owner who feeds the whole county on credit and gossip."],
+      ["Sheriff Roy Tate", "Male", "50s", "A lawman whose loyalty to old friendships clashes with a new land dispute."],
+      ["Cora Mae", "Female", "teens", "A high-schooler determined to be the first in her family to leave for college."],
+      ["Hank Doyle", "Male", "60s", "A weathered ranch hand who has worked the Calhoun fields his whole life."],
+      ["Pastor Lyle", "Male", "40s", "A young preacher trying to hold a fracturing congregation together."],
+      ["Nadine Frost", "Female", "30s", "A developer's agent buying up foreclosed farms with a practiced smile."],
+      ["Earl Mott", "Male", "60s", "The bank manager torn between the ledgers and the neighbors he grew up with."],
+      ["Birdie Calhoun", "Female", "70s", "The family matriarch whose stories hold the deed to more than just land."],
+      ["Travis Kane", "Male", "30s", "A rival farmer whose feud with the Calhouns spans two generations."],
+    ]),
+  },
+  {
+    id: "demo-bible-orbital",
+    name: "Orbital Decay",
+    createdAt: new Date("2026-05-05"),
+    updatedAt: new Date("2026-05-05"),
+    isDemo: true,
+    characters: buildCharacters("od", [
+      ["Cmdr. Iris Vance", "Female", "40s", "The station commander rationing oxygen and morale as rescue grows unlikely."],
+      ["Dr. Anil Rao", "Male", "30s", "The mission biologist whose experiment may be the cause of the contamination."],
+      ["Yuki Tanaka", "Female", "30s", "A flight engineer keeping a dying station alive with duct tape and prayer."],
+      ["Marcus Eberle", "Male", "50s", "A corporate observer whose orders contradict the crew's survival."],
+      ["Petra Nilsen", "Female", "20s", "A rookie pilot on her first deployment, in over her head and hiding it."],
+      ["Solomon Bright", "Male", "60s", "The chaplain and counselor who has buried more crews than he'll admit."],
+      ["Dr. Lin Wei", "Female", "40s", "A physician forced to make triage choices no training prepared her for."],
+      ["Reese Donovan", "Male", "30s", "A comms officer intercepting transmissions the company wants buried."],
+      ["Astrid Holt", "Female", "50s", "Ground control's lead, fighting bureaucracy a quarter-million miles away."],
+      ["Owen Frye", "Male", "20s", "A maintenance tech who knows the station's vents better than its officers."],
+      ["Nova", "Female", "30s", "The station's synthetic intelligence, quietly rewriting its own directives."],
+      ["Gregor Pavlov", "Male", "50s", "A veteran cosmonaut whose old-school instincts clash with new protocol."],
+    ]),
+  },
+  {
+    id: "demo-bible-velvet",
+    name: "The Velvet Court",
+    createdAt: new Date("2026-05-06"),
+    updatedAt: new Date("2026-05-06"),
+    isDemo: true,
+    characters: buildCharacters("vc", [
+      ["Queen Aldreda", "Female", "40s", "A monarch ruling through intelligence and ice, surrounded by sharpening knives."],
+      ["Lord Cassian", "Male", "30s", "The ambitious chancellor whose loyalty is always for sale to the highest crown."],
+      ["Lady Rosalind", "Female", "20s", "A lady-in-waiting playing a far deeper game than her station suggests."],
+      ["SirBram", "Male", "40s", "The captain of the guard, honest to a fault in a court that punishes honesty."],
+      ["Magister Vey", "Male", "60s", "The court physician and poisoner, depending on who is paying."],
+      ["Princess Elowen", "Female", "teens", "The heir being groomed for a throne she is not sure she wants."],
+      ["Duke Harrow", "Male", "50s", "A border duke whose armies make him impossible to ignore or trust."],
+      ["Seraphine", "Female", "30s", "A foreign envoy whose charm masks a spymaster's discipline."],
+      ["Brother Aldous", "Male", "50s", "The royal confessor who hears every secret and keeps a ledger of them."],
+      ["Lady Wren", "Female", "40s", "The dowager whose faded influence still bends the council to her will."],
+      ["Tomas the Fool", "Male", "30s", "A jester who speaks the only truths allowed within the palace walls."],
+      ["Isolde", "Female", "20s", "A kitchen girl who overhears too much and survives by saying nothing."],
+    ]),
+  },
+]
+
 const demoBibles: CharacterBible[] = [
   {
     id: "demo-1",
     name: "Bluff Final",
-    characters: Array.from({ length: 21 }, (_, i) => ({
+    characters: [
+      "Eleanor Whitmore", "Marcus Bellamy", "Sophia Castellanos", "Declan Ross", "Vivian Hale",
+      "Julian Crane", "Beatrice Lowell", "Nathaniel Pierce", "Camille Devereaux", "Sebastian Vaughn",
+      "Adelaide Sinclair", "Oscar Mendoza", "Genevieve Holt", "Rafael Ortega", "Cordelia Banks",
+      "Theodore Marsh", "Isadora Quinn", "Lucian Fairfax", "Margot Ellison", "Gideon Thorne",
+      "Rosalind Carver",
+    ].map((name, i) => ({
       id: `char-${i + 1}`,
-      name: `Character ${i + 1}`,
+      name,
       aliases: [],
       gender: i % 2 === 0 ? "Male" : "Female",
       ageRange: "30s",
@@ -54,6 +185,7 @@ const demoBibles: CharacterBible[] = [
     updatedAt: new Date("2026-04-28"),
     isDemo: true,
   },
+  ...extraDemoBibles,
 ]
 
 export function CharacterBibleProvider({ children }: { children: ReactNode }) {

@@ -1,6 +1,6 @@
 "use client"
 
-import { CharacterBibleProvider, useCharacterBible } from "./CharacterBibleContext"
+import { useCharacterBible } from "./CharacterBibleContext"
 import ProjectsList from "./ProjectsList"
 import UploadView from "./UploadView"
 import ResultsView from "./ResultsView"
@@ -30,9 +30,6 @@ function CharacterBibleContent({ onBack, onSignOut, activeView, onNavigate }: Ch
 }
 
 export default function CharacterBibleScreen({ onBack, onSignOut, activeView, onNavigate }: CharacterBibleScreenProps) {
-  return (
-    <CharacterBibleProvider>
-      <CharacterBibleContent onBack={onBack} onSignOut={onSignOut} activeView={activeView} onNavigate={onNavigate} />
-    </CharacterBibleProvider>
-  )
+  // Provider mounted once at the app root (app/page.tsx).
+  return <CharacterBibleContent onBack={onBack} onSignOut={onSignOut} activeView={activeView} onNavigate={onNavigate} />
 }

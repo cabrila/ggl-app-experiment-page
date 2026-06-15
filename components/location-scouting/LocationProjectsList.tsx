@@ -94,7 +94,7 @@ export default function LocationProjectsList() {
             {/* Content Section - 2/3 width */}
             <button
               onClick={() => handleProjectClick(project.id)}
-              className="flex-1 flex flex-col justify-center p-5 text-left"
+              className="flex-1 min-w-0 flex flex-col justify-center p-5 text-left"
             >
               {/* Hover Actions */}
               {hoveredId === project.id && (
@@ -124,26 +124,26 @@ export default function LocationProjectsList() {
               )}
 
               {/* Project Name */}
-              <div className="flex items-center gap-2 mb-2 pr-16">
-                <h3 className="text-base font-bold text-white font-sans line-clamp-1">
+              <div className="mb-2 pr-16">
+                <h3 className="text-base font-bold text-white font-sans leading-snug break-words line-clamp-2">
                   {project.name}
                 </h3>
                 {project.isDemo && (
-                  <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px] px-1.5 py-0">
+                  <Badge className="mt-1.5 bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px] px-1.5 py-0">
                     Demo
                   </Badge>
                 )}
               </div>
 
               {/* Meta Info */}
-              <div className="flex flex-wrap items-center gap-3 text-xs text-white/50">
-                <div className="flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5" />
-                  <span>{project.locations.length} locations</span>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/50">
+                <div className="flex items-center gap-1 min-w-0">
+                  <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="truncate">{project.locations.length} locations</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span>
+                <div className="flex items-center gap-1 min-w-0">
+                  <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="truncate">
                     {project.createdAt.toLocaleDateString("en-US", {
                       month: "short",
                       day: "numeric",

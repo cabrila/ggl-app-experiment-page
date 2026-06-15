@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Upload, ArrowLeft, FileText, Loader2, X, AlertCircle, RefreshCw } from "lucide-react"
+import { Upload, ArrowLeft, FileText, Loader2, X, AlertCircle, RefreshCw, PenLine, Download } from "lucide-react"
 import { usePropList } from "./PropListContext"
 import { Prop, PropCategory, PropProject } from "@/types/prop-list"
 import { useImportJob } from "@/hooks/useImportJob"
@@ -34,6 +34,9 @@ export default function PropUploadView() {
   const [isDragging, setIsDragging] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // Guard so a completed extraction creates its project exactly ONCE (the
+  // completion effect re-fires as addProject's identity changes on re-render).
+  const createdRef = useRef(false)
 
   // Same upstream AI service as Character Bible — see `useImportJob` and
   // `app/api/import/[taskType]/route.ts`. No direct Gemini call.
@@ -87,7 +90,8 @@ export default function PropUploadView() {
 
   // Map upstream result -> Prop[] -> new project (same pattern as Character Bible)
   useEffect(() => {
-    if (status !== "complete" || !result || !file) return
+    if (status !== "complete" || !result || !file || createdRef.current) return
+    createdRef.current = true
 
     const incoming = Array.isArray(result.props) ? result.props : []
     const props: Prop[] = incoming.map((p, i) => {
@@ -122,6 +126,7 @@ export default function PropUploadView() {
 
   const handleRetry = () => {
     reset()
+    createdRef.current = false
     setFile(null)
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
@@ -129,7 +134,21 @@ export default function PropUploadView() {
   const removeFile = () => {
     setFile(null)
     reset()
+    createdRef.current = false
     if (fileInputRef.current) fileInputRef.current.value = ""
+  }
+
+  const handleCreateManually = () => {
+    const newProject: PropProject = {
+      id: crypto.randomUUID(),
+      name: "New Prop List",
+      props: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+    addProject(newProject)
+    setCurrentProject(newProject)
+    setView("results")
   }
 
   return (
@@ -140,7 +159,7 @@ export default function PropUploadView() {
           className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span className="text-sm font-sans">Back to Projects</span>
+          <span className="text-sm font-sans">Back to My Props</span>
         </button>
       </header>
 
@@ -152,6 +171,21 @@ export default function PropUploadView() {
           <p className="text-white/60 text-center mb-8 font-sans">
             Upload your script (PDF or DOCX). AI will identify props and which scenes they appear in.
           </p>
+
+          {/* Sample screenplay download */}
+          <div className="flex flex-col items-center -mt-4 mb-8">
+            <a
+              href="/screenplays/A_Dinner_Party_screenplay.pdf"
+              download="A_Dinner_Party_screenplay.pdf"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 hover:bg-rose-500/20 hover:text-rose-200 transition-colors font-sans text-sm"
+            >
+              <Download className="w-4 h-4 shrink-0" />
+              <span>Download a sample screenplay</span>
+            </a>
+            <p className="mt-2 text-white/40 text-xs font-sans text-center max-w-md">
+              No script handy? Test the tools with this screenplay — the material is not copyrighted and free to use.
+            </p>
+          </div>
 
           <div className="w-full h-px bg-white/10 mb-8" />
 
@@ -237,6 +271,19 @@ export default function PropUploadView() {
                 onChange={handleFileSelect}
                 className="hidden"
               />
+            </div>
+          )}
+
+          {/* Manual Create Option */}
+          {!isProcessing && (
+            <div className="mt-8 pt-6 border-t border-white/10">
+              <button
+                onClick={handleCreateManually}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 hover:text-white rounded-xl transition-colors font-sans"
+              >
+                <PenLine className="w-4 h-4" />
+                Create Prop List Manually
+              </button>
             </div>
           )}
         </div>

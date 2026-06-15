@@ -8,6 +8,14 @@ interface CharacterCardProps {
   character: Character
   onUpdate: (updates: Partial<Character>) => void
   onDelete: () => void
+  /** When true, collapsible sections are rendered fully expanded (used inside the detail modal). */
+  forceExpanded?: boolean
+  /** When provided (and not forceExpanded), clicking the character name opens the detail modal. */
+  onNameClick?: () => void
+  /** When provided (and not forceExpanded), clicking the edit button opens the detail modal in edit mode. */
+  onEditClick?: () => void
+  /** When true, the card mounts directly in edit mode (used by the modal's edit flow). */
+  startInEdit?: boolean
 }
 
 // Treat unknown / empty as "no value" for display purposes.
@@ -16,8 +24,16 @@ function isMeaningful(value: string | undefined | null): boolean {
   return value.trim().toLowerCase() !== "unknown"
 }
 
-export default function CharacterCard({ character, onUpdate, onDelete }: CharacterCardProps) {
-  const [isEditing, setIsEditing] = useState(false)
+export default function CharacterCard({
+  character,
+  onUpdate,
+  onDelete,
+  forceExpanded = false,
+  onNameClick,
+  onEditClick,
+  startInEdit = false,
+}: CharacterCardProps) {
+  const [isEditing, setIsEditing] = useState(startInEdit)
   const [isAppearancesOpen, setIsAppearancesOpen] = useState(false)
   const [editState, setEditState] = useState({
     name: character.name,
@@ -164,7 +180,7 @@ export default function CharacterCard({ character, onUpdate, onDelete }: Charact
       {/* Hover Actions */}
       <div className="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
-          onClick={() => setIsEditing(true)}
+          onClick={() => (onEditClick && !forceExpanded ? onEditClick() : setIsEditing(true))}
           className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
           title="Edit character"
         >
@@ -181,9 +197,17 @@ export default function CharacterCard({ character, onUpdate, onDelete }: Charact
 
       {/* Character Name */}
       <div className="mb-2 pr-20">
-        <h3 className="text-xl font-bold text-white font-sans uppercase tracking-wide">
-          {character.name}
-        </h3>
+        {onNameClick && !forceExpanded ? (
+          <button onClick={onNameClick} className="text-left max-w-full" title="View full character details">
+            <h3 className="text-xl font-bold text-white font-sans uppercase tracking-wide hover:text-emerald-300 transition-colors cursor-pointer">
+              {character.name}
+            </h3>
+          </button>
+        ) : (
+          <h3 className="text-xl font-bold text-white font-sans uppercase tracking-wide">
+            {character.name}
+          </h3>
+        )}
       </div>
 
       {/* Aliases */}
@@ -246,17 +270,19 @@ export default function CharacterCard({ character, onUpdate, onDelete }: Charact
       {/* Scene Appearances (collapsible) */}
       {hasAppearances && (
         <div className="mt-3">
-          <button
-            onClick={() => setIsAppearancesOpen(!isAppearancesOpen)}
-            className="flex items-center gap-2 text-sm text-white/50 hover:text-white/70 transition-colors w-full"
-          >
-            {isAppearancesOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            <span className="font-sans">
-              Scene Appearances ({appearanceCount})
-            </span>
-          </button>
+          {!forceExpanded && (
+            <button
+              onClick={() => setIsAppearancesOpen(!isAppearancesOpen)}
+              className="flex items-center gap-2 text-sm text-white/50 hover:text-white/70 transition-colors w-full"
+            >
+              {isAppearancesOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              <span className="font-sans">
+                Scene Appearances ({appearanceCount})
+              </span>
+            </button>
+          )}
 
-          {isAppearancesOpen && (
+          {(forceExpanded || isAppearancesOpen) && (
             <div className="mt-3 space-y-3">
               {character.sceneAppearances.map((sa, idx) => (
                 <div

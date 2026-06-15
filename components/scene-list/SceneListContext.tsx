@@ -10,6 +10,7 @@ import {
   updateSceneProject as updateSceneProjectInFirestore,
   deleteSceneProject as deleteSceneProjectFromFirestore,
 } from "@/lib/firestore"
+import { loadDemoData, saveDemoData, DEMO_STORAGE_KEYS } from "@/utils/demoPersistence"
 
 type ViewState = "projects" | "upload" | "results"
 
@@ -94,20 +95,208 @@ const demoProjects: SceneProject[] = [
       },
     ],
   },
+  {
+    id: "demo-2",
+    name: "THE HARBOR LIGHT",
+    createdAt: new Date("2026-04-18"),
+    updatedAt: new Date("2026-04-18"),
+    isDemo: true,
+    scenes: [
+      {
+        id: "1",
+        sceneNumber: 1,
+        sceneHeading: "EXT. LIGHTHOUSE - DAWN",
+        location: "LIGHTHOUSE",
+        timeOfDay: "DAWN",
+        rawText:
+          "Waves crash against the rocks below an aging lighthouse. Maren climbs the spiral stairs, a lantern swinging in her grip.",
+      },
+      {
+        id: "2",
+        sceneNumber: 2,
+        sceneHeading: "INT. KEEPER'S COTTAGE - MORNING",
+        location: "KEEPER'S COTTAGE",
+        timeOfDay: "MORNING",
+        rawText:
+          "A cramped room lined with charts and brass instruments. Maren brews coffee while a radio crackles a storm warning.",
+      },
+      {
+        id: "3",
+        sceneNumber: 3,
+        sceneHeading: "EXT. DOCKS - DAY",
+        location: "DOCKS",
+        timeOfDay: "DAY",
+        rawText:
+          "Fishermen haul nets under a gray sky. A stranger in a long coat watches the lighthouse from the end of the pier.",
+      },
+      {
+        id: "4",
+        sceneNumber: 4,
+        sceneHeading: "INT. LANTERN ROOM - NIGHT",
+        location: "LANTERN ROOM",
+        timeOfDay: "NIGHT",
+        rawText:
+          "The great lamp rotates slowly. Maren spots a ship listing dangerously close to the reef and lunges for the foghorn.",
+      },
+      {
+        id: "5",
+        sceneNumber: 5,
+        sceneHeading: "EXT. REEF - NIGHT",
+        location: "REEF",
+        timeOfDay: "NIGHT",
+        rawText:
+          "Rain lashes the foundering vessel. Maren rows a small dinghy through the swells toward the wreck.",
+      },
+    ],
+  },
+  {
+    id: "demo-3",
+    name: "CITY OF ASH",
+    createdAt: new Date("2026-03-30"),
+    updatedAt: new Date("2026-03-30"),
+    isDemo: true,
+    scenes: [
+      {
+        id: "1",
+        sceneNumber: 1,
+        sceneHeading: "EXT. RUINED SKYLINE - DUSK",
+        location: "RUINED SKYLINE",
+        timeOfDay: "DUSK",
+        rawText:
+          "Smoke drifts over the skeletal remains of a metropolis. A lone figure picks through rubble, scavenging for supplies.",
+      },
+      {
+        id: "2",
+        sceneNumber: 2,
+        sceneHeading: "INT. SUBWAY TUNNEL - CONTINUOUS",
+        location: "SUBWAY TUNNEL",
+        timeOfDay: "NIGHT",
+        rawText:
+          "Flashlight beams cut through the dark. A small band of survivors moves quietly past a derailed train car.",
+      },
+      {
+        id: "3",
+        sceneNumber: 3,
+        sceneHeading: "INT. SHELTER - NIGHT",
+        location: "SHELTER",
+        timeOfDay: "NIGHT",
+        rawText:
+          "Candles flicker around a makeshift camp. Elena divides the last of the rations while the others sleep.",
+      },
+      {
+        id: "4",
+        sceneNumber: 4,
+        sceneHeading: "EXT. CHECKPOINT - DAY",
+        location: "CHECKPOINT",
+        timeOfDay: "DAY",
+        rawText:
+          "Armed sentries guard a barricaded street. Elena negotiates passage, her hands raised and steady.",
+      },
+    ],
+  },
+  {
+    id: "demo-4",
+    name: "TIDES OF SUMMER",
+    createdAt: new Date("2026-03-12"),
+    updatedAt: new Date("2026-03-12"),
+    isDemo: true,
+    scenes: [
+      {
+        id: "1",
+        sceneNumber: 1,
+        sceneHeading: "EXT. BEACH HOUSE - MORNING",
+        location: "BEACH HOUSE",
+        timeOfDay: "MORNING",
+        rawText:
+          "Sunlight spills across a weathered porch. Nora carries her bags up the steps as gulls wheel overhead.",
+      },
+      {
+        id: "2",
+        sceneNumber: 2,
+        sceneHeading: "EXT. BOARDWALK - DAY",
+        location: "BOARDWALK",
+        timeOfDay: "DAY",
+        rawText:
+          "Crowds drift past arcades and ice cream stands. Nora and Theo share a bench, laughing over an old photograph.",
+      },
+      {
+        id: "3",
+        sceneNumber: 3,
+        sceneHeading: "INT. DINER - EVENING",
+        location: "DINER",
+        timeOfDay: "EVENING",
+        rawText:
+          "Neon hums above red vinyl booths. Theo confesses he is leaving at the end of the season.",
+      },
+      {
+        id: "4",
+        sceneNumber: 4,
+        sceneHeading: "EXT. PIER - NIGHT",
+        location: "PIER",
+        timeOfDay: "NIGHT",
+        rawText:
+          "Fireworks bloom over the water. Nora watches alone, then turns as footsteps approach behind her.",
+      },
+    ],
+  },
+  {
+    id: "demo-5",
+    name: "THE LONG WINTER",
+    createdAt: new Date("2026-02-20"),
+    updatedAt: new Date("2026-02-20"),
+    isDemo: true,
+    scenes: [
+      {
+        id: "1",
+        sceneNumber: 1,
+        sceneHeading: "EXT. MOUNTAIN PASS - DAY",
+        location: "MOUNTAIN PASS",
+        timeOfDay: "DAY",
+        rawText:
+          "Snow blankets a treacherous ridge. A convoy of horses struggles upward against a biting wind.",
+      },
+      {
+        id: "2",
+        sceneNumber: 2,
+        sceneHeading: "INT. LODGE - NIGHT",
+        location: "LODGE",
+        timeOfDay: "NIGHT",
+        rawText:
+          "A fire roars in a stone hearth. Travelers huddle close, trading stories while the storm howls outside.",
+      },
+      {
+        id: "3",
+        sceneNumber: 3,
+        sceneHeading: "EXT. FROZEN LAKE - DAY",
+        location: "FROZEN LAKE",
+        timeOfDay: "DAY",
+        rawText:
+          "Ice groans underfoot. Anders tests each step with a long staff as the others wait at the shoreline.",
+      },
+    ],
+  },
 ]
 
 export function SceneListProvider({ children }: { children: ReactNode }) {
-  const [projects, setProjects] = useState<SceneProject[]>(demoProjects)
+  const [projects, setProjects] = useState<SceneProject[]>(() =>
+    loadDemoData(DEMO_STORAGE_KEYS.sceneProjects, demoProjects)
+  )
   const [currentProject, setCurrentProject] = useState<SceneProject | null>(null)
   const [view, setView] = useState<ViewState>("projects")
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  // Persist demo-mode data so it survives navigation/remounts when no backend is signed in.
+  useEffect(() => {
+    if (user) return
+    saveDemoData(DEMO_STORAGE_KEYS.sceneProjects, projects)
+  }, [projects, user])
+
   useEffect(() => {
     const unsubscribe = subscribeToAuthStateChanges((authUser) => {
       setUser(authUser)
       if (!authUser) {
-        setProjects(demoProjects)
+        setProjects(loadDemoData(DEMO_STORAGE_KEYS.sceneProjects, demoProjects))
         setCurrentProject(null)
         setView("projects")
         setIsLoading(false)

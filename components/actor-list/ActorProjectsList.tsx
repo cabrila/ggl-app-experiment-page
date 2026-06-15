@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Users, Calendar, Pencil, Trash2, Share2 } from "lucide-react"
+import { Plus, Users, Calendar, Pencil, Trash2, Share2, Database, ChevronRight } from "lucide-react"
 import { useActorList } from "./ActorListContext"
 import { ActorListProject } from "@/types/actor-list"
 import DeleteConfirmationModal from "@/components/ui/DeleteConfirmationModal"
@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import ShareModal from "@/components/modals/ShareModal"
 
 export default function ActorProjectsList() {
-  const { projects, selectProject, deleteProject, updateProject, setView } = useActorList()
+  const { projects, allActors, selectProject, deleteProject, updateProject, setView } = useActorList()
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ActorListProject | null>(null)
   const [editTarget, setEditTarget] = useState<ActorListProject | null>(null)
@@ -66,6 +66,39 @@ export default function ActorProjectsList() {
 
       {/* Projects Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* All Actors - permanent aggregated card */}
+        <button
+          onClick={() => setView("all-actors")}
+          className="group relative flex rounded-xl border-2 border-sky-500/30 bg-gradient-to-br from-sky-500/10 to-sky-600/5 hover:border-sky-500/50 transition-all overflow-hidden text-left"
+        >
+          {/* Icon Section - 1/3 width */}
+          <div className="w-1/3 min-h-[140px] bg-sky-500/10 border-r border-sky-500/20 flex-shrink-0 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-xl bg-sky-500/20 flex items-center justify-center">
+              <Database className="w-8 h-8 text-sky-400" />
+            </div>
+          </div>
+
+          {/* Content Section - 2/3 width */}
+          <div className="flex-1 flex flex-col justify-center p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <h3 className="text-base font-semibold text-white font-sans">All Actors</h3>
+              <ChevronRight className="w-4 h-4 text-sky-400 group-hover:translate-x-0.5 transition-transform" />
+            </div>
+            <p className="text-xs text-white/50 mb-3 font-sans">
+              Aggregated view of all actors across your lists
+            </p>
+            <div className="flex flex-wrap items-center gap-3 text-xs text-sky-300/80">
+              <div className="flex items-center gap-1">
+                <Users className="w-3.5 h-3.5" />
+                <span>{allActors.length} actors</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span>{projects.length} lists</span>
+              </div>
+            </div>
+          </div>
+        </button>
+
         {/* Existing Projects */}
         {projects.map((project) => (
           <div
@@ -94,7 +127,7 @@ export default function ActorProjectsList() {
             {/* Content Section - 2/3 width */}
             <button
               onClick={() => selectProject(project.id)}
-              className="flex-1 flex flex-col justify-center p-5 text-left cursor-pointer"
+              className="flex-1 min-w-0 flex flex-col justify-center p-5 text-left cursor-pointer"
             >
               {/* Hover Actions */}
               {hoveredId === project.id && (
@@ -124,26 +157,26 @@ export default function ActorProjectsList() {
               )}
 
               {/* Project Name */}
-              <div className="flex items-center gap-2 mb-2 pr-16">
-                <h3 className="text-base font-semibold text-white font-sans line-clamp-1">
+              <div className="mb-2 pr-16">
+                <h3 className="text-base font-semibold text-white font-sans leading-snug break-words line-clamp-2">
                   {project.name}
                 </h3>
                 {project.isDemo && (
-                  <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px] px-1.5 py-0">
+                  <Badge className="mt-1.5 bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px] px-1.5 py-0">
                     Demo
                   </Badge>
                 )}
               </div>
 
               {/* Meta Info */}
-              <div className="flex flex-wrap items-center gap-3 text-xs text-white/50">
-                <div className="flex items-center gap-1">
-                  <Users className="w-3.5 h-3.5" />
-                  <span>{project.actors.length} actors</span>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/50">
+                <div className="flex items-center gap-1 min-w-0">
+                  <Users className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="truncate">{project.actors.length} actors</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span>{formatDate(project.createdAt)}</span>
+                <div className="flex items-center gap-1 min-w-0">
+                  <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="truncate">{formatDate(project.createdAt)}</span>
                 </div>
               </div>
             </button>

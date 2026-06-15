@@ -10,6 +10,7 @@ import {
   updatePropProject as updatePropProjectInFirestore,
   deletePropProject as deletePropProjectFromFirestore,
 } from "@/lib/firestore"
+import { loadDemoData, saveDemoData, DEMO_STORAGE_KEYS } from "@/utils/demoPersistence"
 
 type ViewState = "projects" | "upload" | "results"
 
@@ -148,20 +149,274 @@ const demoProjects: PropProject[] = [
       },
     ],
   },
+  {
+    id: "demo-2",
+    name: "THE HARBOR LIGHT",
+    createdAt: new Date("2026-04-18"),
+    updatedAt: new Date("2026-04-18"),
+    isDemo: true,
+    props: [
+      {
+        id: "1",
+        name: "Brass Lantern",
+        category: "tool",
+        description:
+          "A weathered brass lantern carried by Maren up the lighthouse stairs. Its warm glow lights the cramped spiral passage.",
+        sceneAppearances: [
+          {
+            id: "a1",
+            sceneHeading: "EXT. LIGHTHOUSE - DAWN",
+            handledBy: "MAREN",
+            citation: "Maren climbs the spiral stairs, a lantern swinging in her grip.",
+          },
+        ],
+      },
+      {
+        id: "2",
+        name: "Nautical Charts",
+        category: "document",
+        description:
+          "A stack of yellowed sea charts marked with reefs and currents, pinned around the keeper's cottage walls.",
+        sceneAppearances: [
+          {
+            id: "a1",
+            sceneHeading: "INT. KEEPER'S COTTAGE - MORNING",
+            handledBy: "MAREN",
+            citation: "A cramped room lined with charts and brass instruments.",
+          },
+        ],
+      },
+      {
+        id: "3",
+        name: "Foghorn",
+        category: "tool",
+        description:
+          "The lighthouse foghorn lever, pulled to warn ships off the reef during the storm.",
+        sceneAppearances: [
+          {
+            id: "a1",
+            sceneHeading: "INT. LANTERN ROOM - NIGHT",
+            handledBy: "MAREN",
+            citation: "Maren spots a ship listing dangerously close to the reef and lunges for the foghorn.",
+          },
+        ],
+      },
+      {
+        id: "4",
+        name: "Dinghy",
+        category: "vehicle",
+        description:
+          "A small wooden rowing dinghy Maren uses to reach the foundering vessel through heavy swells.",
+        sceneAppearances: [
+          {
+            id: "a1",
+            sceneHeading: "EXT. REEF - NIGHT",
+            handledBy: "MAREN",
+            citation: "Maren rows a small dinghy through the swells toward the wreck.",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "demo-3",
+    name: "CITY OF ASH",
+    createdAt: new Date("2026-03-30"),
+    updatedAt: new Date("2026-03-30"),
+    isDemo: true,
+    props: [
+      {
+        id: "1",
+        name: "Scavenger's Pack",
+        category: "container",
+        description:
+          "A patched canvas rucksack stuffed with salvaged tools and tins, carried through the ruined skyline.",
+        sceneAppearances: [
+          {
+            id: "a1",
+            sceneHeading: "EXT. RUINED SKYLINE - DUSK",
+            handledBy: "SURVIVOR",
+            citation: "A lone figure picks through rubble, scavenging for supplies.",
+          },
+        ],
+      },
+      {
+        id: "2",
+        name: "Hand-Crank Flashlight",
+        category: "tool",
+        description:
+          "A battered hand-crank flashlight whose beam cuts through the subway dark.",
+        sceneAppearances: [
+          {
+            id: "a1",
+            sceneHeading: "INT. SUBWAY TUNNEL - CONTINUOUS",
+            handledBy: "SURVIVORS",
+            citation: "Flashlight beams cut through the dark.",
+          },
+        ],
+      },
+      {
+        id: "3",
+        name: "Ration Tins",
+        category: "food_or_drink",
+        description:
+          "A dwindling cache of dented ration tins, divided carefully by Elena at the shelter.",
+        sceneAppearances: [
+          {
+            id: "a1",
+            sceneHeading: "INT. SHELTER - NIGHT",
+            handledBy: "ELENA",
+            citation: "Elena divides the last of the rations while the others sleep.",
+          },
+        ],
+      },
+      {
+        id: "4",
+        name: "Sentry Rifle",
+        category: "weapon",
+        description:
+          "A worn service rifle slung by the checkpoint sentries guarding the barricaded street.",
+        sceneAppearances: [
+          {
+            id: "a1",
+            sceneHeading: "EXT. CHECKPOINT - DAY",
+            handledBy: "SENTRY",
+            citation: "Armed sentries guard a barricaded street.",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "demo-4",
+    name: "TIDES OF SUMMER",
+    createdAt: new Date("2026-03-12"),
+    updatedAt: new Date("2026-03-12"),
+    isDemo: true,
+    props: [
+      {
+        id: "1",
+        name: "Old Photograph",
+        category: "document",
+        description:
+          "A creased snapshot of two children on the boardwalk that Nora and Theo pore over, laughing.",
+        sceneAppearances: [
+          {
+            id: "a1",
+            sceneHeading: "EXT. BOARDWALK - DAY",
+            handledBy: "NORA",
+            citation: "Nora and Theo share a bench, laughing over an old photograph.",
+          },
+        ],
+      },
+      {
+        id: "2",
+        name: "Travel Bags",
+        category: "container",
+        description:
+          "A pair of canvas travel bags Nora hauls up the beach-house steps at the start of the season.",
+        sceneAppearances: [
+          {
+            id: "a1",
+            sceneHeading: "EXT. BEACH HOUSE - MORNING",
+            handledBy: "NORA",
+            citation: "Nora carries her bags up the steps as gulls wheel overhead.",
+          },
+        ],
+      },
+      {
+        id: "3",
+        name: "Diner Jukebox",
+        category: "other",
+        description:
+          "A chrome tabletop jukebox glowing in the diner booth as Theo shares his news.",
+        sceneAppearances: [
+          {
+            id: "a1",
+            sceneHeading: "INT. DINER - EVENING",
+            handledBy: "THEO",
+            citation: "Neon hums above red vinyl booths.",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "demo-5",
+    name: "THE LONG WINTER",
+    createdAt: new Date("2026-02-20"),
+    updatedAt: new Date("2026-02-20"),
+    isDemo: true,
+    props: [
+      {
+        id: "1",
+        name: "Walking Staff",
+        category: "tool",
+        description:
+          "A long wooden staff Anders uses to test the ice as the party crosses the frozen lake.",
+        sceneAppearances: [
+          {
+            id: "a1",
+            sceneHeading: "EXT. FROZEN LAKE - DAY",
+            handledBy: "ANDERS",
+            citation: "Anders tests each step with a long staff as the others wait at the shoreline.",
+          },
+        ],
+      },
+      {
+        id: "2",
+        name: "Pack Horses' Harness",
+        category: "equipment",
+        description:
+          "Heavy leather harnesses on the convoy horses straining up the snowbound mountain pass.",
+        sceneAppearances: [
+          {
+            id: "a1",
+            sceneHeading: "EXT. MOUNTAIN PASS - DAY",
+            handledBy: "CONVOY",
+            citation: "A convoy of horses struggles upward against a biting wind.",
+          },
+        ],
+      },
+      {
+        id: "3",
+        name: "Iron Lantern",
+        category: "tool",
+        description:
+          "A black iron lantern hung by the lodge hearth, casting flickering light over the gathered travelers.",
+        sceneAppearances: [
+          {
+            id: "a1",
+            sceneHeading: "INT. LODGE - NIGHT",
+            handledBy: "TRAVELERS",
+            citation: "A fire roars in a stone hearth. Travelers huddle close.",
+          },
+        ],
+      },
+    ],
+  },
 ]
 
 export function PropListProvider({ children }: { children: ReactNode }) {
-  const [projects, setProjects] = useState<PropProject[]>(demoProjects)
+  const [projects, setProjects] = useState<PropProject[]>(() =>
+    loadDemoData(DEMO_STORAGE_KEYS.propProjects, demoProjects)
+  )
   const [currentProject, setCurrentProject] = useState<PropProject | null>(null)
   const [view, setView] = useState<ViewState>("projects")
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  // Persist demo-mode data so it survives navigation/remounts when no backend is signed in.
+  useEffect(() => {
+    if (user) return
+    saveDemoData(DEMO_STORAGE_KEYS.propProjects, projects)
+  }, [projects, user])
+
   useEffect(() => {
     const unsubscribe = subscribeToAuthStateChanges((authUser) => {
       setUser(authUser)
       if (!authUser) {
-        setProjects(demoProjects)
+        setProjects(loadDemoData(DEMO_STORAGE_KEYS.propProjects, demoProjects))
         setCurrentProject(null)
         setView("projects")
         setIsLoading(false)

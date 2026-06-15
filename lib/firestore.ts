@@ -2,6 +2,7 @@ import {
   collection,
   doc,
   addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   onSnapshot,
@@ -12,7 +13,7 @@ import {
 } from "firebase/firestore"
 import { db } from "./firebase"
 import { CharacterBible } from "@/types/character-bible"
-import { ActorListProject } from "@/types/actor-list"
+import { ActorListProject, Actor } from "@/types/actor-list"
 import { LocationProject } from "@/types/location-scouting"
 import { PropProject } from "@/types/prop-list"
 import { SceneProject } from "@/types/scene-list"
@@ -237,6 +238,45 @@ export async function deleteActorProject(
 
   const projectRef = doc(db, `users/${userId}/actorProjects/${projectId}`)
   await deleteDoc(projectRef)
+}
+
+// ==================== STANDALONE ACTORS ====================
+// Actors that don't belong to any list. Stored one doc per actor, keyed by the
+// actor's own id, under users/{userId}/standaloneActors. Unlike projects, an
+// Actor has no createdAt/updatedAt, so we persist it as-is.
+
+export function subscribeToStandaloneActors(
+  userId: string,
+  onData: (actors: Actor[]) => void,
+  onError: (error: Error) => void
+): Unsubscribe {
+  if (!isFirestoreInitialized()) {
+    onError(new Error("Firestore not initialized"))
+    return () => {}
+  }
+
+  const actorsRef = collection(db, `users/${userId}/standaloneActors`)
+
+  return onSnapshot(
+    actorsRef,
+    (snapshot) => {
+      const actors = snapshot.docs.map((d) => ({ ...d.data(), id: d.id } as Actor))
+      onData(actors)
+    },
+    onError
+  )
+}
+
+export async function saveStandaloneActor(userId: string, actor: Actor): Promise<void> {
+  if (!isFirestoreInitialized()) throw new Error("Firestore not initialized")
+  const actorRef = doc(db, `users/${userId}/standaloneActors/${actor.id}`)
+  await setDoc(actorRef, stripUndefined(actor))
+}
+
+export async function deleteStandaloneActor(userId: string, actorId: string): Promise<void> {
+  if (!isFirestoreInitialized()) throw new Error("Firestore not initialized")
+  const actorRef = doc(db, `users/${userId}/standaloneActors/${actorId}`)
+  await deleteDoc(actorRef)
 }
 
 // ==================== LOCATION PROJECTS ====================

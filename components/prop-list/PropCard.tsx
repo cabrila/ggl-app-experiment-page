@@ -38,10 +38,26 @@ interface PropCardProps {
   prop: Prop
   onUpdate: (prop: Prop) => void
   onDelete: () => void
+  /** When true, collapsible sections are rendered fully expanded (used inside the detail modal). */
+  forceExpanded?: boolean
+  /** When provided (and not forceExpanded), clicking the prop name opens the detail modal. */
+  onNameClick?: () => void
+  /** When provided (and not forceExpanded), clicking the edit button opens the detail modal in edit mode. */
+  onEditClick?: () => void
+  /** When true, the card mounts directly in edit mode (used by the modal's edit flow). */
+  startInEdit?: boolean
 }
 
-export default function PropCard({ prop, onUpdate, onDelete }: PropCardProps) {
-  const [isEditing, setIsEditing] = useState(false)
+export default function PropCard({
+  prop,
+  onUpdate,
+  onDelete,
+  forceExpanded = false,
+  onNameClick,
+  onEditClick,
+  startInEdit = false,
+}: PropCardProps) {
+  const [isEditing, setIsEditing] = useState(startInEdit)
   const [editData, setEditData] = useState<Prop>(prop)
   const [isExpanded, setIsExpanded] = useState(false)
 
@@ -209,7 +225,7 @@ export default function PropCard({ prop, onUpdate, onDelete }: PropCardProps) {
     <div className="group relative p-5 rounded-xl border border-white/10 bg-[#1a2e23] hover:border-white/20 transition-colors">
       <div className="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
-          onClick={() => setIsEditing(true)}
+          onClick={() => (onEditClick && !forceExpanded ? onEditClick() : setIsEditing(true))}
           className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
           title="Edit prop"
         >
@@ -229,7 +245,15 @@ export default function PropCard({ prop, onUpdate, onDelete }: PropCardProps) {
           <Package className="w-5 h-5 text-rose-400" />
         </div>
         <div className="flex-1 min-w-0 pr-16">
-          <h3 className="text-lg font-bold text-white font-sans leading-tight">{prop.name}</h3>
+          {onNameClick && !forceExpanded ? (
+            <button onClick={onNameClick} className="text-left max-w-full" title="View full prop details">
+              <h3 className="text-lg font-bold text-white font-sans leading-tight hover:text-rose-300 transition-colors cursor-pointer">
+                {prop.name}
+              </h3>
+            </button>
+          ) : (
+            <h3 className="text-lg font-bold text-white font-sans leading-tight">{prop.name}</h3>
+          )}
           <span className="text-xs text-rose-400 font-sans uppercase tracking-wide">
             {CATEGORY_LABELS[prop.category]}
           </span>
@@ -249,18 +273,20 @@ export default function PropCard({ prop, onUpdate, onDelete }: PropCardProps) {
 
       {prop.sceneAppearances.length > 0 && (
         <div className="mt-3">
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="flex items-center gap-2 text-sm text-white/50 hover:text-white/70 transition-colors w-full"
-          >
-            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            <span className="font-sans">
-              {prop.sceneAppearances.length} Scene Appearance
-              {prop.sceneAppearances.length !== 1 ? "s" : ""}
-            </span>
-          </button>
+          {!forceExpanded && (
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="flex items-center gap-2 text-sm text-white/50 hover:text-white/70 transition-colors w-full"
+            >
+              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              <span className="font-sans">
+                {prop.sceneAppearances.length} Scene Appearance
+                {prop.sceneAppearances.length !== 1 ? "s" : ""}
+              </span>
+            </button>
+          )}
 
-          {isExpanded && (
+          {(forceExpanded || isExpanded) && (
             <div className="mt-3 space-y-2">
               {prop.sceneAppearances.map((app) => (
                 <div key={app.id} className="p-3 bg-[#0f1f17] rounded-lg">

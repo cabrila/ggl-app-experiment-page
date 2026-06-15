@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone, ArrowRight, Package, Film, DollarSign, UserPlus, Menu, X } from "lucide-react"
+import { LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone, ArrowRight, Package, Film, DollarSign, UserPlus, Menu, X, HelpCircle } from "lucide-react"
 import { useCasting } from "@/components/casting/CastingContext"
 import FeedbackModal from "@/components/modals/FeedbackModal"
 import FeedbackUserModal from "@/components/modals/FeedbackUserModal"
+import OnboardingModal from "@/components/modals/OnboardingModal"
 import { trackFeatureClick, type FeatureName } from "@/lib/analytics"
 import { useFirebaseUser } from "@/hooks/useFirebaseUser"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -69,6 +70,7 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false)
   const [isFeedbackUserModalOpen, setIsFeedbackUserModalOpen] = useState(false)
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const userButtonRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -371,6 +373,18 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
         </div>
       </main>
 
+      {/* Help / Onboarding tour - bottom left, just above the footer */}
+      <div className="shrink-0 px-6 pb-2 flex justify-start">
+        <button
+          onClick={() => setIsOnboardingOpen(true)}
+          className="w-9 h-9 rounded-full flex items-center justify-center bg-white/5 border border-white/15 text-white/60 hover:text-white hover:bg-white/15 hover:border-white/30 transition-all"
+          title="How it works"
+          aria-label="Open the getting started guide"
+        >
+          <HelpCircle className="w-5 h-5" />
+        </button>
+      </div>
+
       {/* Bottom tagline */}
       <footer className="py-3 px-6 shrink-0 border-t border-white/10">
         <div className="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
@@ -421,6 +435,11 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
       {/* Feedback User Sign-up Modal */}
       {isFeedbackUserModalOpen && (
         <FeedbackUserModal onClose={() => setIsFeedbackUserModalOpen(false)} />
+      )}
+
+      {/* Onboarding / Getting Started Modal */}
+      {isOnboardingOpen && (
+        <OnboardingModal onClose={() => setIsOnboardingOpen(false)} />
       )}
     </div>
   )

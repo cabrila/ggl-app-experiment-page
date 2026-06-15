@@ -1,6 +1,6 @@
 "use client"
 
-import { PropListProvider, usePropList } from "./PropListContext"
+import { usePropList } from "./PropListContext"
 import PropProjectsList from "./PropProjectsList"
 import PropUploadView from "./PropUploadView"
 import PropResultsView from "./PropResultsView"
@@ -41,9 +41,6 @@ function PropListContent({ onBack, onSignOut, activeView, onNavigate }: PropList
 }
 
 export default function PropListScreen({ onBack, onSignOut, activeView, onNavigate }: PropListScreenProps) {
-  return (
-    <PropListProvider>
-      <PropListContent onBack={onBack} onSignOut={onSignOut} activeView={activeView} onNavigate={onNavigate} />
-    </PropListProvider>
-  )
+  // Provider mounted once at the app root (app/page.tsx).
+  return <PropListContent onBack={onBack} onSignOut={onSignOut} activeView={activeView} onNavigate={onNavigate} />
 }

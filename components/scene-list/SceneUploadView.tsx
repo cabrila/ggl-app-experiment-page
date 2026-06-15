@@ -13,6 +13,9 @@ export default function SceneUploadView() {
   const [isDragging, setIsDragging] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // Guard so a completed extraction creates its project exactly ONCE (the
+  // completion effect re-fires as addProject's identity changes on re-render).
+  const createdRef = useRef(false)
 
   // Same upstream AI service as Character Bible — see `useImportJob` and
   // `app/api/import/[taskType]/route.ts`. No direct Gemini call.
@@ -88,7 +91,8 @@ export default function SceneUploadView() {
 
   // Map upstream result -> Scene[] -> new project (same pattern as Character Bible)
   useEffect(() => {
-    if (status !== "complete" || !result || !file) return
+    if (status !== "complete" || !result || !file || createdRef.current) return
+    createdRef.current = true
 
     const incoming = Array.isArray(result.scenes) ? result.scenes : []
     const scenes: Scene[] = incoming.map((s, i) => ({
@@ -100,7 +104,13 @@ export default function SceneUploadView() {
           : `Scene ${i + 1}`,
       location: typeof s.location === "string" ? s.location : "",
       timeOfDay: typeof s.time_of_day === "string" ? s.time_of_day : "",
-      rawText: typeof s.raw_text === "string" ? s.raw_text : "",
+      // The scene-extract skill returns `summary`; fall back to `raw_text` for older payloads.
+      rawText:
+        typeof s.summary === "string" && s.summary
+          ? s.summary
+          : typeof s.raw_text === "string"
+          ? s.raw_text
+          : "",
     }))
 
     const scriptName =
@@ -120,6 +130,7 @@ export default function SceneUploadView() {
 
   const handleRetry = () => {
     reset()
+    createdRef.current = false
     setFile(null)
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
@@ -127,6 +138,7 @@ export default function SceneUploadView() {
   const removeFile = () => {
     setFile(null)
     reset()
+    createdRef.current = false
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
 

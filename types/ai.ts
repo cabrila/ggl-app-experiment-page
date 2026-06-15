@@ -81,6 +81,9 @@ export interface SceneExtractResult {
     scene_heading?: string
     location?: string
     time_of_day?: string
+    // The scene-extract skill returns a `summary` of the scene; `raw_text` is
+    // kept for backward compatibility with any older payloads.
+    summary?: string
     raw_text?: string
   }[]
 }

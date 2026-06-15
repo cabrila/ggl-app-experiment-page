@@ -1,6 +1,6 @@
 "use client"
 
-import { SceneListProvider, useSceneList } from "./SceneListContext"
+import { useSceneList } from "./SceneListContext"
 import SceneProjectsList from "./SceneProjectsList"
 import SceneUploadView from "./SceneUploadView"
 import SceneResultsView from "./SceneResultsView"
@@ -40,9 +40,6 @@ function SceneListContent({ onBack, onSignOut, activeView, onNavigate }: SceneLi
 }
 
 export default function SceneListScreen({ onBack, onSignOut, activeView, onNavigate }: SceneListScreenProps) {
-  return (
-    <SceneListProvider>
-      <SceneListContent onBack={onBack} onSignOut={onSignOut} activeView={activeView} onNavigate={onNavigate} />
-    </SceneListProvider>
-  )
+  // Provider mounted once at the app root (app/page.tsx).
+  return <SceneListContent onBack={onBack} onSignOut={onSignOut} activeView={activeView} onNavigate={onNavigate} />
 }

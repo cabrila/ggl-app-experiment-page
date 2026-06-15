@@ -13,6 +13,9 @@ export default function UploadView() {
   const [isDragging, setIsDragging] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // Guard so a completed extraction creates its bible exactly ONCE (the
+  // completion effect re-fires as addBible's identity changes on re-render).
+  const createdRef = useRef(false)
 
   // Use the AI service integration hook
   const { status, message, result, error, run, reset } = useImportJob<CharacterExtractResult>("character-extract")
@@ -70,7 +73,8 @@ export default function UploadView() {
 
   // Handle successful extraction - use useEffect to avoid setState during render
   useEffect(() => {
-    if (status === "complete" && result) {
+    if (status === "complete" && result && !createdRef.current) {
+      createdRef.current = true
       const scriptName = file?.name.replace(/\.(pdf|docx)$/i, "").toUpperCase() || "SCRIPT"
 
       // Map AI service result to our Character type. The skill returns
@@ -107,6 +111,7 @@ export default function UploadView() {
 
   const handleRetry = () => {
     reset()
+    createdRef.current = false
     setFile(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ""

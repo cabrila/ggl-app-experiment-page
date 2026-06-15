@@ -13,6 +13,10 @@ export default function ActorUploadView() {
   const [isDragging, setIsDragging] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // Guard so a completed extraction creates its project exactly ONCE. Without
+  // this, createProject's changing identity re-fires the effect (each create →
+  // Firestore write → re-render → new createProject), spawning duplicate lists.
+  const createdRef = useRef(false)
 
   // Use the AI service integration hook
   const { status, message, result, error, run, reset } = useImportJob<ActorExtractResult>("actor-extract")
@@ -69,7 +73,8 @@ export default function ActorUploadView() {
 
   // Handle successful extraction - use useEffect to avoid setState during render
   useEffect(() => {
-    if (status === "complete" && result && file) {
+    if (status === "complete" && result && file && !createdRef.current) {
+      createdRef.current = true
       // Map AI service result to our Actor type
       const actors: Actor[] = result.actors.map((actor, index) => ({
         id: `${Date.now()}-${index}`,
@@ -91,6 +96,7 @@ export default function ActorUploadView() {
 
   const handleRetry = () => {
     reset()
+    createdRef.current = false
     setFile(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
@@ -100,6 +106,7 @@ export default function ActorUploadView() {
   const removeFile = () => {
     setFile(null)
     reset()
+    createdRef.current = false
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }

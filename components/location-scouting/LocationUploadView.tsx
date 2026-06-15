@@ -13,6 +13,9 @@ export default function LocationUploadView() {
   const [isDragging, setIsDragging] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // Guard so a completed extraction creates its project exactly ONCE (the
+  // completion effect re-fires as addProject's identity changes on re-render).
+  const createdRef = useRef(false)
 
   // Use the AI service integration hook
   const { status, message, result, error, run, reset } = useImportJob<LocationOverviewResult>("location-overview")
@@ -67,7 +70,8 @@ export default function LocationUploadView() {
 
   // Handle successful extraction - use useEffect to avoid setState during render
   useEffect(() => {
-    if (status === "complete" && result && file) {
+    if (status === "complete" && result && file && !createdRef.current) {
+      createdRef.current = true
       // Map AI service result to our Location type
       const locations: Location[] = result.locations.map((loc, index) => ({
         id: `${Date.now()}-${index}`,
@@ -96,6 +100,7 @@ export default function LocationUploadView() {
 
   const handleRetry = () => {
     reset()
+    createdRef.current = false
     setFile(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
@@ -105,6 +110,7 @@ export default function LocationUploadView() {
   const removeFile = () => {
     setFile(null)
     reset()
+    createdRef.current = false
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }

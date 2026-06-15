@@ -34,6 +34,9 @@ export default function PropUploadView() {
   const [isDragging, setIsDragging] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // Guard so a completed extraction creates its project exactly ONCE (the
+  // completion effect re-fires as addProject's identity changes on re-render).
+  const createdRef = useRef(false)
 
   // Same upstream AI service as Character Bible — see `useImportJob` and
   // `app/api/import/[taskType]/route.ts`. No direct Gemini call.
@@ -87,7 +90,8 @@ export default function PropUploadView() {
 
   // Map upstream result -> Prop[] -> new project (same pattern as Character Bible)
   useEffect(() => {
-    if (status !== "complete" || !result || !file) return
+    if (status !== "complete" || !result || !file || createdRef.current) return
+    createdRef.current = true
 
     const incoming = Array.isArray(result.props) ? result.props : []
     const props: Prop[] = incoming.map((p, i) => {
@@ -122,6 +126,7 @@ export default function PropUploadView() {
 
   const handleRetry = () => {
     reset()
+    createdRef.current = false
     setFile(null)
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
@@ -129,6 +134,7 @@ export default function PropUploadView() {
   const removeFile = () => {
     setFile(null)
     reset()
+    createdRef.current = false
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
 

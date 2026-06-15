@@ -1,6 +1,6 @@
 "use client"
 
-import { ActorListProvider, useActorList } from "./ActorListContext"
+import { useActorList } from "./ActorListContext"
 import ActorProjectsList from "./ActorProjectsList"
 import ActorUploadView from "./ActorUploadView"
 import ActorResultsView from "./ActorResultsView"
@@ -32,9 +32,7 @@ function ActorListContent({ onBack, onSignOut, activeView, onNavigate }: ActorLi
 }
 
 export default function ActorListScreen({ onBack, onSignOut, activeView, onNavigate }: ActorListScreenProps) {
-  return (
-    <ActorListProvider>
-      <ActorListContent onBack={onBack} onSignOut={onSignOut} activeView={activeView} onNavigate={onNavigate} />
-    </ActorListProvider>
-  )
+  // Provider is mounted once at the app root (app/page.tsx) so data persists
+  // across navigation and loads from the splash — no per-screen remount.
+  return <ActorListContent onBack={onBack} onSignOut={onSignOut} activeView={activeView} onNavigate={onNavigate} />
 }

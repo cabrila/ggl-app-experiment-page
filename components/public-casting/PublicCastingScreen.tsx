@@ -1,8 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { PublicCastingProvider } from "./PublicCastingContext"
-import { ActorListProvider } from "@/components/actor-list/ActorListContext"
 import CastingCallsList from "./CastingCallsList"
 import CastingCallSetup from "./CastingCallSetup"
 import SubmissionsList from "./SubmissionsList"
@@ -85,11 +83,7 @@ function PublicCastingContent({ onBack, onSignOut, activeView, onNavigate }: Pub
 }
 
 export default function PublicCastingScreen({ onBack, onSignOut, activeView, onNavigate }: PublicCastingScreenProps) {
-  return (
-    <PublicCastingProvider>
-      <ActorListProvider>
-        <PublicCastingContent onBack={onBack} onSignOut={onSignOut} activeView={activeView} onNavigate={onNavigate} />
-      </ActorListProvider>
-    </PublicCastingProvider>
-  )
+  // PublicCastingProvider + ActorListProvider are mounted once at the app root
+  // (app/page.tsx) — so submissions and actor lists share the same instances.
+  return <PublicCastingContent onBack={onBack} onSignOut={onSignOut} activeView={activeView} onNavigate={onNavigate} />
 }

@@ -1,9 +1,10 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Home, LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone, Package, Film, DollarSign, Menu, X } from "lucide-react"
+import { Home, LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone, Package, Film, DollarSign, Menu, X, HelpCircle } from "lucide-react"
 import { useCasting } from "@/components/casting/CastingContext"
 import FeedbackModal from "@/components/modals/FeedbackModal"
+import OnboardingModal from "@/components/modals/OnboardingModal"
 import { trackFeatureClick, type FeatureName } from "@/lib/analytics"
 import { useFirebaseUser } from "@/hooks/useFirebaseUser"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -78,6 +79,7 @@ interface FeatureLayoutProps {
 export default function FeatureLayout({ children, onBack, onSignOut, activeView, onNavigate }: FeatureLayoutProps) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false)
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const userButtonRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -324,7 +326,7 @@ export default function FeatureLayout({ children, onBack, onSignOut, activeView,
         <div className="flex-1 flex overflow-hidden">
         {/* Left Sidebar - Hidden on mobile */}
         <aside className="hidden md:flex flex-col w-16 border-r border-white/10 py-4 shrink-0">
-          <nav className="flex flex-col items-center gap-2">
+          <nav className="flex-1 flex flex-col items-center gap-2">
             {sidebarItems.map((item) => {
               const IconComponent = item.icon
               const isActive = activeView === item.id
@@ -355,6 +357,18 @@ export default function FeatureLayout({ children, onBack, onSignOut, activeView,
               )
             })}
           </nav>
+
+          {/* Help / Onboarding tour - bottom left of the main menu */}
+          <div className="flex justify-center mt-2">
+            <button
+              onClick={() => setIsOnboardingOpen(true)}
+              className="w-9 h-9 rounded-full flex items-center justify-center bg-white/5 border border-white/15 text-white/60 hover:text-white hover:bg-white/15 hover:border-white/30 transition-all"
+              title="How it works"
+              aria-label="Open the getting started guide"
+            >
+              <HelpCircle className="w-5 h-5" />
+            </button>
+          </div>
         </aside>
 
         {/* Main Content */}
@@ -382,6 +396,11 @@ export default function FeatureLayout({ children, onBack, onSignOut, activeView,
       {/* Feedback Modal */}
       {isFeedbackModalOpen && (
         <FeedbackModal onClose={() => setIsFeedbackModalOpen(false)} />
+      )}
+
+      {/* Onboarding / Getting Started Modal */}
+      {isOnboardingOpen && (
+        <OnboardingModal onClose={() => setIsOnboardingOpen(false)} />
       )}
     </div>
   )

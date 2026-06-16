@@ -1541,6 +1541,7 @@ export default function CanvasModal({ onClose }: CanvasModalProps) {
                                 }))
                               }}
                               className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4"
+                              autoComplete="off"
                             />
                             <span className="text-sm text-slate-700">{status.label}</span>
                           </label>
@@ -1566,6 +1567,7 @@ export default function CanvasModal({ onClose }: CanvasModalProps) {
                               }))
                             }}
                             className="w-20 px-2 py-1 border border-slate-300 rounded text-sm"
+                            autoComplete="off"
                           />
                           <span className="text-slate-500 text-sm">to</span>
                           <input
@@ -1581,6 +1583,7 @@ export default function CanvasModal({ onClose }: CanvasModalProps) {
                               }))
                             }}
                             className="w-20 px-2 py-1 border border-slate-300 rounded text-sm"
+                            autoComplete="off"
                           />
                         </div>
                       </div>
@@ -1605,6 +1608,7 @@ export default function CanvasModal({ onClose }: CanvasModalProps) {
                                   }))
                                 }}
                                 className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4"
+                                autoComplete="off"
                               />
                               <span className="text-sm text-slate-700">{location}</span>
                             </label>
@@ -1626,6 +1630,7 @@ export default function CanvasModal({ onClose }: CanvasModalProps) {
                     value={databaseSearchQuery}
                     onChange={(e) => setDatabaseSearchQuery(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+                    autoComplete="off"
                   />
                 </div>
               </div>
@@ -1882,6 +1887,7 @@ export default function CanvasModal({ onClose }: CanvasModalProps) {
                           checked={selectedCharacterIds.includes(char.id)}
                           onChange={() => handleCharacterToggle(char.id)}
                           className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                          autoComplete="off"
                         />
                         <span className="text-sm text-slate-700 flex-1">{char.name}</span>
                         <span className="text-xs text-slate-500">
@@ -1959,6 +1965,7 @@ export default function CanvasModal({ onClose }: CanvasModalProps) {
                                 }))
                               }}
                               className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                              autoComplete="off"
                             />
                             <span className="text-sm text-slate-700">{status.label}</span>
                           </label>
@@ -1984,6 +1991,7 @@ export default function CanvasModal({ onClose }: CanvasModalProps) {
                               }))
                             }}
                             className="w-20 px-2 py-1 border border-slate-300 rounded text-sm"
+                            autoComplete="off"
                           />
                           <span className="text-slate-500 text-sm">to</span>
                           <input
@@ -1999,6 +2007,7 @@ export default function CanvasModal({ onClose }: CanvasModalProps) {
                               }))
                             }}
                             className="w-20 px-2 py-1 border border-slate-300 rounded text-sm"
+                            autoComplete="off"
                           />
                         </div>
                       </div>
@@ -2023,6 +2032,7 @@ export default function CanvasModal({ onClose }: CanvasModalProps) {
                                   }))
                                 }}
                                 className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                                autoComplete="off"
                               />
                               <span className="text-sm text-slate-700">{location}</span>
                             </label>
@@ -2075,6 +2085,7 @@ export default function CanvasModal({ onClose }: CanvasModalProps) {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+                    autoComplete="off"
                   />
                 </div>
                 {searchQuery && (

@@ -78,6 +78,7 @@ export default function CharacterCard({
           </label>
           <input
             type="text"
+            autoComplete="off"
             value={editState.name}
             onChange={(e) => setEditState({ ...editState, name: e.target.value })}
             className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans focus:outline-none focus:border-emerald-500/50"
@@ -91,6 +92,7 @@ export default function CharacterCard({
           </label>
           <input
             type="text"
+            autoComplete="off"
             value={editState.aliases}
             onChange={(e) => setEditState({ ...editState, aliases: e.target.value })}
             placeholder="e.g. BOB, ROBERTO"
@@ -106,6 +108,7 @@ export default function CharacterCard({
             </label>
             <input
               type="text"
+              autoComplete="off"
               value={editState.ageRange}
               onChange={(e) => setEditState({ ...editState, ageRange: e.target.value })}
               placeholder="e.g. 30s, 25-35"
@@ -118,6 +121,7 @@ export default function CharacterCard({
             </label>
             <input
               type="text"
+              autoComplete="off"
               value={editState.gender}
               onChange={(e) => setEditState({ ...editState, gender: e.target.value })}
               className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans focus:outline-none focus:border-emerald-500/50"
@@ -131,6 +135,7 @@ export default function CharacterCard({
             Description
           </label>
           <textarea
+            autoComplete="off"
             value={editState.description}
             onChange={(e) => setEditState({ ...editState, description: e.target.value })}
             rows={4}

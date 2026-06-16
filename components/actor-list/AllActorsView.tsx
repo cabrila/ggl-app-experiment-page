@@ -291,6 +291,7 @@ export default function AllActorsView() {
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
             <input
               type="text"
+              autoComplete="off"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by name, email, or list..."
@@ -370,6 +371,7 @@ export default function AllActorsView() {
                 <label className="block text-xs text-white/50 mb-1.5 font-sans">Age (Min)</label>
                 <input
                   type="number"
+                  autoComplete="off"
                   value={ageMin}
                   onChange={(e) => setAgeMin(e.target.value)}
                   placeholder="18"
@@ -381,6 +383,7 @@ export default function AllActorsView() {
                 <label className="block text-xs text-white/50 mb-1.5 font-sans">Age (Max)</label>
                 <input
                   type="number"
+                  autoComplete="off"
                   value={ageMax}
                   onChange={(e) => setAgeMax(e.target.value)}
                   placeholder="65"
@@ -411,6 +414,7 @@ export default function AllActorsView() {
                 <label className="block text-xs text-white/50 mb-1.5 font-sans">Location</label>
                 <input
                   type="text"
+                  autoComplete="off"
                   value={filterByLocation}
                   onChange={(e) => setFilterByLocation(e.target.value)}
                   placeholder="e.g. Los Angeles"
@@ -422,6 +426,7 @@ export default function AllActorsView() {
                 <label className="block text-xs text-white/50 mb-1.5 font-sans">Availability</label>
                 <input
                   type="text"
+                  autoComplete="off"
                   value={filterByAvailability}
                   onChange={(e) => setFilterByAvailability(e.target.value)}
                   placeholder="e.g. Weekends"
@@ -598,7 +603,7 @@ export default function AllActorsView() {
 
       {/* Add to List Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setShowAddModal(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowAddModal(false) }}>
           <div className="bg-[#1a2e23] border border-white/10 rounded-xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
               <h2 className="text-lg font-bold text-white font-sans">Add to List</h2>
@@ -639,6 +644,7 @@ export default function AllActorsView() {
                 <div className="flex gap-2">
                   <input
                     type="text"
+                    autoComplete="off"
                     value={newListName}
                     onChange={(e) => setNewListName(e.target.value)}
                     placeholder="Enter list name..."
@@ -666,7 +672,7 @@ export default function AllActorsView() {
         return (
           <div
             className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 sm:p-8"
-            onClick={() => setDetailActorId(null)}
+            onMouseDown={(e) => { if (e.target === e.currentTarget) setDetailActorId(null) }}
           >
             <div className="relative w-full max-w-xl my-auto" onClick={(e) => e.stopPropagation()}>
               <button
@@ -692,7 +698,7 @@ export default function AllActorsView() {
 
       {/* Delete Warning Modal */}
       {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setDeleteTarget(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onMouseDown={(e) => { if (e.target === e.currentTarget) setDeleteTarget(null) }}>
           <div className="bg-[#1a2e23] border border-white/10 rounded-xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
               <div className="flex items-center gap-2">

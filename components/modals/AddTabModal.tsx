@@ -57,6 +57,7 @@ export default function AddTabModal({ onClose }: AddTabModalProps) {
               Tab Name
             </label>
             <input
+              autoComplete="off"
               type="text"
               id="tabName"
               value={tabName}

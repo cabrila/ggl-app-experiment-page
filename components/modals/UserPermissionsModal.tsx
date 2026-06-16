@@ -382,6 +382,7 @@ export default function UserPermissionsModal({ onClose }: UserPermissionsModalPr
                     {editingUser === member.user.id ? (
                       <div className="space-y-2">
                         <input
+                          autoComplete="off"
                           type="text"
                           value={editForm.name}
                           onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
@@ -389,6 +390,7 @@ export default function UserPermissionsModal({ onClose }: UserPermissionsModalPr
                           placeholder="Full Name"
                         />
                         <input
+                          autoComplete="off"
                           type="email"
                           value={editForm.email}
                           onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
@@ -622,6 +624,7 @@ export default function UserPermissionsModal({ onClose }: UserPermissionsModalPr
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
                 <input
+                  autoComplete="off"
                   type="email"
                   value={inviteForm.email}
                   onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
@@ -633,6 +636,7 @@ export default function UserPermissionsModal({ onClose }: UserPermissionsModalPr
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
                 <input
+                  autoComplete="off"
                   type="text"
                   value={inviteForm.name}
                   onChange={(e) => setInviteForm({ ...inviteForm, name: e.target.value })}
@@ -647,6 +651,7 @@ export default function UserPermissionsModal({ onClose }: UserPermissionsModalPr
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Role/Title</label>
                 <input
+                  autoComplete="off"
                   type="text"
                   value={inviteForm.role}
                   onChange={(e) => setInviteForm({ ...inviteForm, role: e.target.value })}
@@ -737,7 +742,7 @@ export default function UserPermissionsModal({ onClose }: UserPermissionsModalPr
                 <p className="text-sm text-gray-600">Allow anyone with the link to view this project</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" />
+                <input autoComplete="off" type="checkbox" className="sr-only peer" />
                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
               </label>
             </div>
@@ -750,7 +755,7 @@ export default function UserPermissionsModal({ onClose }: UserPermissionsModalPr
                 </p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" defaultChecked />
+                <input autoComplete="off" type="checkbox" className="sr-only peer" defaultChecked />
                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
               </label>
             </div>
@@ -761,7 +766,7 @@ export default function UserPermissionsModal({ onClose }: UserPermissionsModalPr
                 <p className="text-sm text-gray-600">Let non-members add comments when shared a direct link</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" />
+                <input autoComplete="off" type="checkbox" className="sr-only peer" />
                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
               </label>
             </div>
@@ -780,7 +785,7 @@ export default function UserPermissionsModal({ onClose }: UserPermissionsModalPr
                 </p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" defaultChecked />
+                <input autoComplete="off" type="checkbox" className="sr-only peer" defaultChecked />
                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
               </label>
             </div>
@@ -791,7 +796,7 @@ export default function UserPermissionsModal({ onClose }: UserPermissionsModalPr
                 <p className="text-sm text-gray-600">Track all user actions and permission changes</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" defaultChecked />
+                <input autoComplete="off" type="checkbox" className="sr-only peer" defaultChecked />
                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
               </label>
             </div>

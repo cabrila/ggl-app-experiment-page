@@ -49,6 +49,7 @@ export default function AddShortlistModal({ onClose, characterId }: AddShortlist
       <div className="p-6">
         <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
         <input
+          autoComplete="off"
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}

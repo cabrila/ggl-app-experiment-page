@@ -297,6 +297,7 @@ export default function ManageStatusesModal({ onClose, actor, characterId }: Man
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Status Label</label>
         <input
+          autoComplete="off"
           type="text"
           value={newStatus.label}
           onChange={(e) => setNewStatus({ ...newStatus, label: e.target.value })}

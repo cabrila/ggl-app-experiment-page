@@ -84,9 +84,9 @@ export default function QRCodeModal({ isOpen, onClose, url, title }: QRCodeModal
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-        onClick={onClose}
+        onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}
       />
       
       {/* Modal */}

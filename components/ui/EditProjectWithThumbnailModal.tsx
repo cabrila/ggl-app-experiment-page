@@ -196,7 +196,7 @@ export default function EditProjectWithThumbnailModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-      onClick={handleBackdropClick}
+      onMouseDown={handleBackdropClick}
     >
       <div
         ref={modalRef}
@@ -298,6 +298,7 @@ export default function EditProjectWithThumbnailModal({
                 accept="image/*"
                 onChange={handleInputChange}
                 className="hidden"
+                autoComplete="off"
               />
             </div>
           </div>
@@ -314,6 +315,7 @@ export default function EditProjectWithThumbnailModal({
               onChange={(e) => setName(e.target.value)}
               className={`w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-1 transition-colors font-sans ${colors.focusRing}`}
               placeholder="Enter name..."
+              autoComplete="off"
             />
           </div>
 
@@ -326,6 +328,7 @@ export default function EditProjectWithThumbnailModal({
                   checked={completed}
                   onChange={(e) => setCompleted(e.target.checked)}
                   className="mt-0.5 w-4 h-4 rounded border-white/30 bg-transparent text-emerald-500 focus:ring-emerald-500/50 focus:ring-offset-0 cursor-pointer"
+                  autoComplete="off"
                 />
                 <span className="flex flex-col">
                   <span className="text-sm font-medium text-white font-sans">Completed</span>

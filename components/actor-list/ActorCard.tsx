@@ -160,6 +160,7 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
           </label>
           <input
             type="text"
+            autoComplete="off"
             value={editedActor.name}
             onChange={(e) => setEditedActor({ ...editedActor, name: e.target.value })}
             className="w-full px-4 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans focus:outline-none focus:border-emerald-500/50"
@@ -174,6 +175,7 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
             </label>
             <input
               type="number"
+              autoComplete="off"
               value={editedActor.age}
               onChange={(e) => setEditedActor({ ...editedActor, age: parseInt(e.target.value) || 0 })}
               className="w-full px-4 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans focus:outline-none focus:border-emerald-500/50"
@@ -185,6 +187,7 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
             </label>
             <input
               type="text"
+              autoComplete="off"
               value={editedActor.playingAge}
               onChange={(e) => setEditedActor({ ...editedActor, playingAge: e.target.value })}
               className="w-full px-4 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans focus:outline-none focus:border-emerald-500/50"
@@ -199,6 +202,7 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
           </label>
           <input
             type="tel"
+            autoComplete="off"
             value={editedActor.phone}
             onChange={(e) => setEditedActor({ ...editedActor, phone: e.target.value })}
             className="w-full px-4 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans focus:outline-none focus:border-emerald-500/50"
@@ -212,6 +216,7 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
           </label>
           <input
             type="email"
+            autoComplete="off"
             value={editedActor.email}
             onChange={(e) => setEditedActor({ ...editedActor, email: e.target.value })}
             className="w-full px-4 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans focus:outline-none focus:border-emerald-500/50"
@@ -238,6 +243,7 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
           </label>
           <input
             type="url"
+            autoComplete="off"
             value={editedActor.headshotUrl}
             onChange={(e) => setEditedActor({ ...editedActor, headshotUrl: e.target.value })}
             className="w-full px-4 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans focus:outline-none focus:border-emerald-500/50 text-sm"
@@ -253,6 +259,7 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
             <Video className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
             <input
               type="url"
+              autoComplete="off"
               value={editedActor.mediaMaterial || ""}
               onChange={(e) => setEditedActor({ ...editedActor, mediaMaterial: e.target.value })}
               placeholder="https://youtube.com/watch?v=..."
@@ -272,6 +279,7 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
                 <Video className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
                 <input
                   type="url"
+                  autoComplete="off"
                   value={video}
                   onChange={(e) => handleUpdateVideo(index, e.target.value)}
                   placeholder="https://youtube.com/watch?v=..."
@@ -325,6 +333,7 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
             Notes
           </label>
           <textarea
+            autoComplete="off"
             value={editedActor.notes}
             onChange={(e) => setEditedActor({ ...editedActor, notes: e.target.value })}
             rows={3}
@@ -347,6 +356,7 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
                 </div>
                 <input
                   type="text"
+                  autoComplete="off"
                   value={field.value}
                   onChange={(e) => handleUpdateCustomField(field.id, e.target.value)}
                   placeholder="Enter value..."
@@ -367,6 +377,7 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
           <div className="flex items-center gap-2 mt-3">
             <input
               type="text"
+              autoComplete="off"
               value={newFieldName}
               onChange={(e) => setNewFieldName(e.target.value)}
               placeholder="Field name..."

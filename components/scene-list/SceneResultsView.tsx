@@ -337,7 +337,7 @@ export default function SceneResultsView() {
         return (
           <div
             className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 sm:p-8"
-            onClick={closeDetail}
+            onMouseDown={(e) => { if (e.target === e.currentTarget) closeDetail() }}
           >
             <div className="relative w-full max-w-xl my-auto" onClick={(e) => e.stopPropagation()}>
               <button

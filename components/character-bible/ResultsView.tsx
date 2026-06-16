@@ -400,9 +400,9 @@ export default function ResultsView() {
         return (
           <div
             className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 sm:p-8"
-            onClick={closeDetail}
+            onMouseDown={(e) => { if (e.target === e.currentTarget) closeDetail() }}
           >
-            <div className="relative w-full max-w-xl my-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="relative w-full max-w-xl my-auto">
               <button
                 onClick={closeDetail}
                 className="absolute -top-2 -right-2 z-10 p-2 bg-[#1a2e23] hover:bg-white/20 border border-white/10 rounded-full text-white/70 hover:text-white transition-colors"

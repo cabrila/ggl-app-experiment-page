@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react"
 import { User } from "firebase/auth"
 import { Character, CharacterBible, CharacterBibleView } from "@/types/character-bible"
 import { subscribeToAuthStateChanges } from "@/lib/auth"
@@ -191,6 +191,12 @@ const demoBibles: CharacterBible[] = [
 export function CharacterBibleProvider({ children }: { children: ReactNode }) {
   const [bibles, setBibles] = useState<CharacterBible[]>(demoBibles)
   const [currentBible, setCurrentBible] = useState<CharacterBible | null>(null)
+  // Latest currentBible for the Firestore subscription callback (set up with
+  // [user] deps), so manual adds/edits refresh the open bible when signed in.
+  const currentBibleRef = useRef<CharacterBible | null>(null)
+  useEffect(() => {
+    currentBibleRef.current = currentBible
+  }, [currentBible])
   const [view, setView] = useState<CharacterBibleView>("list")
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -220,9 +226,10 @@ export function CharacterBibleProvider({ children }: { children: ReactNode }) {
       user.uid,
       (firestoreBibles) => {
         setBibles(firestoreBibles)
-        // Update currentBible if it exists in the new data
-        if (currentBible) {
-          const updated = firestoreBibles.find((b) => b.id === currentBible.id)
+        // Update currentBible if it exists in the new data (read latest via ref)
+        const current = currentBibleRef.current
+        if (current) {
+          const updated = firestoreBibles.find((b) => b.id === current.id)
           if (updated) {
             setCurrentBible(updated)
           }

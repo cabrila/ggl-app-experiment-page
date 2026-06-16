@@ -267,6 +267,7 @@ export default function ActorResultsView() {
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
             <input
               type="text"
+              autoComplete="off"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search actors..."
@@ -347,6 +348,7 @@ export default function ActorResultsView() {
                 <label className="block text-xs text-white/50 mb-1.5 font-sans">Age (Min)</label>
                 <input
                   type="number"
+                  autoComplete="off"
                   value={ageMin}
                   onChange={(e) => setAgeMin(e.target.value)}
                   placeholder="18"
@@ -358,6 +360,7 @@ export default function ActorResultsView() {
                 <label className="block text-xs text-white/50 mb-1.5 font-sans">Age (Max)</label>
                 <input
                   type="number"
+                  autoComplete="off"
                   value={ageMax}
                   onChange={(e) => setAgeMax(e.target.value)}
                   placeholder="65"
@@ -388,6 +391,7 @@ export default function ActorResultsView() {
                 <label className="block text-xs text-white/50 mb-1.5 font-sans">Location</label>
                 <input
                   type="text"
+                  autoComplete="off"
                   value={filterByLocation}
                   onChange={(e) => setFilterByLocation(e.target.value)}
                   placeholder="e.g. Los Angeles"
@@ -399,6 +403,7 @@ export default function ActorResultsView() {
                 <label className="block text-xs text-white/50 mb-1.5 font-sans">Availability</label>
                 <input
                   type="text"
+                  autoComplete="off"
                   value={filterByAvailability}
                   onChange={(e) => setFilterByAvailability(e.target.value)}
                   placeholder="e.g. Weekends"
@@ -580,7 +585,7 @@ export default function ActorResultsView() {
         return (
           <div
             className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 sm:p-8"
-            onClick={closeActorDetail}
+            onMouseDown={(e) => { if (e.target === e.currentTarget) closeActorDetail() }}
           >
             <div className="relative w-full max-w-xl my-auto" onClick={(e) => e.stopPropagation()}>
               <button

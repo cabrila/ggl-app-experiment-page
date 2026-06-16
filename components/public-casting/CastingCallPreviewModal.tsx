@@ -168,9 +168,9 @@ export default function CastingCallPreviewModal({ castingCall, project, onClose 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-        onClick={onClose}
+        onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}
       />
       
       {/* Modal - Full screen on mobile, centered on larger screens */}
@@ -290,6 +290,7 @@ export default function CastingCallPreviewModal({ castingCall, project, onClose 
                         value={formData[field.label] || ""}
                         onChange={(e) => handleInputChange(field.label, e.target.value)}
                         rows={3}
+                        autoComplete="off"
                         className={`w-full px-4 py-2.5 bg-white/5 border rounded-xl text-white placeholder-white/30 font-sans resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all ${
                           errors[field.label] ? "border-red-500/50" : "border-white/10"
                         }`}
@@ -360,6 +361,7 @@ export default function CastingCallPreviewModal({ castingCall, project, onClose 
                               multiple
                               className="hidden"
                               onChange={(e) => handleImageFiles(field.label, e.target.files)}
+                              autoComplete="off"
                             />
                           </label>
                         </div>
@@ -379,6 +381,7 @@ export default function CastingCallPreviewModal({ castingCall, project, onClose 
                                     placeholder={field.placeholder || "Paste a YouTube or Vimeo link"}
                                     value={url}
                                     onChange={(e) => handleUrlChange(field.label, idx, e.target.value)}
+                                    autoComplete="off"
                                     className={`flex-1 px-4 py-2.5 bg-white/5 border rounded-xl text-white placeholder-white/30 font-sans focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all ${
                                       errors[field.label] ? "border-red-500/50" : "border-white/10"
                                     }`}
@@ -424,6 +427,7 @@ export default function CastingCallPreviewModal({ castingCall, project, onClose 
                         placeholder={field.placeholder}
                         value={formData[field.label] || ""}
                         onChange={(e) => handleInputChange(field.label, e.target.value)}
+                        autoComplete="off"
                         className={`w-full px-4 py-2.5 bg-white/5 border rounded-xl text-white placeholder-white/30 font-sans focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all ${
                           errors[field.label] ? "border-red-500/50" : "border-white/10"
                         }`}
@@ -443,6 +447,7 @@ export default function CastingCallPreviewModal({ castingCall, project, onClose 
                       checked={talentPoolConsent}
                       onChange={(e) => setTalentPoolConsent(e.target.checked)}
                       className="mt-0.5 w-4 h-4 rounded border-white/30 bg-white/5 text-emerald-500 focus:ring-emerald-500/50 focus:ring-offset-0 cursor-pointer"
+                      autoComplete="off"
                     />
                     <span className="text-sm text-white/70 font-sans leading-relaxed">
                       {castingCall.talentPoolConsentText ||

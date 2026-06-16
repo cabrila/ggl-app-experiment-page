@@ -138,6 +138,7 @@ export default function AddCharacterModal({ onClose }: AddCharacterModalProps) {
               {getCurrentTerminology(state).character.singular} Name *
             </label>
             <input
+              autoComplete="off"
               type="text"
               value={formData.name}
               onChange={(e) => handleInputChange("name", e.target.value)}
@@ -148,6 +149,7 @@ export default function AddCharacterModal({ onClose }: AddCharacterModalProps) {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
             <input
+              autoComplete="off"
               type="text"
               value={formData.age}
               onChange={(e) => handleInputChange("age", e.target.value)}
@@ -158,6 +160,7 @@ export default function AddCharacterModal({ onClose }: AddCharacterModalProps) {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
             <input
+              autoComplete="off"
               type="text"
               value={formData.gender}
               onChange={(e) => handleInputChange("gender", e.target.value)}
@@ -168,6 +171,7 @@ export default function AddCharacterModal({ onClose }: AddCharacterModalProps) {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Ethnicity</label>
             <input
+              autoComplete="off"
               type="text"
               value={formData.ethnicity}
               onChange={(e) => handleInputChange("ethnicity", e.target.value)}
@@ -179,6 +183,7 @@ export default function AddCharacterModal({ onClose }: AddCharacterModalProps) {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
           <textarea
+            autoComplete="off"
             value={formData.description}
             onChange={(e) => handleInputChange("description", e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -189,6 +194,7 @@ export default function AddCharacterModal({ onClose }: AddCharacterModalProps) {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Casting Notes</label>
           <textarea
+            autoComplete="off"
             value={formData.castingNotes}
             onChange={(e) => handleInputChange("castingNotes", e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"

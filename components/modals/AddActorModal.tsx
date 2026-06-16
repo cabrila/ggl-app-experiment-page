@@ -521,6 +521,7 @@ export default function AddActorModal({ onClose, characterId }: AddActorModalPro
                     {state.terminology.actor.singular} Name *
                   </label>
                   <input
+                    autoComplete="off"
                     type="text"
                     value={formData.name}
                     onChange={(e) => handleInputChange("name", e.target.value)}
@@ -533,6 +534,7 @@ export default function AddActorModal({ onClose, characterId }: AddActorModalPro
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
                   <input
+                    autoComplete="off"
                     type="text"
                     value={formData.age}
                     onChange={(e) => handleInputChange("age", e.target.value)}
@@ -561,6 +563,7 @@ export default function AddActorModal({ onClose, characterId }: AddActorModalPro
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Contact Phone</label>
                   <input
+                    autoComplete="off"
                     type="tel"
                     value={formData.contactPhone}
                     onChange={(e) => handleInputChange("contactPhone", e.target.value)}
@@ -573,6 +576,7 @@ export default function AddActorModal({ onClose, characterId }: AddActorModalPro
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Contact Email</label>
                   <input
+                    autoComplete="off"
                     type="email"
                     value={formData.contactEmail}
                     onChange={(e) => handleInputChange("contactEmail", e.target.value)}
@@ -604,6 +608,7 @@ export default function AddActorModal({ onClose, characterId }: AddActorModalPro
                           </button>
                         </div>
                         <input
+                          autoComplete="off"
                           type="text"
                           value={formData.playingAge}
                           onChange={(e) => handleInputChange("playingAge", e.target.value)}
@@ -627,6 +632,7 @@ export default function AddActorModal({ onClose, characterId }: AddActorModalPro
                           </button>
                         </div>
                         <input
+                          autoComplete="off"
                           type="text"
                           value={formData.ethnicity}
                           onChange={(e) => handleInputChange("ethnicity", e.target.value)}
@@ -650,6 +656,7 @@ export default function AddActorModal({ onClose, characterId }: AddActorModalPro
                           </button>
                         </div>
                         <input
+                          autoComplete="off"
                           type="text"
                           value={formData.location}
                           onChange={(e) => handleInputChange("location", e.target.value)}
@@ -673,6 +680,7 @@ export default function AddActorModal({ onClose, characterId }: AddActorModalPro
                           </button>
                         </div>
                         <input
+                          autoComplete="off"
                           type="text"
                           value={formData.agent}
                           onChange={(e) => handleInputChange("agent", e.target.value)}
@@ -773,6 +781,7 @@ export default function AddActorModal({ onClose, characterId }: AddActorModalPro
                           <div className="space-y-3">
                             <div className="flex space-x-2">
                               <input
+                                autoComplete="off"
                                 type="text"
                                 value={newPastProduction}
                                 onChange={(e) => setNewPastProduction(e.target.value)}
@@ -837,6 +846,7 @@ export default function AddActorModal({ onClose, characterId }: AddActorModalPro
                           </select>
                         ) : (
                           <input
+                            autoComplete="off"
                             type={field.type}
                             value={formData[fieldKey as keyof typeof formData] as string}
                             onChange={(e) => handleInputChange(fieldKey, e.target.value)}
@@ -901,6 +911,7 @@ export default function AddActorModal({ onClose, characterId }: AddActorModalPro
               <label className="block text-sm font-medium text-gray-700 mb-2">Skills</label>
               <div className="flex space-x-2 mb-2">
                 <input
+                  autoComplete="off"
                   type="text"
                   value={newSkill}
                   onChange={(e) => setNewSkill(e.target.value)}
@@ -938,6 +949,7 @@ export default function AddActorModal({ onClose, characterId }: AddActorModalPro
               <label className="block text-sm font-medium text-gray-700 mb-2">Availability</label>
               <div className="flex space-x-2 mb-2">
                 <input
+                  autoComplete="off"
                   type="text"
                   value={newAvailability}
                   onChange={(e) => setNewAvailability(e.target.value)}
@@ -980,6 +992,7 @@ export default function AddActorModal({ onClose, characterId }: AddActorModalPro
               <label className="block text-sm font-medium text-gray-700 mb-2">Headshots</label>
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                 <input
+                  autoComplete="off"
                   type="file"
                   multiple
                   accept="image/*"
@@ -1035,6 +1048,7 @@ export default function AddActorModal({ onClose, characterId }: AddActorModalPro
               <label className="block text-sm font-medium text-gray-700 mb-2">Video Content</label>
               <div className="flex space-x-2 mb-4">
                 <input
+                  autoComplete="off"
                   type="text"
                   value={newVimeoUrl}
                   onChange={(e) => {
@@ -1062,6 +1076,7 @@ export default function AddActorModal({ onClose, characterId }: AddActorModalPro
                         {editingVideoTitle === video.id ? (
                           <div className="flex items-center space-x-2">
                             <input
+                              autoComplete="off"
                               type="text"
                               value={currentVideoTitles[video.id] || video.title}
                               onChange={(e) =>
@@ -1160,6 +1175,7 @@ export default function AddActorModal({ onClose, characterId }: AddActorModalPro
                           Password (optional)
                         </label>
                         <input
+                          autoComplete="off"
                           type="text"
                           value={video.videoPassword || ""}
                           onChange={(e) => {
@@ -1220,6 +1236,7 @@ export default function AddActorModal({ onClose, characterId }: AddActorModalPro
                           </div>
                           <div className="flex gap-2">
                             <input
+                              autoComplete="off"
                               type="text"
                               value={currentVideoTags[video.id] || ""}
                               onChange={(e) => setCurrentVideoTags((prev) => ({ ...prev, [video.id]: e.target.value }))}

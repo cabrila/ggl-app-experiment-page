@@ -154,6 +154,7 @@ Best regards`
                 From
               </label>
               <input
+                autoComplete="off"
                 id="share-from"
                 type="email"
                 value={fromEmail}
@@ -170,6 +171,7 @@ Best regards`
                 To
               </label>
               <input
+                autoComplete="off"
                 id="share-email"
                 type="email"
                 value={email}
@@ -186,6 +188,7 @@ Best regards`
                 Subject
               </label>
               <input
+                autoComplete="off"
                 id="share-subject"
                 type="text"
                 value={subject}
@@ -201,6 +204,7 @@ Best regards`
                 Message
               </label>
               <textarea
+                autoComplete="off"
                 id="share-message"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}

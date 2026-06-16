@@ -198,6 +198,7 @@ export default function MoveActorModal({ onClose, actor, characterId }: MoveActo
                   }`}
                 >
                   <input
+                    autoComplete="off"
                     type="radio"
                     name="destination"
                     value={destination.type === "shortlist" ? destination.shortlistId : destination.key}

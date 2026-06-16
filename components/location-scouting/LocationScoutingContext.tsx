@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react"
 import { User } from "firebase/auth"
 import { Location, LocationProject } from "@/types/location-scouting"
 import { subscribeToAuthStateChanges } from "@/lib/auth"
@@ -222,6 +222,12 @@ export function LocationScoutingProvider({ children }: { children: ReactNode }) 
     loadDemoData(DEMO_STORAGE_KEYS.locationProjects, demoProjects)
   )
   const [currentProject, setCurrentProject] = useState<LocationProject | null>(null)
+  // Latest currentProject for the Firestore subscription callback (set up with
+  // [user] deps), so manual adds/edits refresh the open list when signed in.
+  const currentProjectRef = useRef<LocationProject | null>(null)
+  useEffect(() => {
+    currentProjectRef.current = currentProject
+  }, [currentProject])
   const [view, setView] = useState<ViewState>("projects")
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -257,9 +263,10 @@ export function LocationScoutingProvider({ children }: { children: ReactNode }) 
       user.uid,
       (firestoreProjects) => {
         setProjects(firestoreProjects)
-        // Update currentProject if it exists in the new data
-        if (currentProject) {
-          const updated = firestoreProjects.find((p) => p.id === currentProject.id)
+        // Update currentProject if it exists in the new data (read latest via ref)
+        const current = currentProjectRef.current
+        if (current) {
+          const updated = firestoreProjects.find((p) => p.id === current.id)
           if (updated) {
             setCurrentProject(updated)
           }

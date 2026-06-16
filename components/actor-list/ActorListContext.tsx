@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, useMemo, ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, useMemo, useRef, ReactNode } from "react"
 import { User } from "firebase/auth"
 import { Actor, ActorGender, ActorListProject, AggregatedActor } from "@/types/actor-list"
 import { subscribeToAuthStateChanges } from "@/lib/auth"
@@ -279,6 +279,14 @@ export function ActorListProvider({ children }: { children: ReactNode }) {
   const [view, setView] = useState<ActorListView>("list")
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  // Latest currentProject for the Firestore subscription callback, which is set
+  // up with [user] deps and would otherwise close over a stale value — so
+  // manual adds/edits (which rely on the subscription to refresh state) were
+  // not showing up when signed in.
+  const currentProjectRef = useRef<ActorListProject | null>(null)
+  useEffect(() => {
+    currentProjectRef.current = currentProject
+  }, [currentProject])
   const [standaloneActors, setStandaloneActors] = useState<Actor[]>(() =>
     loadDemoData(DEMO_STORAGE_KEYS.actorListStandalone, [] as Actor[])
   )
@@ -322,9 +330,11 @@ export function ActorListProvider({ children }: { children: ReactNode }) {
       user.uid,
       (firestoreProjects) => {
         setProjects(firestoreProjects)
-        // Update currentProject if it exists in the new data
-        if (currentProject) {
-          const updated = firestoreProjects.find((p) => p.id === currentProject.id)
+        // Update currentProject if it exists in the new data (read the latest
+        // via ref — the callback's closure is fixed at [user]-effect setup time)
+        const current = currentProjectRef.current
+        if (current) {
+          const updated = firestoreProjects.find((p) => p.id === current.id)
           if (updated) {
             setCurrentProject(updated)
           }

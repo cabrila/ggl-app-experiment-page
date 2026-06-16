@@ -356,6 +356,7 @@ export default function AddFromDatabaseModal({ onClose, characterId }: AddFromDa
             <div className="relative flex-1 max-w-xl">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
+                autoComplete="off"
                 type="text"
                 placeholder={`Search by name, location, project, or character...`}
                 value={searchTerm}

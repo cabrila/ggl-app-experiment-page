@@ -25,6 +25,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${gabarito.variable} antialiased bg-[#0a2618]`}>
+      <head>
+        <link rel="icon" href="/images/favicon.ico" />
+      </head>
       <body className="font-sans">
         <GoogleAnalytics />
         <AnalyticsProvider>

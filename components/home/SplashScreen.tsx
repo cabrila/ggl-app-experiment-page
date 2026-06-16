@@ -51,18 +51,14 @@ const featureButtons = [
     iconBg: "bg-sky-500/20",
     iconColor: "text-sky-400",
   },
-  // Hidden until the Street/Public Casting backend is built (see TODO.md, Phase 2).
-  // The screen, routing and submissions UI all exist, but casting forms and
-  // submissions are not yet persisted server-side, so the entry point is hidden
-  // for the initial deploy. Restore by uncommenting once Phase 2 ships.
-  // {
-  //   id: "public-casting",
-  //   title: "Public Casting",
-  //   description: "Share a simple casting form for actors to submit themselves for roles in your project.",
-  //   icon: Megaphone,
-  //   iconBg: "bg-violet-500/20",
-  //   iconColor: "text-violet-400",
-  // },
+  {
+    id: "public-casting",
+    title: "Public Casting",
+    description: "Share a simple casting form for actors to submit themselves for roles in your project.",
+    icon: Megaphone,
+    iconBg: "bg-violet-500/20",
+    iconColor: "text-violet-400",
+  },
 ]
 
 interface SplashScreenProps {

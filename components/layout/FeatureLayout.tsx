@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Home, LogOut, MessageSquarePlus, BookUser, MapPin, Users, Package, Film, DollarSign, Menu, X, HelpCircle } from "lucide-react"
+import { Home, LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone, Package, Film, DollarSign, Menu, X, HelpCircle } from "lucide-react"
 import { useCasting } from "@/components/casting/CastingContext"
 import FeedbackModal from "@/components/modals/FeedbackModal"
 import OnboardingModal from "@/components/modals/OnboardingModal"
@@ -57,17 +57,15 @@ const sidebarItems = [
     activeBg: "bg-sky-500/30",
     activeBorder: "border-sky-400",
   },
-  // Public Casting hidden until its backend ships (see TODO.md Phase 2).
-  // Restore this entry to bring the side-menu button back.
-  // {
-  //   id: "public-casting" as ActiveView,
-  //   title: "Public Casting",
-  //   icon: Megaphone,
-  //   iconBg: "bg-violet-500/20",
-  //   iconColor: "text-violet-400",
-  //   activeBg: "bg-violet-500/30",
-  //   activeBorder: "border-violet-400",
-  // },
+  {
+    id: "public-casting" as ActiveView,
+    title: "Public Casting",
+    icon: Megaphone,
+    iconBg: "bg-violet-500/20",
+    iconColor: "text-violet-400",
+    activeBg: "bg-violet-500/30",
+    activeBorder: "border-violet-400",
+  },
 ]
 
 interface FeatureLayoutProps {

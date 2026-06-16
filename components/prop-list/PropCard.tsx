@@ -99,6 +99,7 @@ export default function PropCard({
         </label>
         <input
           type="text"
+          autoComplete="off"
           value={editData.name}
           onChange={(e) => setEditData({ ...editData, name: e.target.value })}
           className="w-full px-4 py-3 bg-[#0f1f17] rounded-lg text-white font-sans mb-4 border border-white/10 focus:border-rose-500/50 focus:outline-none"
@@ -125,6 +126,7 @@ export default function PropCard({
           Description
         </label>
         <textarea
+          autoComplete="off"
           value={editData.description}
           onChange={(e) => setEditData({ ...editData, description: e.target.value })}
           rows={3}
@@ -135,6 +137,7 @@ export default function PropCard({
           Notes
         </label>
         <textarea
+          autoComplete="off"
           value={editData.notes || ""}
           onChange={(e) => setEditData({ ...editData, notes: e.target.value })}
           rows={2}
@@ -169,18 +172,21 @@ export default function PropCard({
                   </button>
                 </div>
                 <input
+                  autoComplete="off"
                   value={app.sceneHeading}
                   onChange={(e) => updateAppearance(idx, "sceneHeading", e.target.value)}
                   placeholder="Scene heading"
                   className="w-full px-3 py-2 bg-[#1a2e23] rounded text-white text-sm font-sans mb-2 border border-white/10 focus:border-rose-500/50 focus:outline-none"
                 />
                 <input
+                  autoComplete="off"
                   value={app.handledBy}
                   onChange={(e) => updateAppearance(idx, "handledBy", e.target.value)}
                   placeholder="Handled by"
                   className="w-full px-3 py-2 bg-[#1a2e23] rounded text-white text-sm font-sans mb-2 border border-white/10 focus:border-rose-500/50 focus:outline-none"
                 />
                 <textarea
+                  autoComplete="off"
                   value={app.citation}
                   onChange={(e) => updateAppearance(idx, "citation", e.target.value)}
                   placeholder="Citation"
@@ -254,7 +260,7 @@ export default function PropCard({
           ) : (
             <h3 className="text-lg font-bold text-white font-sans leading-tight">{prop.name}</h3>
           )}
-          <span className="text-xs text-rose-400 font-sans uppercase tracking-wide">
+          <span className="text-xs text-rose-400 font-sans uppercase tracking-wide mt-1 block">
             {CATEGORY_LABELS[prop.category]}
           </span>
         </div>

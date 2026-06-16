@@ -178,6 +178,7 @@ export default function FeedbackModal({ onClose, onShowFeedbackUserSignup }: Fee
                 Subject <span className="text-white/40">(optional)</span>
               </label>
               <input
+                autoComplete="off"
                 id="feedback-heading"
                 type="text"
                 value={heading}
@@ -196,6 +197,7 @@ export default function FeedbackModal({ onClose, onShowFeedbackUserSignup }: Fee
                 Message <span className="text-red-400">*</span>
               </label>
               <textarea
+                autoComplete="off"
                 id="feedback-message"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
@@ -240,6 +242,7 @@ export default function FeedbackModal({ onClose, onShowFeedbackUserSignup }: Fee
               )}
               
               <input
+                autoComplete="off"
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"

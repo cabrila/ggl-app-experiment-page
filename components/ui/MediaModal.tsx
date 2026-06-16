@@ -75,7 +75,7 @@ export default function MediaModal({ isOpen, onClose, url, title }: MediaModalPr
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
-      onClick={onClose}
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" />

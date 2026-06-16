@@ -396,6 +396,7 @@ onClick={() => {
             <div className="mb-5">
               <label className="block text-sm font-medium text-white/60 mb-2">New Initials (max 2 characters)</label>
               <input
+                autoComplete="off"
                 type="text"
                 value={tempInitials}
                 onChange={(e) => setTempInitials(e.target.value)}

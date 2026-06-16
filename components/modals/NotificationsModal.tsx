@@ -312,6 +312,7 @@ export default function NotificationsModal({ onClose }: NotificationsModalProps)
           <div className="flex-1 relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
+              autoComplete="off"
               type="text"
               placeholder="Search notifications..."
               value={searchTerm}
@@ -452,6 +453,7 @@ function NotificationRow({
       }`}
     >
       <input
+        autoComplete="off"
         type="checkbox"
         checked={isSelected}
         onChange={onToggleSelect}
@@ -634,6 +636,7 @@ function SendNotificationPanel({
             </span>
           </div>
           <textarea
+            autoComplete="off"
             ref={textareaRef}
             value={message}
             onChange={(e) => setMessage(e.target.value.slice(0, 500))}
@@ -744,6 +747,7 @@ function SendNotificationPanel({
               <div className="relative mb-2">
                 <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
+                  autoComplete="off"
                   type="text"
                   placeholder="Search users..."
                   value={userSearch}

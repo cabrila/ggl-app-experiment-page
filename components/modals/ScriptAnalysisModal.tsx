@@ -310,7 +310,7 @@ export default function ScriptAnalysisModal({ onClose }: ScriptAnalysisModalProp
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={handleDrop}
               >
-                <input ref={fileInputRef} type="file" accept=".pdf" onChange={handleFileSelect} className="hidden" />
+                <input autoComplete="off" ref={fileInputRef} type="file" accept=".pdf" onChange={handleFileSelect} className="hidden" />
 
                 {uploadedFile ? (
                   <div className="space-y-4">

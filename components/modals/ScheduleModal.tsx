@@ -471,6 +471,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(false)
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-2">
                 <input
+                  autoComplete="off"
                   type="checkbox"
                   id="check-conflicts"
                   checked={checkConflicts}
@@ -547,6 +548,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(false)
                           Title <span className="text-red-500">*</span>
                         </label>
                         <input
+                          autoComplete="off"
                           type="text"
                           value={newDayData.title}
                           onChange={(e) => setNewDayData({ ...newDayData, title: e.target.value })}
@@ -559,6 +561,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(false)
                           Date <span className="text-red-500">*</span>
                         </label>
                         <input
+                          autoComplete="off"
                           type="date"
                           value={newDayData.date}
                           onChange={(e) => setNewDayData({ ...newDayData, date: e.target.value })}
@@ -568,6 +571,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(false)
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Call Time</label>
                         <input
+                          autoComplete="off"
                           type="time"
                           value={newDayData.startTime}
                           onChange={(e) => setNewDayData({ ...newDayData, startTime: e.target.value })}
@@ -577,6 +581,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(false)
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
                         <input
+                          autoComplete="off"
                           type="text"
                           value={newDayData.location}
                           onChange={(e) => setNewDayData({ ...newDayData, location: e.target.value })}
@@ -601,6 +606,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(false)
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Props (comma-separated)</label>
                         <input
+                          autoComplete="off"
                           type="text"
                           value={newDayData.props}
                           onChange={(e) => setNewDayData({ ...newDayData, props: e.target.value })}
@@ -611,6 +617,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(false)
                       <div className="col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-1">Scene Notes</label>
                         <textarea
+                          autoComplete="off"
                           value={newDayData.sceneNotes}
                           onChange={(e) => setNewDayData({ ...newDayData, sceneNotes: e.target.value })}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -688,6 +695,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(false)
                                   <div className="flex items-center gap-1">
                                     <Clock className="w-4 h-4" />
                                     <input
+                                      autoComplete="off"
                                       type="time"
                                       value={entry.startTime || "06:00"}
                                       onChange={(e) => handleUpdateEntry(entry.id, { startTime: e.target.value })}
@@ -975,6 +983,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(false)
                   Phase Name <span className="text-red-500">*</span>
                 </label>
                 <input
+                  autoComplete="off"
                   type="text"
                   value={phaseFormData.name}
                   onChange={(e) => setPhaseFormData({ ...phaseFormData, name: e.target.value })}
@@ -988,6 +997,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(false)
                   Start Date <span className="text-red-500">*</span>
                 </label>
                 <input
+                  autoComplete="off"
                   type="date"
                   value={phaseFormData.startDate}
                   onChange={(e) => setPhaseFormData({ ...phaseFormData, startDate: e.target.value })}
@@ -1070,6 +1080,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(false)
                     Title <span className="text-red-500">*</span>
                   </label>
                   <input
+                    autoComplete="off"
                     type="text"
                     value={newDayData.title}
                     onChange={(e) => setNewDayData({ ...newDayData, title: e.target.value })}
@@ -1082,6 +1093,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(false)
                     Date <span className="text-red-500">*</span>
                   </label>
                   <input
+                    autoComplete="off"
                     type="date"
                     value={newDayData.date}
                     onChange={(e) => setNewDayData({ ...newDayData, date: e.target.value })}
@@ -1091,6 +1103,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(false)
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Call Time</label>
                   <input
+                    autoComplete="off"
                     type="time"
                     value={newDayData.startTime}
                     onChange={(e) => setNewDayData({ ...newDayData, startTime: e.target.value })}
@@ -1100,6 +1113,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(false)
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
                   <input
+                    autoComplete="off"
                     type="text"
                     value={newDayData.location}
                     onChange={(e) => setNewDayData({ ...newDayData, location: e.target.value })}
@@ -1124,6 +1138,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(false)
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Props (comma-separated)</label>
                   <input
+                    autoComplete="off"
                     type="text"
                     value={newDayData.props}
                     onChange={(e) => setNewDayData({ ...newDayData, props: e.target.value })}
@@ -1134,6 +1149,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(false)
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Scene Notes</label>
                   <textarea
+                    autoComplete="off"
                     value={newDayData.sceneNotes}
                     onChange={(e) => setNewDayData({ ...newDayData, sceneNotes: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -1191,6 +1207,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(false)
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
+                  autoComplete="off"
                   type="text"
                   value={actorSearchQuery}
                   onChange={(e) => setActorSearchQuery(e.target.value)}

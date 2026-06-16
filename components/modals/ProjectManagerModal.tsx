@@ -1217,6 +1217,7 @@ Please ensure you're importing a file exported from this application, or check t
               </div>
               <div className="ml-4">
                 <input
+                  autoComplete="off"
                   ref={fileInputRef}
                   type="file"
                   accept=".json,application/json"
@@ -1374,6 +1375,7 @@ Please ensure you're importing a file exported from this application, or check t
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Project Name *</label>
             <input
+              autoComplete="off"
               type="text"
               name="name"
               required
@@ -1401,6 +1403,7 @@ Please ensure you're importing a file exported from this application, or check t
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Production Company</label>
             <input
+              autoComplete="off"
               type="text"
               name="productionCompany"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -1410,6 +1413,7 @@ Please ensure you're importing a file exported from this application, or check t
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Director</label>
             <input
+              autoComplete="off"
               type="text"
               name="director"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -1419,6 +1423,7 @@ Please ensure you're importing a file exported from this application, or check t
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Producer</label>
             <input
+              autoComplete="off"
               type="text"
               name="producer"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -1428,6 +1433,7 @@ Please ensure you're importing a file exported from this application, or check t
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Script Link</label>
             <input
+              autoComplete="off"
               type="url"
               name="scriptLink"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -1438,6 +1444,7 @@ Please ensure you're importing a file exported from this application, or check t
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
           <textarea
+            autoComplete="off"
             name="description"
             rows={3}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -1498,6 +1505,7 @@ Please ensure you're importing a file exported from this application, or check t
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Project Name *</label>
               <input
+                autoComplete="off"
                 type="text"
                 name="name"
                 defaultValue={editingProject.name}
@@ -1525,6 +1533,7 @@ Please ensure you're importing a file exported from this application, or check t
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Production Company</label>
               <input
+                autoComplete="off"
                 type="text"
                 name="productionCompany"
                 defaultValue={editingProject.details.productionCompany}
@@ -1534,6 +1543,7 @@ Please ensure you're importing a file exported from this application, or check t
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Director</label>
               <input
+                autoComplete="off"
                 type="text"
                 name="director"
                 defaultValue={editingProject.details.director}
@@ -1543,6 +1553,7 @@ Please ensure you're importing a file exported from this application, or check t
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Producer</label>
               <input
+                autoComplete="off"
                 type="text"
                 name="producer"
                 defaultValue={editingProject.details.producer}
@@ -1552,6 +1563,7 @@ Please ensure you're importing a file exported from this application, or check t
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Script Link</label>
               <input
+                autoComplete="off"
                 type="url"
                 name="scriptLink"
                 defaultValue={editingProject.details.scriptLink}
@@ -1562,6 +1574,7 @@ Please ensure you're importing a file exported from this application, or check t
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
             <textarea
+              autoComplete="off"
               name="description"
               rows={3}
               defaultValue={editingProject.details.description}

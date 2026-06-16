@@ -51,6 +51,7 @@ export default function LocationCard({
         </label>
         <input
           type="text"
+          autoComplete="off"
           value={editData.name}
           onChange={(e) => setEditData({ ...editData, name: e.target.value })}
           className="w-full px-4 py-3 bg-[#0f1f17] rounded-lg text-white font-sans mb-4 border border-white/10 focus:border-amber-500/50 focus:outline-none"
@@ -98,6 +99,7 @@ export default function LocationCard({
           Description
         </label>
         <textarea
+          autoComplete="off"
           value={editData.description}
           onChange={(e) => setEditData({ ...editData, description: e.target.value })}
           rows={3}
@@ -109,6 +111,7 @@ export default function LocationCard({
           Scouting Notes
         </label>
         <textarea
+          autoComplete="off"
           value={editData.scoutingNotes}
           onChange={(e) => setEditData({ ...editData, scoutingNotes: e.target.value })}
           rows={3}
@@ -127,6 +130,7 @@ export default function LocationCard({
           </label>
           <input
             type="url"
+            autoComplete="off"
             value={editData.locationIdeaMapUrl || ""}
             onChange={(e) => setEditData({ ...editData, locationIdeaMapUrl: e.target.value })}
             placeholder="https://maps.google.com/..."
@@ -139,6 +143,7 @@ export default function LocationCard({
           </label>
           <input
             type="url"
+            autoComplete="off"
             value={editData.locationIdeaLink || ""}
             onChange={(e) => setEditData({ ...editData, locationIdeaLink: e.target.value })}
             placeholder="https://example.com/location-reference"

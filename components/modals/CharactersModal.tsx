@@ -1068,6 +1068,7 @@ const handleOpenCharacterBible = () => {
 
                             {editingCategoryId === category.id ? (
                               <input
+                                autoComplete="off"
                                 ref={editInputRef}
                                 autoFocus
                                 value={editingCategoryName}
@@ -1258,7 +1259,7 @@ const handleOpenCharacterBible = () => {
           </div>
 
           {/* Hidden File Input */}
-        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+        <input autoComplete="off" ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
 
         {/* Embedded CoPilot - Fixed position in lower right corner */}
         <div className="fixed bottom-6 right-6 z-40">

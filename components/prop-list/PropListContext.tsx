@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react"
 import { User } from "firebase/auth"
 import { Prop, PropProject } from "@/types/prop-list"
 import { subscribeToAuthStateChanges } from "@/lib/auth"
@@ -405,6 +405,12 @@ export function PropListProvider({ children }: { children: ReactNode }) {
   const [view, setView] = useState<ViewState>("projects")
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  // Latest currentProject for the Firestore subscription callback (set up with
+  // [user] deps), so manual adds/edits refresh the open list when signed in.
+  const currentProjectRef = useRef<PropProject | null>(null)
+  useEffect(() => {
+    currentProjectRef.current = currentProject
+  }, [currentProject])
 
   // Persist demo-mode data so it survives navigation/remounts when no backend is signed in.
   useEffect(() => {
@@ -432,8 +438,9 @@ export function PropListProvider({ children }: { children: ReactNode }) {
       user.uid,
       (firestoreProjects) => {
         setProjects(firestoreProjects)
-        if (currentProject) {
-          const updated = firestoreProjects.find((p) => p.id === currentProject.id)
+        const current = currentProjectRef.current
+        if (current) {
+          const updated = firestoreProjects.find((p) => p.id === current.id)
           if (updated) setCurrentProject(updated)
         }
         setIsLoading(false)

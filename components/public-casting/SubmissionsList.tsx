@@ -376,6 +376,7 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by name, email, or form..."
                 className="w-full pl-10 pr-4 py-2.5 bg-[#13261c] border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-violet-500/50 focus:outline-none font-sans text-sm"
+                autoComplete="off"
               />
             </div>
 
@@ -489,6 +490,7 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
                     onChange={(e) => setAgeMin(e.target.value)}
                     placeholder="18"
                     className="w-full px-3 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-violet-500/50 focus:outline-none font-sans text-sm"
+                    autoComplete="off"
                   />
                 </div>
                 {/* Age Max */}
@@ -500,6 +502,7 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
                     onChange={(e) => setAgeMax(e.target.value)}
                     placeholder="65"
                     className="w-full px-3 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-violet-500/50 focus:outline-none font-sans text-sm"
+                    autoComplete="off"
                   />
                 </div>
                 {/* Gender */}
@@ -530,6 +533,7 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
                     onChange={(e) => setFilterByLocation(e.target.value)}
                     placeholder="e.g. Los Angeles"
                     className="w-full px-3 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-violet-500/50 focus:outline-none font-sans text-sm"
+                    autoComplete="off"
                   />
                 </div>
                 {/* Availability */}
@@ -541,6 +545,7 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
                     onChange={(e) => setFilterByAvailability(e.target.value)}
                     placeholder="e.g. Weekends"
                     className="w-full px-3 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-violet-500/50 focus:outline-none font-sans text-sm"
+                    autoComplete="off"
                   />
                 </div>
               </div>
@@ -679,7 +684,7 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
         return (
           <div
             className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 sm:p-8"
-            onClick={() => setDetailSubmissionId(null)}
+            onMouseDown={(e) => { if (e.target === e.currentTarget) setDetailSubmissionId(null) }}
           >
             <div className="relative w-full max-w-xl my-auto" onClick={(e) => e.stopPropagation()}>
               <button
@@ -705,7 +710,7 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
 
       {/* Add selected submissions to an actor list */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setShowAddModal(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowAddModal(false) }}>
           <div className="bg-[#1a2e23] border border-white/10 rounded-xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
               <h2 className="text-lg font-bold text-white font-sans">Add to Actor List</h2>
@@ -751,6 +756,7 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
                     placeholder="Enter list name..."
                     onKeyDown={(e) => { if (e.key === "Enter") handleCreateNewList() }}
                     className="flex-1 px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-sky-500/50 focus:outline-none font-sans text-sm"
+                    autoComplete="off"
                   />
                   <button
                     onClick={handleCreateNewList}

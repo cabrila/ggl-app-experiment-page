@@ -50,6 +50,7 @@ export default function SceneCard({
             </label>
             <input
               type="number"
+              autoComplete="off"
               value={editData.sceneNumber}
               onChange={(e) => setEditData({ ...editData, sceneNumber: Number(e.target.value) })}
               className="w-full px-3 py-3 bg-[#0f1f17] rounded-lg text-white font-mono border border-white/10 focus:border-teal-500/50 focus:outline-none"
@@ -61,6 +62,7 @@ export default function SceneCard({
             </label>
             <input
               type="text"
+              autoComplete="off"
               value={editData.sceneHeading}
               onChange={(e) => setEditData({ ...editData, sceneHeading: e.target.value })}
               className="w-full px-4 py-3 bg-[#0f1f17] rounded-lg text-white font-sans border border-white/10 focus:border-teal-500/50 focus:outline-none"
@@ -75,6 +77,7 @@ export default function SceneCard({
             </label>
             <input
               type="text"
+              autoComplete="off"
               value={editData.location}
               onChange={(e) => setEditData({ ...editData, location: e.target.value })}
               className="w-full px-4 py-3 bg-[#0f1f17] rounded-lg text-white font-sans border border-white/10 focus:border-teal-500/50 focus:outline-none"
@@ -86,6 +89,7 @@ export default function SceneCard({
             </label>
             <input
               type="text"
+              autoComplete="off"
               value={editData.timeOfDay}
               onChange={(e) => setEditData({ ...editData, timeOfDay: e.target.value })}
               className="w-full px-4 py-3 bg-[#0f1f17] rounded-lg text-white font-sans border border-white/10 focus:border-teal-500/50 focus:outline-none"
@@ -97,6 +101,7 @@ export default function SceneCard({
           Raw Text
         </label>
         <textarea
+          autoComplete="off"
           value={editData.rawText}
           onChange={(e) => setEditData({ ...editData, rawText: e.target.value })}
           rows={5}
@@ -107,6 +112,7 @@ export default function SceneCard({
           Notes
         </label>
         <textarea
+          autoComplete="off"
           value={editData.notes || ""}
           onChange={(e) => setEditData({ ...editData, notes: e.target.value })}
           rows={2}

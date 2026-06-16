@@ -645,6 +645,7 @@ onClick={() => navigateToModal("splashScreen")}
             <div className="relative flex-shrink-0 w-full sm:w-auto sm:min-w-[300px]">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
               <input
+                autoComplete="off"
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -684,6 +685,7 @@ onClick={() => navigateToModal("splashScreen")}
                     {uniqueGenders.map((gender) => (
                       <label key={gender} className="flex items-center space-x-2 cursor-pointer">
                         <input
+                          autoComplete="off"
                           type="checkbox"
                           checked={genderFilter.includes(gender)}
                           onChange={() => handleGenderFilterChange(gender)}
@@ -709,6 +711,7 @@ onClick={() => navigateToModal("splashScreen")}
                     {uniqueLocations.map((location) => (
                       <label key={location} className="flex items-center space-x-2 cursor-pointer">
                         <input
+                          autoComplete="off"
                           type="checkbox"
                           checked={locationFilter.includes(location)}
                           onChange={() => handleLocationFilterChange(location)}
@@ -734,6 +737,7 @@ onClick={() => navigateToModal("splashScreen")}
                         Min: <span className="font-semibold">{ageRangeFilter.min}</span>
                       </label>
                       <input
+                        autoComplete="off"
                         type="range"
                         min="0"
                         max="100"
@@ -747,6 +751,7 @@ onClick={() => navigateToModal("splashScreen")}
                         Max: <span className="font-semibold">{ageRangeFilter.max}</span>
                       </label>
                       <input
+                        autoComplete="off"
                         type="range"
                         min="0"
                         max="100"
@@ -772,6 +777,7 @@ onClick={() => navigateToModal("splashScreen")}
                     {state.projects.map((project) => (
                       <label key={project.id} className="flex items-center space-x-2 cursor-pointer">
                         <input
+                          autoComplete="off"
                           type="checkbox"
                           checked={projectFilter.includes(project.id)}
                           onChange={() => handleProjectFilterChange(project.id)}

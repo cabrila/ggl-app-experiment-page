@@ -245,6 +245,7 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
                   value={createdLink}
                   readOnly
                   className="flex-1 bg-transparent text-white/80 text-sm font-mono truncate outline-none"
+                  autoComplete="off"
                 />
                 <button
                   onClick={handleCopyLink}
@@ -417,6 +418,7 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
                     accept="image/*"
                     className="hidden"
                     onChange={(e) => setHeaderImageFromFile(e.target.files?.[0])}
+                    autoComplete="off"
                   />
                 </div>
               </div>
@@ -431,6 +433,7 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g., Lead Role - Sarah"
                   className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-violet-500/50 focus:outline-none transition-colors font-sans"
+                  autoComplete="off"
                 />
               </div>
 
@@ -444,6 +447,7 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
                   onChange={(e) => setProjectName(e.target.value)}
                   placeholder="e.g., Midnight Echo"
                   className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-violet-500/50 focus:outline-none transition-colors font-sans"
+                  autoComplete="off"
                 />
               </div>
 
@@ -456,6 +460,7 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Brief description of the role or casting call..."
                   rows={3}
+                  autoComplete="off"
                   className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-violet-500/50 focus:outline-none transition-colors font-sans resize-none"
                 />
               </div>
@@ -490,6 +495,7 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
                   disabled={!talentPoolConsentEnabled}
                   placeholder="Consent checkbox label shown at the end of the form..."
                   rows={2}
+                  autoComplete="off"
                   className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-violet-500/50 focus:outline-none transition-colors font-sans resize-none disabled:opacity-40 disabled:cursor-not-allowed"
                 />
                 <p className="text-xs text-white/40 mt-1.5 font-sans">
@@ -592,6 +598,7 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
                       onChange={(e) => updateField(field.id, { label: e.target.value })}
                       placeholder="Field label"
                       className="px-3 py-2 bg-[#1a2e23] border border-white/10 rounded-lg text-white text-sm placeholder-white/30 focus:border-violet-500/50 focus:outline-none font-sans"
+                      autoComplete="off"
                     />
 
                     <input
@@ -600,6 +607,7 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
                       onChange={(e) => updateField(field.id, { placeholder: e.target.value })}
                       placeholder="Placeholder text"
                       className="px-3 py-2 bg-[#1a2e23] border border-white/10 rounded-lg text-white text-sm placeholder-white/30 focus:border-violet-500/50 focus:outline-none font-sans"
+                      autoComplete="off"
                     />
 
                     <div className="flex items-center gap-3">
@@ -609,6 +617,7 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
                           checked={field.required}
                           onChange={(e) => updateField(field.id, { required: e.target.checked })}
                           className="w-4 h-4 rounded border-white/20 bg-[#1a2e23] text-violet-500 focus:ring-violet-500/50"
+                          autoComplete="off"
                         />
                         Required
                       </label>
@@ -642,6 +651,7 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
                             onChange={(e) => updateOption(field.id, optIndex, e.target.value)}
                             placeholder={`Option ${optIndex + 1}`}
                             className="flex-1 px-3 py-1.5 bg-[#1a2e23] border border-white/10 rounded-lg text-white text-sm placeholder-white/30 focus:border-violet-500/50 focus:outline-none font-sans"
+                            autoComplete="off"
                           />
                           <button
                             onClick={() => removeOption(field.id, optIndex)}

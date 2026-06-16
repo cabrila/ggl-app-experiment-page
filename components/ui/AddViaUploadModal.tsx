@@ -186,7 +186,7 @@ export default function AddViaUploadModal<T, R>({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
-      onClick={onClose}
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <div
         className="w-full max-w-2xl max-h-[85vh] flex flex-col bg-[#13261c] border border-white/10 rounded-2xl overflow-hidden"
@@ -366,6 +366,7 @@ export default function AddViaUploadModal<T, R>({
                     accept={accept}
                     onChange={handleFileSelect}
                     className="hidden"
+                    autoComplete="off"
                   />
                 </div>
               )}

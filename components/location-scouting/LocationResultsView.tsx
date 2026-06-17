@@ -118,12 +118,12 @@ export default function LocationResultsView() {
     }))
 
   const handleAddUploaded = (items: Location[]) => {
-    let lastId: string | null = null
-    items.forEach((item) => {
-      addLocation(currentProject.id, item)
+    if (items.length === 0) return
+    addLocation(currentProject.id, items)
+    items.forEach(() => {
       trackAddItem("location-overview", "location")
-      lastId = item.id
     })
+    const lastId = items[items.length - 1]?.id
     if (lastId) setNewItemId(lastId)
   }
 

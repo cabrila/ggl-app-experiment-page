@@ -24,7 +24,7 @@ interface LocationScoutingContextType {
   addProject: (project: LocationProject) => void
   updateProject: (project: LocationProject) => void
   deleteProject: (projectId: string) => void
-  addLocation: (projectId: string, location: Location) => void
+  addLocation: (projectId: string, location: Location | Location[]) => void
   updateLocation: (projectId: string, location: Location) => void
   deleteLocation: (projectId: string, locationId: string) => void
 }
@@ -343,11 +343,12 @@ export function LocationScoutingProvider({ children }: { children: ReactNode }) 
     }
   }
 
-  const addLocation = async (projectId: string, location: Location) => {
+  const addLocation = async (projectId: string, location: Location | Location[]) => {
     const project = projects.find((p) => p.id === projectId)
     if (!project) return
 
-    const updatedLocations = [...project.locations, location]
+    const newLocations = Array.isArray(location) ? location : [location]
+    const updatedLocations = [...project.locations, ...newLocations]
     const updatedProject = { ...project, locations: updatedLocations, updatedAt: new Date() }
 
     if (user && !project.isDemo) {

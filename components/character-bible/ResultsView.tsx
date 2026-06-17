@@ -127,12 +127,12 @@ export default function ResultsView() {
     }))
 
   const handleAddUploaded = (items: Character[]) => {
-    let lastId: string | null = null
-    items.forEach((item) => {
-      addCharacter(currentBible.id, item)
+    if (items.length === 0) return
+    addCharacter(currentBible.id, items)
+    items.forEach(() => {
       trackAddItem("character-bible", "character")
-      lastId = item.id
     })
+    const lastId = items[items.length - 1]?.id
     if (lastId) setNewItemId(lastId)
   }
 

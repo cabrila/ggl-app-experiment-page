@@ -21,7 +21,7 @@ interface CharacterBibleContextType {
   addBible: (bible: CharacterBible) => void
   updateBible: (id: string, updates: Partial<CharacterBible>) => void
   deleteBible: (id: string) => void
-  addCharacter: (bibleId: string, character: Character) => void
+  addCharacter: (bibleId: string, character: Character | Character[]) => void
   updateCharacter: (bibleId: string, characterId: string, updates: Partial<Character>) => void
   deleteCharacter: (bibleId: string, characterId: string) => void
 }
@@ -313,11 +313,12 @@ export function CharacterBibleProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const addCharacter = async (bibleId: string, character: Character) => {
+  const addCharacter = async (bibleId: string, character: Character | Character[]) => {
     const bible = bibles.find((b) => b.id === bibleId)
     if (!bible) return
 
-    const updatedCharacters = [...bible.characters, character]
+    const newCharacters = Array.isArray(character) ? character : [character]
+    const updatedCharacters = [...bible.characters, ...newCharacters]
 
     if (user && !bible.isDemo) {
       try {
@@ -335,9 +336,9 @@ export function CharacterBibleProvider({ children }: { children: ReactNode }) {
             : b
         )
       )
-      if (currentBible?.id === bibleId) {
+      if (currentBibleRef.current?.id === bibleId) {
         setCurrentBible({
-          ...currentBible,
+          ...currentBibleRef.current,
           characters: updatedCharacters,
           updatedAt: new Date(),
         })

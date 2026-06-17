@@ -293,9 +293,9 @@ export default function CastingCallsList({
               onChange={(e) => setFilterByStatus(e.target.value as CastingStatusFilter)}
               className="appearance-none pl-10 pr-10 py-2.5 bg-[#13261c] border border-white/10 rounded-xl text-white text-sm focus:border-violet-500/50 focus:outline-none font-sans min-w-[170px] cursor-pointer"
             >
-              <option value="all">All Casting Calls</option>
-              <option value="with-submissions">With Submissions</option>
-              <option value="no-submissions">No Submissions</option>
+              <option value="all" className="bg-[#13261c] text-white">All Casting Calls</option>
+              <option value="with-submissions" className="bg-[#13261c] text-white">With Submissions</option>
+              <option value="no-submissions" className="bg-[#13261c] text-white">No Submissions</option>
             </select>
             <Filter className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
             <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />

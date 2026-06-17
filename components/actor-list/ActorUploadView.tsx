@@ -80,7 +80,7 @@ export default function ActorUploadView() {
         id: `${Date.now()}-${index}`,
         name: actor.name,
         age: actor.age || 0,
-        playingAge: actor.playing_age || "Unknown",
+        playingAge: actor.playing_age || "",
         phone: actor.phone || "",
         email: actor.email || "",
         headshotUrl: actor.headshot_url || "",

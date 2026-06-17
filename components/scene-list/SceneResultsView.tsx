@@ -108,18 +108,24 @@ export default function SceneResultsView() {
     }))
 
   const handleAddUploaded = (items: Scene[]) => {
+    if (items.length === 0) return
     // Continue scene numbering from the current max so added scenes don't
     // collide with existing ones.
     let nextNumber = currentProject.scenes.length
       ? Math.max(...currentProject.scenes.map((s) => s.sceneNumber)) + 1
       : 1
-    let lastId: string | null = null
-    items.forEach((item) => {
-      const scene: Scene = { ...item, sceneNumber: nextNumber++ }
-      addScene(currentProject.id, scene)
+    
+    const numberedScenes = items.map((item) => ({
+      ...item,
+      sceneNumber: nextNumber++
+    }))
+
+    addScene(currentProject.id, numberedScenes)
+    
+    items.forEach(() => {
       trackAddItem("scene-list", "scene")
-      lastId = scene.id
     })
+    const lastId = items[items.length - 1]?.id
     if (lastId) setNewItemId(lastId)
   }
 

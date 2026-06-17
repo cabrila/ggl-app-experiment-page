@@ -252,21 +252,21 @@ function AddItemModal({ onClose, onAdd, scenes, characters, characterActorMap }:
         <div className="px-6 pb-6 space-y-5">
           {/* Row 1 */}
           <div className="flex gap-4">
-            <div className="flex-1"><FloatingField label="Name" value={form.name} onChange={(v) => update("name", v)} /></div>
-            <div className="flex-1"><FloatingField label="Model" value={form.model} onChange={(v) => update("model", v)} /></div>
+            <div className="flex-1"><FloatingField label="Name" value={form.name} onChange={(v) => update("name", v)} placeholder="e.g. Coffee Mug" /></div>
+            <div className="flex-1"><FloatingField label="Model" value={form.model} onChange={(v) => update("model", v)} placeholder="e.g. Ceramic, White" /></div>
             <ImageUploadBox imageUrl={imageUrl} onImageChange={setImageUrl} />
           </div>
 
           {/* Row 2 */}
           <div className="grid grid-cols-2 gap-4">
             <FloatingSelect label="Category" value={form.category} onChange={(v) => update("category", v)} options={CATEGORIES} />
-            <FloatingField label="Serial Number" value={form.serialNumber} onChange={(v) => update("serialNumber", v)} />
+            <FloatingField label="Serial Number" value={form.serialNumber} onChange={(v) => update("serialNumber", v)} placeholder="e.g. SN-12345" />
           </div>
 
           {/* Row 3 */}
           <div className="grid grid-cols-2 gap-4">
-            <FloatingField label="Brand" value={form.brand} onChange={(v) => update("brand", v)} />
-            <FloatingField label="Sku / Barcode" value={form.skuBarcode} onChange={(v) => update("skuBarcode", v)} />
+            <FloatingField label="Brand" value={form.brand} onChange={(v) => update("brand", v)} placeholder="e.g. Acme Corp" />
+            <FloatingField label="Sku / Barcode" value={form.skuBarcode} onChange={(v) => update("skuBarcode", v)} placeholder="e.g. 0123456789" />
           </div>
 
           {/* Scene Assignment */}
@@ -517,21 +517,21 @@ function EditItemModal({ item, onClose, onSave, scenes, characters, characterAct
         <div className="px-6 pb-6 space-y-5">
           {/* Row 1 */}
           <div className="flex gap-4">
-            <div className="flex-1"><FloatingField label="Name" value={form.name} onChange={(v) => update("name", v)} /></div>
-            <div className="flex-1"><FloatingField label="Model" value={form.model} onChange={(v) => update("model", v)} /></div>
+            <div className="flex-1"><FloatingField label="Name" value={form.name} onChange={(v) => update("name", v)} placeholder="e.g. Coffee Mug" /></div>
+            <div className="flex-1"><FloatingField label="Model" value={form.model} onChange={(v) => update("model", v)} placeholder="e.g. Ceramic, White" /></div>
             <ImageUploadBox imageUrl={imageUrl} onImageChange={setImageUrl} />
           </div>
 
           {/* Row 2 */}
           <div className="grid grid-cols-2 gap-4">
             <FloatingSelect label="Category" value={form.category} onChange={(v) => update("category", v)} options={CATEGORIES} />
-            <FloatingField label="Serial Number" value={form.serialNumber} onChange={(v) => update("serialNumber", v)} />
+            <FloatingField label="Serial Number" value={form.serialNumber} onChange={(v) => update("serialNumber", v)} placeholder="e.g. SN-12345" />
           </div>
 
           {/* Row 3 */}
           <div className="grid grid-cols-2 gap-4">
-            <FloatingField label="Brand" value={form.brand} onChange={(v) => update("brand", v)} />
-            <FloatingField label="Sku / Barcode" value={form.skuBarcode} onChange={(v) => update("skuBarcode", v)} />
+            <FloatingField label="Brand" value={form.brand} onChange={(v) => update("brand", v)} placeholder="e.g. Acme Corp" />
+            <FloatingField label="Sku / Barcode" value={form.skuBarcode} onChange={(v) => update("skuBarcode", v)} placeholder="e.g. 0123456789" />
           </div>
 
           {/* Notes */}

@@ -96,8 +96,8 @@ export default function ResultsView() {
       source: "manual",
       name: "New Character",
       aliases: [],
-      gender: "unknown",
-      ageRange: "unknown",
+      gender: "",
+      ageRange: "",
       description: "",
       sceneAppearances: [],
     }
@@ -114,8 +114,8 @@ export default function ResultsView() {
         source: "ai" as const,
         name: char.name,
         aliases: char.aliases || [],
-        gender: char.gender || "unknown",
-        ageRange: char.age_range || "unknown",
+        gender: char.gender || "",
+        ageRange: char.age_range || "",
         description: char.description || "",
         sceneAppearances: (char.scene_appearances || []).map((sa) => ({
           sceneHeading: sa.scene_heading,
@@ -127,12 +127,12 @@ export default function ResultsView() {
     }))
 
   const handleAddUploaded = (items: Character[]) => {
-    let lastId: string | null = null
-    items.forEach((item) => {
-      addCharacter(currentBible.id, item)
+    if (items.length === 0) return
+    addCharacter(currentBible.id, items)
+    items.forEach(() => {
       trackAddItem("character-bible", "character")
-      lastId = item.id
     })
+    const lastId = items[items.length - 1]?.id
     if (lastId) setNewItemId(lastId)
   }
 

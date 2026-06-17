@@ -28,7 +28,7 @@ interface ActorListContextType {
   selectProject: (id: string) => void
   updateProject: (id: string, updates: Partial<ActorListProject>) => void
   deleteProject: (id: string) => void
-  addActor: (actor: Actor) => void
+  addActor: (actor: Actor | Actor[]) => void
   updateActor: (actor: Actor) => void
   deleteActor: (id: string) => void
   goBack: () => void
@@ -506,10 +506,11 @@ export function ActorListProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const addActor = async (actor: Actor) => {
+  const addActor = async (actor: Actor | Actor[]) => {
     if (!currentProject) return
 
-    const updatedActors = [...currentProject.actors, actor]
+    const newActors = Array.isArray(actor) ? actor : [actor]
+    const updatedActors = [...currentProject.actors, ...newActors]
     const updatedProject = {
       ...currentProject,
       actors: updatedActors,

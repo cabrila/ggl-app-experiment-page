@@ -165,12 +165,12 @@ export default function ActorResultsView() {
     }))
 
   const handleAddUploaded = (items: Actor[]) => {
-    let lastId: string | null = null
-    items.forEach((item) => {
-      addActor(item)
+    if (items.length === 0) return
+    addActor(items)
+    items.forEach(() => {
       trackAddItem("actor-list", "actor")
-      lastId = item.id
     })
+    const lastId = items[items.length - 1]?.id
     if (lastId) setNewItemId(lastId)
   }
 

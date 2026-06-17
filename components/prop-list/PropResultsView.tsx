@@ -136,12 +136,12 @@ export default function PropResultsView() {
     })
 
   const handleAddUploaded = (items: Prop[]) => {
-    let lastId: string | null = null
-    items.forEach((item) => {
-      addProp(currentProject.id, item)
+    if (items.length === 0) return
+    addProp(currentProject.id, items)
+    items.forEach(() => {
       trackAddItem("prop-list", "prop")
-      lastId = item.id
     })
+    const lastId = items[items.length - 1]?.id
     if (lastId) setNewItemId(lastId)
   }
 

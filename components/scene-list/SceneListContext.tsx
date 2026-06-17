@@ -24,7 +24,7 @@ interface SceneListContextType {
   addProject: (project: SceneProject) => void
   updateProject: (project: SceneProject) => void
   deleteProject: (projectId: string) => void
-  addScene: (projectId: string, scene: Scene) => void
+  addScene: (projectId: string, scene: Scene | Scene[]) => void
   updateScene: (projectId: string, scene: Scene) => void
   deleteScene: (projectId: string, sceneId: string) => void
 }
@@ -387,10 +387,11 @@ export function SceneListProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const addScene = async (projectId: string, scene: Scene) => {
+  const addScene = async (projectId: string, scene: Scene | Scene[]) => {
     const project = projects.find((p) => p.id === projectId)
     if (!project) return
-    const updatedScenes = [...project.scenes, scene]
+    const newScenes = Array.isArray(scene) ? scene : [scene]
+    const updatedScenes = [...project.scenes, ...newScenes]
     const updatedProject = { ...project, scenes: updatedScenes, updatedAt: new Date() }
 
     if (user && !project.isDemo) {

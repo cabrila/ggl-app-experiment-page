@@ -24,7 +24,7 @@ interface PropListContextType {
   addProject: (project: PropProject) => void
   updateProject: (project: PropProject) => void
   deleteProject: (projectId: string) => void
-  addProp: (projectId: string, prop: Prop) => void
+  addProp: (projectId: string, prop: Prop | Prop[]) => void
   updateProp: (projectId: string, prop: Prop) => void
   deleteProp: (projectId: string, propId: string) => void
 }
@@ -507,10 +507,11 @@ export function PropListProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const addProp = async (projectId: string, prop: Prop) => {
+  const addProp = async (projectId: string, prop: Prop | Prop[]) => {
     const project = projects.find((p) => p.id === projectId)
     if (!project) return
-    const updatedProps = [...project.props, prop]
+    const newProps = Array.isArray(prop) ? prop : [prop]
+    const updatedProps = [...project.props, ...newProps]
     const updatedProject = { ...project, props: updatedProps, updatedAt: new Date() }
 
     if (user && !project.isDemo) {

@@ -514,9 +514,9 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
                       onChange={(e) => setFilterByGender(e.target.value)}
                       className="appearance-none w-full pl-3 pr-9 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white focus:border-violet-500/50 focus:outline-none font-sans text-sm cursor-pointer"
                     >
-                      <option value="all">All Genders</option>
+                      <option value="all" className="bg-[#0f1f17] text-white">All Genders</option>
                       {genderOptions.map((g) => (
-                        <option key={g} value={g}>
+                        <option key={g} value={g} className="bg-[#0f1f17] text-white">
                           {g}
                         </option>
                       ))}

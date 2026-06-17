@@ -446,9 +446,9 @@ export default function AddFromDatabaseModal({ onClose, characterId }: AddFromDa
                   onChange={(e) => setGenderFilter(e.target.value)}
                   className="px-3 py-1.5 bg-background border border-border rounded-lg text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-success-500/50"
                 >
-                  <option value="all">All Genders</option>
+                  <option value="all" className="bg-background text-foreground">All Genders</option>
                   {genders.map((gender) => (
-                    <option key={gender} value={gender}>
+                    <option key={gender} value={gender} className="bg-background text-foreground">
                       {gender}
                     </option>
                   ))}

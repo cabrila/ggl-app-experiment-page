@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
 
     const genAI = new GoogleGenerativeAI(apiKey)
     const model = genAI.getGenerativeModel({
-      model: process.env.GEMINI_MODEL ?? "gemini-2.5-flash",
+      model: process.env.GEMINI_MODEL ?? "gemini-3.5-flash",
     })
 
     const prompt = `Analyze this screenplay/script document and extract all characters. For each character, provide:

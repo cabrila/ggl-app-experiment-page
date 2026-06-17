@@ -85,8 +85,8 @@ export default function UploadView() {
         source: "ai" as const,
         name: char.name,
         aliases: char.aliases || [],
-        gender: char.gender || "unknown",
-        ageRange: char.age_range || "unknown",
+        gender: char.gender || "",
+        ageRange: char.age_range || "",
         description: char.description || "",
         sceneAppearances: (char.scene_appearances || []).map((sa) => ({
           sceneHeading: sa.scene_heading,

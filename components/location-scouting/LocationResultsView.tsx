@@ -224,9 +224,9 @@ export default function LocationResultsView() {
             onChange={(e) => setTypeFilter(e.target.value as "all" | Location["type"])}
             className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white/80 focus:border-amber-500/50 focus:outline-none font-sans"
           >
-            <option value="all">All types</option>
+            <option value="all" className="bg-[#0f1f17] text-white">All types</option>
             {TYPE_GROUPS.map((t) => (
-              <option key={t.value} value={t.value}>{t.label}</option>
+              <option key={t.value} value={t.value} className="bg-[#0f1f17] text-white">{t.label}</option>
             ))}
           </select>
           <select
@@ -234,9 +234,9 @@ export default function LocationResultsView() {
             onChange={(e) => setTimeFilter(e.target.value as "all" | Location["timeOfDay"])}
             className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white/80 focus:border-amber-500/50 focus:outline-none font-sans"
           >
-            <option value="all">Any time</option>
+            <option value="all" className="bg-[#0f1f17] text-white">Any time</option>
             {TIME_OPTIONS.map((t) => (
-              <option key={t} value={t}>{t}</option>
+              <option key={t} value={t} className="bg-[#0f1f17] text-white">{t}</option>
             ))}
           </select>
         </div>

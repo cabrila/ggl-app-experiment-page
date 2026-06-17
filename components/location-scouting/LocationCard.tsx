@@ -68,8 +68,8 @@ export default function LocationCard({
               onChange={(e) => setEditData({ ...editData, type: e.target.value as "INT" | "EXT" })}
               className="w-full px-4 py-3 bg-[#0f1f17] rounded-lg text-white font-sans border border-white/10 focus:border-amber-500/50 focus:outline-none"
             >
-              <option value="INT">INT.</option>
-              <option value="EXT">EXT.</option>
+              <option value="INT" className="bg-[#0f1f17] text-white">INT.</option>
+              <option value="EXT" className="bg-[#0f1f17] text-white">EXT.</option>
             </select>
           </div>
           <div>
@@ -86,10 +86,10 @@ export default function LocationCard({
               }
               className="w-full px-4 py-3 bg-[#0f1f17] rounded-lg text-white font-sans border border-white/10 focus:border-amber-500/50 focus:outline-none"
             >
-              <option value="DAY">DAY</option>
-              <option value="NIGHT">NIGHT</option>
-              <option value="DAWN">DAWN</option>
-              <option value="DUSK">DUSK</option>
+              <option value="DAY" className="bg-[#0f1f17] text-white">DAY</option>
+              <option value="NIGHT" className="bg-[#0f1f17] text-white">NIGHT</option>
+              <option value="DAWN" className="bg-[#0f1f17] text-white">DAWN</option>
+              <option value="DUSK" className="bg-[#0f1f17] text-white">DUSK</option>
             </select>
           </div>
         </div>

@@ -303,9 +303,9 @@ export default function CastingCallPreviewModal({ castingCall, project, onClose 
                           errors[field.label] ? "border-red-500/50" : "border-white/10"
                         }`}
                       >
-                        <option value="">{field.placeholder || "Select an option"}</option>
+                        <option value="" className="bg-[#0f1f17] text-white">{field.placeholder || "Select an option"}</option>
                         {field.options?.map((opt) => (
-                          <option key={opt} value={opt}>{opt}</option>
+                          <option key={opt} value={opt} className="bg-[#0f1f17] text-white">{opt}</option>
                         ))}
                       </select>
                     ) : field.type === "image" ? (

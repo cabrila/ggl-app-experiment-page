@@ -405,9 +405,9 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
                 onChange={(e) => setFilterByForm(e.target.value)}
                 className="appearance-none pl-4 pr-10 py-2.5 bg-[#13261c] border border-white/10 rounded-xl text-white text-sm focus:border-violet-500/50 focus:outline-none font-sans min-w-[150px] cursor-pointer"
               >
-                <option value="all">All Forms</option>
+                <option value="all" className="bg-[#13261c] text-white">All Forms</option>
                 {formNames.map((name) => (
-                  <option key={name} value={name}>
+                  <option key={name} value={name} className="bg-[#13261c] text-white">
                     {name}
                   </option>
                 ))}
@@ -423,7 +423,7 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
                 className="appearance-none pl-4 pr-10 py-2.5 bg-[#13261c] border border-white/10 rounded-xl text-white text-sm focus:border-violet-500/50 focus:outline-none font-sans min-w-[140px] cursor-pointer"
               >
                 {gradeOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
+                  <option key={option.value} value={option.value} className="bg-[#13261c] text-white">
                     {option.label}
                   </option>
                 ))}

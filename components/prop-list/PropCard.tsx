@@ -115,7 +115,7 @@ export default function PropCard({
             className="w-full px-4 py-3 bg-[#0f1f17] rounded-lg text-white font-sans border border-white/10 focus:border-rose-500/50 focus:outline-none"
           >
             {CATEGORIES.map((c) => (
-              <option key={c} value={c}>
+              <option key={c} value={c} className="bg-[#0f1f17] text-white">
                 {CATEGORY_LABELS[c]}
               </option>
             ))}

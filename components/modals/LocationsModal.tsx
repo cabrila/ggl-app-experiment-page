@@ -1353,12 +1353,12 @@ function AddLocationModal({ onClose, onAdd, existingLocations, prefillCoords }: 
             </div>
           )}
           <div className="grid grid-cols-2 gap-4">
-            <FloatingField label="Location Name" value={form.name} onChange={(v) => update("name", v)} />
-            <FloatingField label="Address" value={form.address} onChange={(v) => update("address", v)} />
+            <FloatingField label="Location Name" value={form.name} onChange={(v) => update("name", v)} placeholder="e.g. Central Park" />
+            <FloatingField label="Address" value={form.address} onChange={(v) => update("address", v)} placeholder="e.g. 123 Main St, New York, NY" />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <FloatingField label="Latitude" value={form.lat} onChange={(v) => update("lat", v)} type="number" />
-            <FloatingField label="Longitude" value={form.lng} onChange={(v) => update("lng", v)} type="number" />
+            <FloatingField label="Latitude" value={form.lat} onChange={(v) => update("lat", v)} type="number" placeholder="e.g. 40.7812" />
+            <FloatingField label="Longitude" value={form.lng} onChange={(v) => update("lng", v)} type="number" placeholder="e.g. -73.9665" />
           </div>
           <div>
             <p className="text-xs text-gray-500 mb-2 flex items-center gap-1"><Tag className="w-3 h-3" /> Vibe Tags</p>
@@ -1374,39 +1374,39 @@ function AddLocationModal({ onClose, onAdd, existingLocations, prefillCoords }: 
               showCaptions
             />
           </div>
-          <FloatingTextarea label="Notes" value={form.notes} onChange={(v) => update("notes", v)} />
+          <FloatingTextarea label="Notes" value={form.notes} onChange={(v) => update("notes", v)} placeholder="e.g. Great lighting in the morning, requires generator for extra power." />
           <div>
             <h3 className="text-base font-bold text-gray-900">Costing</h3>
             <div className="grid grid-cols-3 gap-4 mt-2">
-              <FloatingField label="Daily Rate" value={form.dailyRate} onChange={(v) => update("dailyRate", v)} placeholder="$0" />
-              <FloatingField label="Overtime Rate" value={form.overtimeRate} onChange={(v) => update("overtimeRate", v)} placeholder="$0/hr" />
-              <FloatingField label="Security Deposit" value={form.securityDeposit} onChange={(v) => update("securityDeposit", v)} placeholder="$0" />
+              <FloatingField label="Daily Rate" value={form.dailyRate} onChange={(v) => update("dailyRate", v)} placeholder="e.g. $1500" />
+              <FloatingField label="Overtime Rate" value={form.overtimeRate} onChange={(v) => update("overtimeRate", v)} placeholder="e.g. $250/hr" />
+              <FloatingField label="Security Deposit" value={form.securityDeposit} onChange={(v) => update("securityDeposit", v)} placeholder="e.g. $500" />
             </div>
           </div>
           {locType === "on-location" ? (
             <div>
               <h3 className="text-base font-bold text-gray-900">Logistics</h3>
               <div className="grid grid-cols-2 gap-4 mt-2">
-                <FloatingField label="Basecamp Parking" value={form.basecampParking} onChange={(v) => update("basecampParking", v)} />
-                <FloatingField label="Crew Parking Capacity" value={form.crewParkingCapacity} onChange={(v) => update("crewParkingCapacity", v)} type="number" />
-                <FloatingField label="Sun Path Notes" value={form.sunPathNotes} onChange={(v) => update("sunPathNotes", v)} />
-                <FloatingField label="Noise Profile" value={form.noiseProfile} onChange={(v) => update("noiseProfile", v)} />
+                <FloatingField label="Basecamp Parking" value={form.basecampParking} onChange={(v) => update("basecampParking", v)} placeholder="e.g. Nearby lot, 5 min walk" />
+                <FloatingField label="Crew Parking Capacity" value={form.crewParkingCapacity} onChange={(v) => update("crewParkingCapacity", v)} type="number" placeholder="e.g. 50" />
+                <FloatingField label="Sun Path Notes" value={form.sunPathNotes} onChange={(v) => update("sunPathNotes", v)} placeholder="e.g. Good morning light, blocked in afternoon" />
+                <FloatingField label="Noise Profile" value={form.noiseProfile} onChange={(v) => update("noiseProfile", v)} placeholder="e.g. Quiet, occasional traffic" />
                 <FloatingSelect label="Load-in Difficulty" value={form.loadInDifficulty} onChange={(v) => update("loadInDifficulty", v)} options={LOAD_IN_OPTIONS} />
-                <FloatingField label="Bathrooms" value={form.bathroomCount} onChange={(v) => update("bathroomCount", v)} type="number" />
+                <FloatingField label="Bathrooms" value={form.bathroomCount} onChange={(v) => update("bathroomCount", v)} type="number" placeholder="e.g. 2" />
               </div>
             </div>
           ) : (
             <div>
               <h3 className="text-base font-bold text-gray-900">Technical Specs</h3>
               <div className="grid grid-cols-4 gap-3 mt-2 mb-4">
-                <FloatingField label="Length (ft)" value={form.dimL} onChange={(v) => update("dimL", v)} type="number" />
-                <FloatingField label="Width (ft)" value={form.dimW} onChange={(v) => update("dimW", v)} type="number" />
-                <FloatingField label="Height (ft)" value={form.dimH} onChange={(v) => update("dimH", v)} type="number" />
-                <FloatingField label="Grid Height" value={form.gridHeight} onChange={(v) => update("gridHeight", v)} type="number" />
+                <FloatingField label="Length (ft)" value={form.dimL} onChange={(v) => update("dimL", v)} type="number" placeholder="e.g. 100" />
+                <FloatingField label="Width (ft)" value={form.dimW} onChange={(v) => update("dimW", v)} type="number" placeholder="e.g. 50" />
+                <FloatingField label="Height (ft)" value={form.dimH} onChange={(v) => update("dimH", v)} type="number" placeholder="e.g. 30" />
+                <FloatingField label="Grid Height" value={form.gridHeight} onChange={(v) => update("gridHeight", v)} type="number" placeholder="e.g. 20" />
               </div>
               <div className="grid grid-cols-3 gap-4 mb-4">
                 <FloatingSelect label="Floor Type" value={form.floorType} onChange={(v) => update("floorType", v)} options={FLOOR_TYPE_OPTIONS} />
-                <FloatingField label="Amperage" value={form.amperage} onChange={(v) => update("amperage", v)} />
+                <FloatingField label="Amperage" value={form.amperage} onChange={(v) => update("amperage", v)} placeholder="e.g. 200A" />
                 <FloatingSelect label="Sound Rating" value={form.soundRating} onChange={(v) => update("soundRating", v)} options={SOUND_RATING_OPTIONS} />
               </div>
               <div className="flex flex-wrap gap-3">
@@ -1472,11 +1472,11 @@ function EditLocationModal({ location, onClose, onSave }: { location: ProjectLoc
         </div>
         <div className="px-6 pb-6 space-y-5">
           <div className="grid grid-cols-2 gap-4">
-            <FloatingField label="Location Name" value={form.name} onChange={(v) => update("name", v)} />
+            <FloatingField label="Location Name" value={form.name} onChange={(v) => update("name", v)} placeholder="e.g. Central Park" />
             <FloatingSelect label="Status" value={form.status} onChange={(v) => update("status", v)} options={LOCATION_STATUSES.map((s) => ({ value: s.value, label: s.label }))} />
           </div>
-          <FloatingField label="Address" value={form.address} onChange={(v) => update("address", v)} />
-          <FloatingTextarea label="Notes" value={form.notes} onChange={(v) => update("notes", v)} />
+          <FloatingField label="Address" value={form.address} onChange={(v) => update("address", v)} placeholder="e.g. 123 Main St, New York, NY" />
+          <FloatingTextarea label="Notes" value={form.notes} onChange={(v) => update("notes", v)} placeholder="e.g. Good morning light, requires generator" />
           <div>
             <h3 className="text-base font-bold text-gray-900">Vibe Tags</h3>
             <TagPicker selected={vibeTags} onChange={setVibeTags} options={VIBE_TAG_OPTIONS} />
@@ -1497,9 +1497,9 @@ function EditLocationModal({ location, onClose, onSave }: { location: ProjectLoc
           <div>
             <h3 className="text-base font-bold text-gray-900">Costing</h3>
             <div className="grid grid-cols-3 gap-4 mt-2">
-              <FloatingField label="Daily Rate" value={form.dailyRate} onChange={(v) => update("dailyRate", v)} />
-              <FloatingField label="Overtime Rate" value={form.overtimeRate} onChange={(v) => update("overtimeRate", v)} />
-              <FloatingField label="Security Deposit" value={form.securityDeposit} onChange={(v) => update("securityDeposit", v)} />
+              <FloatingField label="Daily Rate" value={form.dailyRate} onChange={(v) => update("dailyRate", v)} placeholder="e.g. $1500" />
+              <FloatingField label="Overtime Rate" value={form.overtimeRate} onChange={(v) => update("overtimeRate", v)} placeholder="e.g. $250/hr" />
+              <FloatingField label="Security Deposit" value={form.securityDeposit} onChange={(v) => update("securityDeposit", v)} placeholder="e.g. $500" />
             </div>
           </div>
           <div>

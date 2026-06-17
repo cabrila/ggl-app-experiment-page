@@ -38,8 +38,8 @@ export default function CharacterCard({
   const [editState, setEditState] = useState({
     name: character.name,
     aliases: (character.aliases || []).join(", "),
-    gender: character.gender || "",
-    ageRange: character.ageRange || "",
+    gender: character.gender === "unknown" ? "" : (character.gender || ""),
+    ageRange: character.ageRange === "unknown" ? "" : (character.ageRange || ""),
     description: character.description || "",
   })
 
@@ -61,8 +61,8 @@ export default function CharacterCard({
     setEditState({
       name: character.name,
       aliases: (character.aliases || []).join(", "),
-      gender: character.gender || "",
-      ageRange: character.ageRange || "",
+      gender: character.gender === "unknown" ? "" : (character.gender || ""),
+      ageRange: character.ageRange === "unknown" ? "" : (character.ageRange || ""),
       description: character.description || "",
     })
     setIsEditing(false)
@@ -81,6 +81,7 @@ export default function CharacterCard({
             autoComplete="off"
             value={editState.name}
             onChange={(e) => setEditState({ ...editState, name: e.target.value })}
+            placeholder="e.g. John Doe"
             className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans focus:outline-none focus:border-emerald-500/50"
           />
         </div>
@@ -124,6 +125,7 @@ export default function CharacterCard({
               autoComplete="off"
               value={editState.gender}
               onChange={(e) => setEditState({ ...editState, gender: e.target.value })}
+              placeholder="e.g. Male, Female, Non-binary"
               className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans focus:outline-none focus:border-emerald-500/50"
             />
           </div>
@@ -139,6 +141,7 @@ export default function CharacterCard({
             value={editState.description}
             onChange={(e) => setEditState({ ...editState, description: e.target.value })}
             rows={4}
+            placeholder="e.g. A brief description of the character's traits, backstory, etc."
             className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans resize-none focus:outline-none focus:border-emerald-500/50"
           />
         </div>

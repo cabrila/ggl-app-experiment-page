@@ -243,9 +243,9 @@ export default function ResultsView() {
             onChange={(e) => setGenderFilter(e.target.value as "all" | (typeof GENDER_GROUPS)[number])}
             className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white/80 focus:border-emerald-500/50 focus:outline-none font-sans"
           >
-            <option value="all">All genders</option>
+            <option value="all" className="bg-[#0f1f17] text-white">All genders</option>
             {GENDER_GROUPS.map((g) => (
-              <option key={g} value={g}>{g}</option>
+              <option key={g} value={g} className="bg-[#0f1f17] text-white">{g}</option>
             ))}
           </select>
         </div>

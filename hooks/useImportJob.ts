@@ -108,7 +108,7 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
         }
 
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ''
-        const res = await fetch(`${backendUrl}/import/${taskType}`, {
+        const res = await fetch(`${backendUrl}/api/import/${taskType}`, {
           method: "POST",
           headers: { Authorization: `Bearer ${idToken}` },
           body: form,
@@ -154,7 +154,7 @@ export function useImportJob<T>(taskType: string): ImportJobState<T> {
         const user = auth.currentUser
         const idToken = user ? await user.getIdToken() : null
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ''
-        const res = await fetch(`${backendUrl}/import/${taskType}/${taskId}`, {
+        const res = await fetch(`${backendUrl}/api/import/${taskType}/${taskId}`, {
           headers: idToken ? { Authorization: `Bearer ${idToken}` } : undefined,
           cache: "no-store",
         })

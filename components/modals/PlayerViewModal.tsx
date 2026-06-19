@@ -1367,6 +1367,7 @@ export default function PlayerViewModal({ onClose }: { onClose: () => void }) {
                 </div>
 
                 <textarea
+                  autoComplete="off"
                   value={maybeNoteText}
                   onChange={(e) => setMaybeNoteText(e.target.value)}
                   placeholder="Share your thoughts about this actor..."

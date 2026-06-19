@@ -1,17 +1,21 @@
 "use client"
 
 import { useState } from "react"
-import { FileText, Users, Calendar, Plus, Pencil, Trash2 } from "lucide-react"
+import { FileText, Users, Calendar, Plus, Pencil, Trash2, Share2 } from "lucide-react"
 import { useCharacterBible } from "./CharacterBibleContext"
 import { CharacterBible } from "@/types/character-bible"
 import DeleteConfirmationModal from "@/components/ui/DeleteConfirmationModal"
 import EditProjectWithThumbnailModal from "@/components/ui/EditProjectWithThumbnailModal"
+import { trackListCreated, trackDelete } from "@/lib/analytics"
+import { Badge } from "@/components/ui/badge"
+import ShareModal from "@/components/modals/ShareModal"
 
 export default function ProjectsList() {
   const { bibles, setView, setCurrentBible, deleteBible, updateBible } = useCharacterBible()
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<CharacterBible | null>(null)
   const [editTarget, setEditTarget] = useState<CharacterBible | null>(null)
+  const [shareTarget, setShareTarget] = useState<CharacterBible | null>(null)
 
   const handleOpenBible = (bible: CharacterBible) => {
     setCurrentBible(bible)
@@ -19,6 +23,7 @@ export default function ProjectsList() {
   }
 
   const handleNewBible = () => {
+    trackListCreated("character-bible")
     setView("upload")
   }
 
@@ -32,8 +37,14 @@ export default function ProjectsList() {
     setEditTarget(bible)
   }
 
+  const handleShare = (e: React.MouseEvent, bible: CharacterBible) => {
+    e.stopPropagation()
+    setShareTarget(bible)
+  }
+
   const handleConfirmDelete = () => {
     if (deleteTarget) {
+      trackDelete("character-bible", "list")
       deleteBible(deleteTarget.id)
     }
   }
@@ -99,11 +110,18 @@ export default function ProjectsList() {
             {/* Content Section - 2/3 width */}
             <button
               onClick={() => handleOpenBible(bible)}
-              className="flex-1 flex flex-col justify-center p-5 text-left"
+              className="flex-1 min-w-0 flex flex-col justify-center p-5 text-left"
             >
               {/* Action buttons on hover */}
               {hoveredId === bible.id && (
                 <div className="absolute top-3 right-3 flex items-center gap-1">
+                  <button
+                    onClick={(e) => handleShare(e, bible)}
+                    className="p-2 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 transition-colors"
+                    title="Share"
+                  >
+                    <Share2 className="w-4 h-4 text-indigo-400" />
+                  </button>
                   <button
                     onClick={(e) => handleEdit(e, bible)}
                     className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
@@ -122,19 +140,26 @@ export default function ProjectsList() {
               )}
 
               {/* Project Name */}
-              <h3 className="text-base font-semibold text-white mb-2 font-sans pr-16 line-clamp-1">
-                {bible.name}
-              </h3>
+              <div className="mb-2 pr-16">
+                <h3 className="text-base font-semibold text-white font-sans leading-snug break-words line-clamp-2">
+                  {bible.name}
+                </h3>
+                {bible.isDemo && (
+                  <Badge className="mt-1.5 bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px] px-1.5 py-0">
+                    Demo
+                  </Badge>
+                )}
+              </div>
 
               {/* Meta Info */}
-              <div className="flex flex-wrap items-center gap-3 text-xs text-white/50">
-                <span className="flex items-center gap-1">
-                  <Users className="w-3.5 h-3.5" />
-                  {bible.characters.length} characters
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/50">
+                <span className="flex items-center gap-1 min-w-0">
+                  <Users className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="truncate">{bible.characters.length} characters</span>
                 </span>
-                <span className="flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5" />
-                  {formatDate(bible.createdAt)}
+                <span className="flex items-center gap-1 min-w-0">
+                  <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="truncate">{formatDate(bible.createdAt)}</span>
                 </span>
               </div>
             </button>
@@ -174,6 +199,16 @@ export default function ProjectsList() {
         label="Character Bible Name"
         accentColor="sky"
       />
+
+      {/* Share Modal */}
+      {shareTarget && (
+        <ShareModal
+          onClose={() => setShareTarget(null)}
+          toolType="character-bible"
+          projectName={shareTarget.name}
+          data={shareTarget.characters}
+        />
+      )}
       </div>
     </div>
   )

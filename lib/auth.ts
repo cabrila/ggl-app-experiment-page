@@ -9,7 +9,7 @@ import {
   signInWithPhoneNumber,
   ConfirmationResult,
 } from "firebase/auth"
-import { auth } from "./firebase"
+import { auth, waitForAuth } from "./firebase"
 
 // Store the confirmation result for phone auth verification
 let confirmationResult: ConfirmationResult | null = null
@@ -23,9 +23,21 @@ const actionCodeSettings = {
 }
 
 /**
+ * Check if Firebase auth is properly initialized
+ */
+function isAuthInitialized(): boolean {
+  return auth && typeof auth.onIdTokenChanged === "function"
+}
+
+/**
  * Send a magic link to the user's email
  */
 export async function sendMagicLink(email: string): Promise<void> {
+  // Check if auth is properly initialized
+  if (!isAuthInitialized()) {
+    throw new Error("Firebase is not properly configured. Please check your environment variables.")
+  }
+
   const settings = {
     url: `${typeof window !== "undefined" ? window.location.origin : ""}/auth/callback`,
     handleCodeInApp: true,
@@ -48,7 +60,7 @@ export async function sendMagicLink(email: string): Promise<void> {
 export function isMagicLinkCallback(): boolean {
   if (typeof window === "undefined") return false
   // Check if auth is properly initialized
-  if (!auth || typeof auth.onIdTokenChanged !== "function") return false
+  if (!isAuthInitialized()) return false
   
   try {
     return isSignInWithEmailLink(auth, window.location.href)
@@ -61,6 +73,11 @@ export function isMagicLinkCallback(): boolean {
  * Complete the magic link sign-in process
  */
 export async function completeMagicLinkSignIn(email?: string): Promise<User> {
+  // Check if auth is properly initialized
+  if (!isAuthInitialized()) {
+    throw new Error("Firebase is not properly configured. Please check your environment variables.")
+  }
+
   try {
     const storedEmail = typeof window !== "undefined" ? window.localStorage.getItem("emailForSignIn") : null
     const emailToUse = email || storedEmail
@@ -95,27 +112,43 @@ export async function signOut(): Promise<void> {
 }
 
 /**
- * Subscribe to authentication state changes
+ * Subscribe to authentication state changes.
+ * Waits for Firebase to be ready before subscribing, so callers don't
+ * silently get a no-op subscription on cold start.
  */
 export function subscribeToAuthStateChanges(callback: (user: User | null) => void): () => void {
   // Guard against SSR - auth is a placeholder object on server
   if (typeof window === "undefined") {
     return () => {}
   }
-  
-  // Check if auth is properly initialized
-  if (!auth || typeof auth.onIdTokenChanged !== "function") {
-    // Firebase not properly initialized, call callback with null immediately
-    setTimeout(() => callback(null), 0)
-    return () => {}
-  }
-  
-  try {
-    return onAuthStateChanged(auth, callback)
-  } catch {
-    // If subscription fails, call callback with null
-    setTimeout(() => callback(null), 0)
-    return () => {}
+
+  let realUnsubscribe: (() => void) | null = null
+  let cancelled = false
+
+  // Wait for Firebase auth to be ready before subscribing
+  waitForAuth()
+    .then(() => {
+      if (cancelled) return
+      if (!isAuthInitialized()) {
+        console.warn("[v0] Firebase auth still not initialized after waitForAuth")
+        callback(null)
+        return
+      }
+      try {
+        realUnsubscribe = onAuthStateChanged(auth, callback)
+      } catch (err) {
+        console.error("[v0] onAuthStateChanged failed:", err)
+        callback(null)
+      }
+    })
+    .catch((err) => {
+      console.error("[v0] waitForAuth failed:", err)
+      if (!cancelled) callback(null)
+    })
+
+  return () => {
+    cancelled = true
+    if (realUnsubscribe) realUnsubscribe()
   }
 }
 
@@ -132,7 +165,7 @@ export function getCurrentUser(): User | null {
  */
 export function initRecaptchaVerifier(buttonId: string): RecaptchaVerifier | null {
   // Check if auth is properly initialized
-  if (!auth || typeof auth.onIdTokenChanged !== "function") {
+  if (!isAuthInitialized()) {
     console.warn("Firebase auth not initialized, skipping reCAPTCHA setup")
     return null
   }
@@ -162,6 +195,26 @@ export function initRecaptchaVerifier(buttonId: string): RecaptchaVerifier | nul
 }
 
 /**
+ * Initialize reCAPTCHA verifier with retry logic, waiting for auth to be ready
+ */
+export async function initRecaptchaVerifierAsync(buttonId: string, maxRetries = 5): Promise<RecaptchaVerifier | null> {
+  // Wait for auth to be ready
+  await waitForAuth()
+  
+  for (let i = 0; i < maxRetries; i++) {
+    const verifier = initRecaptchaVerifier(buttonId)
+    if (verifier) {
+      return verifier
+    }
+    // Wait a bit before retrying
+    await new Promise(resolve => setTimeout(resolve, 200 * (i + 1)))
+  }
+  
+  console.warn("Failed to initialize reCAPTCHA after retries")
+  return null
+}
+
+/**
  * Send a verification code to the user's phone number
  */
 export async function sendPhoneVerificationCode(phoneNumber: string): Promise<void> {
@@ -173,6 +226,7 @@ export async function sendPhoneVerificationCode(phoneNumber: string): Promise<vo
     confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier)
   } catch (error: unknown) {
     console.error("Error sending phone verification code:", error)
+    // After any failure, the verifier is consumed and must be recreated
     if (recaptchaVerifier) {
       recaptchaVerifier.clear()
       recaptchaVerifier = null

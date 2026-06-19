@@ -527,6 +527,7 @@ function SynopsisEditor({ synopsis, onChange }: { synopsis: string; onChange: (v
   return isEditing ? (
     <div className="pl-10 pr-8 pb-2">
       <input
+        autoComplete="off"
         autoFocus
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
@@ -579,7 +580,7 @@ function ScriptReport({ blocks, characters, onClose }: {
   const maxLines = report[0]?.lines || 1
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[70] flex items-center justify-center" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[70] flex items-center justify-center" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <div className="bg-white rounded-2xl shadow-2xl border border-stone-200 w-full max-w-lg max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-stone-200">
@@ -905,6 +906,7 @@ function BeatBoard({ beats, onBeatsChange, scenes }: {
                         /* Edit mode */
                         <div className="space-y-2">
                           <input
+                            autoComplete="off"
                             autoFocus
                             value={beat.title}
                             onChange={(e) => updateBeat(beat.id, { title: e.target.value })}
@@ -913,6 +915,7 @@ function BeatBoard({ beats, onBeatsChange, scenes }: {
                             onKeyDown={(e) => { if (e.key === "Escape" || (e.key === "Enter" && !e.shiftKey)) setEditingId(null) }}
                           />
                           <textarea
+                            autoComplete="off"
                             value={beat.description}
                             onChange={(e) => updateBeat(beat.id, { description: e.target.value })}
                             placeholder="Description..."
@@ -1561,6 +1564,7 @@ export default function ScriptModal({ onClose }: { onClose: () => void }) {
         <div className="h-10 bg-white/80 border-b border-stone-200 flex items-center gap-2 px-4 shrink-0">
           <Search className="w-4 h-4 text-stone-400" />
           <input
+            autoComplete="off"
             autoFocus
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}

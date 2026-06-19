@@ -1,12 +1,12 @@
 "use client"
 
-import { LocationScoutingProvider, useLocationScouting } from "./LocationScoutingContext"
+import { useLocationScouting } from "./LocationScoutingContext"
 import LocationProjectsList from "./LocationProjectsList"
 import LocationUploadView from "./LocationUploadView"
 import LocationResultsView from "./LocationResultsView"
 import FeatureLayout from "@/components/layout/FeatureLayout"
 
-type ActiveView = "character-bible" | "location-overview" | "actor-database" | "public-casting"
+type ActiveView = "character-bible" | "location-overview" | "actor-database" | "public-casting" | "prop-list" | "scene-list"
 
 interface LocationScoutingScreenProps {
   onBack: () => void
@@ -30,9 +30,6 @@ function LocationScoutingContent({ onBack, onSignOut, activeView, onNavigate }: 
 }
 
 export default function LocationScoutingScreen({ onBack, onSignOut, activeView, onNavigate }: LocationScoutingScreenProps) {
-  return (
-    <LocationScoutingProvider>
-      <LocationScoutingContent onBack={onBack} onSignOut={onSignOut} activeView={activeView} onNavigate={onNavigate} />
-    </LocationScoutingProvider>
-  )
+  // Provider mounted once at the app root (app/page.tsx).
+  return <LocationScoutingContent onBack={onBack} onSignOut={onSignOut} activeView={activeView} onNavigate={onNavigate} />
 }

@@ -83,7 +83,7 @@ export default function EditActorModal({ onClose, actor, characterId }: EditActo
       type: "select",
       options: ["No nudity", "Partial nudity", "Full nudity", "Simulated intimacy"],
     },
-    { key: "pastProductions", label: "Past Productions", type: "array", placeholder: "Add production name" },
+    { key: "pastProductions", label: "Past Productions", type: "array", placeholder: "e.g. Stranger Things" },
     { key: "salaryEstimate", label: "Salary Estimate", type: "text", placeholder: "e.g. $50,000 - $75,000" },
   ]
 
@@ -128,11 +128,11 @@ export default function EditActorModal({ onClose, actor, characterId }: EditActo
       setFormData({
         name: actor.name || "",
         age: actor.age || "",
-        playingAge: actor.playingAge || "",
+        playingAge: actor.playingAge === "Unknown" ? "" : (actor.playingAge || ""),
         location: actor.location || "",
         agent: actor.agent || "",
         imdbUrl: actor.imdbUrl || "",
-        gender: actor.gender || "",
+        gender: actor.gender === "Unknown" || actor.gender === "unknown" ? "" : (actor.gender || ""),
         ethnicity: actor.ethnicity || "",
         contactPhone: actor.contactPhone || "",
         contactEmail: actor.contactEmail || "",
@@ -458,11 +458,12 @@ export default function EditActorModal({ onClose, actor, characterId }: EditActo
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
                 <input
+                  autoComplete="off"
                   type="text"
                   value={formData.name}
                   onChange={(e) => handleInputChange("name", e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  placeholder="Enter actor's name"
+                  placeholder="e.g. John Doe"
                 />
               </div>
 
@@ -470,11 +471,12 @@ export default function EditActorModal({ onClose, actor, characterId }: EditActo
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
                 <input
+                  autoComplete="off"
                   type="text"
                   value={formData.age}
                   onChange={(e) => handleInputChange("age", e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  placeholder="e.g., 25"
+                  placeholder="e.g. 25"
                 />
               </div>
 
@@ -498,11 +500,12 @@ export default function EditActorModal({ onClose, actor, characterId }: EditActo
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Contact Phone</label>
                 <input
+                  autoComplete="off"
                   type="tel"
                   value={formData.contactPhone}
                   onChange={(e) => handleInputChange("contactPhone", e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  placeholder="(555) 123-4567"
+                  placeholder="e.g. 555-0123"
                 />
               </div>
 
@@ -510,11 +513,12 @@ export default function EditActorModal({ onClose, actor, characterId }: EditActo
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Contact Email</label>
                 <input
+                  autoComplete="off"
                   type="email"
                   value={formData.contactEmail}
                   onChange={(e) => handleInputChange("contactEmail", e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  placeholder="actor@email.com"
+                  placeholder="e.g. actor@example.com"
                 />
               </div>
             </div>
@@ -541,11 +545,12 @@ export default function EditActorModal({ onClose, actor, characterId }: EditActo
                         </button>
                       </div>
                       <input
+                        autoComplete="off"
                         type="text"
                         value={formData.playingAge}
                         onChange={(e) => handleInputChange("playingAge", e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        placeholder="e.g., 20-30"
+                        placeholder="e.g. 20-30"
                       />
                     </div>
                   )}
@@ -564,11 +569,12 @@ export default function EditActorModal({ onClose, actor, characterId }: EditActo
                         </button>
                       </div>
                       <input
+                        autoComplete="off"
                         type="text"
                         value={formData.ethnicity}
                         onChange={(e) => handleInputChange("ethnicity", e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        placeholder="e.g., Caucasian, Hispanic, etc."
+                        placeholder="e.g. Caucasian"
                       />
                     </div>
                   )}
@@ -587,11 +593,12 @@ export default function EditActorModal({ onClose, actor, characterId }: EditActo
                         </button>
                       </div>
                       <input
+                        autoComplete="off"
                         type="text"
                         value={formData.location}
                         onChange={(e) => handleInputChange("location", e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        placeholder="e.g., Los Angeles, CA"
+                        placeholder="e.g. Los Angeles, CA"
                       />
                     </div>
                   )}
@@ -610,6 +617,7 @@ export default function EditActorModal({ onClose, actor, characterId }: EditActo
                         </button>
                       </div>
                       <input
+                        autoComplete="off"
                         type="text"
                         value={formData.agent}
                         onChange={(e) => handleInputChange("agent", e.target.value)}
@@ -710,6 +718,7 @@ export default function EditActorModal({ onClose, actor, characterId }: EditActo
                         <div className="space-y-3">
                           <div className="flex space-x-2">
                             <input
+                              autoComplete="off"
                               type="text"
                               value={newPastProduction}
                               onChange={(e) => setNewPastProduction(e.target.value)}
@@ -774,6 +783,7 @@ export default function EditActorModal({ onClose, actor, characterId }: EditActo
                         </select>
                       ) : (
                         <input
+                          autoComplete="off"
                           type={field.type}
                           value={formData[fieldKey as keyof typeof formData] as string}
                           onChange={(e) => handleInputChange(fieldKey, e.target.value)}
@@ -801,6 +811,7 @@ export default function EditActorModal({ onClose, actor, characterId }: EditActo
                   <span className="mt-1 block text-sm text-gray-500">PNG, JPG, GIF up to 10MB each</span>
                 </label>
                 <input
+                  autoComplete="off"
                   id="headshot-upload"
                   name="headshot-upload"
                   type="file"
@@ -860,6 +871,7 @@ export default function EditActorModal({ onClose, actor, characterId }: EditActo
           <div className="space-y-3">
             <div className="flex gap-2">
               <input
+                autoComplete="off"
                 type="text"
                 value={newVimeoUrl}
                 onChange={(e) => {
@@ -867,7 +879,7 @@ export default function EditActorModal({ onClose, actor, characterId }: EditActo
                   setVimeoError("")
                 }}
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                placeholder="Enter Vimeo or YouTube URL (e.g., https://vimeo.com/123456789 or https://youtube.com/watch?v=abc123)"
+                placeholder="e.g. https://vimeo.com/..."
               />
               <button
                 onClick={handleAddVideo}
@@ -894,6 +906,7 @@ export default function EditActorModal({ onClose, actor, characterId }: EditActo
                           {editingVideoTitle === video.id ? (
                             <div className="flex items-center space-x-2 flex-1">
                               <input
+                                autoComplete="off"
                                 type="text"
                                 value={currentVideoTitles[video.id] || video.title || ""}
                                 onChange={(e) =>
@@ -909,7 +922,7 @@ export default function EditActorModal({ onClose, actor, characterId }: EditActo
                                   }
                                 }}
                                 className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                                placeholder="Enter video title"
+                                placeholder="e.g. Action Showreel 2024"
                                 autoFocus
                               />
                               <button
@@ -1019,6 +1032,7 @@ export default function EditActorModal({ onClose, actor, characterId }: EditActo
                           Password (optional)
                         </label>
                         <input
+                          autoComplete="off"
                           type="text"
                           value={video.videoPassword || ""}
                           onChange={(e) => {
@@ -1079,12 +1093,13 @@ export default function EditActorModal({ onClose, actor, characterId }: EditActo
                           </div>
                           <div className="flex gap-2">
                             <input
+                              autoComplete="off"
                               type="text"
                               value={currentVideoTags[video.id] || ""}
                               onChange={(e) => setCurrentVideoTags((prev) => ({ ...prev, [video.id]: e.target.value }))}
                               onKeyPress={(e) => e.key === "Enter" && handleAddActorTag(video.id)}
                               className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                              placeholder="Enter actor name and press Enter"
+                              placeholder="e.g. John Doe"
                             />
                             <button
                               onClick={() => handleAddActorTag(video.id)}
@@ -1134,12 +1149,13 @@ export default function EditActorModal({ onClose, actor, characterId }: EditActo
           <label className="block text-sm font-medium text-gray-700 mb-2">Skills</label>
           <div className="flex gap-2 mb-2">
             <input
+              autoComplete="off"
               type="text"
               value={newSkill}
               onChange={(e) => setNewSkill(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && handleAddSkill()}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              placeholder="Add a skill"
+              placeholder="e.g. Horseback Riding"
             />
             <button
               onClick={handleAddSkill}

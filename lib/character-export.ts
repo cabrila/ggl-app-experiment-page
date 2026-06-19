@@ -34,20 +34,20 @@ export function exportCharactersAsPDF(characters: Character[], projectName: stri
   doc.text(`Character Bible - ${characters.length} characters`, 14, 28)
   doc.text(`Generated on ${new Date().toLocaleDateString()}`, 14, 34)
   
-  // Table data
+  // Table data - map new shape to export format
   const tableData = characters.map((char) => [
     char.name,
-    char.age || "N/A",
-    char.gender || "N/A",
-    char.ethnicity || "N/A",
-    char.scenes?.toString() || "0",
-    char.castingNotes || "-",
+    char.ageRange || "-",
+    char.gender || "-",
+    char.aliases?.join(", ") || "-",
+    String(char.sceneAppearances?.length ?? 0),
+    char.description || "-",
   ])
-  
+
   // Create table
   autoTable(doc, {
     startY: 42,
-    head: [["Name", "Age", "Gender", "Ethnicity", "Scenes", "Casting Notes"]],
+    head: [["Name", "Age", "Gender", "Aliases", "Scenes", "Description"]],
     body: tableData,
     styles: {
       fontSize: 9,
@@ -63,9 +63,9 @@ export function exportCharactersAsPDF(characters: Character[], projectName: stri
     },
     columnStyles: {
       0: { cellWidth: 30 },
-      1: { cellWidth: 15 },
-      2: { cellWidth: 20 },
-      3: { cellWidth: 25 },
+      1: { cellWidth: 18 },
+      2: { cellWidth: 22 },
+      3: { cellWidth: 30 },
       4: { cellWidth: 15 },
       5: { cellWidth: "auto" },
     },
@@ -92,28 +92,32 @@ export function exportCharactersAsPDF(characters: Character[], projectName: stri
  * Export characters as Excel file
  */
 export function exportCharactersAsExcel(characters: Character[], projectName: string) {
-  // Prepare data for Excel
+  // Prepare data for Excel - map new shape to export format
   const excelData = characters.map((char) => ({
     "Name": char.name,
-    "Age": char.age || "",
+    "Aliases": char.aliases?.join(", ") || "",
+    "Age Range": char.ageRange || "",
     "Gender": char.gender || "",
-    "Ethnicity": char.ethnicity || "",
-    "Scenes": char.scenes || 0,
-    "Casting Notes": char.castingNotes || "",
+    "Description": char.description || "",
+    "Scene Count": char.sceneAppearances?.length ?? 0,
+    "Scene Appearances": (char.sceneAppearances || [])
+      .map((sa) => `${sa.sceneHeading} — ${sa.citation}`)
+      .join("\n"),
   }))
-  
+
   // Create workbook and worksheet
   const wb = XLSX.utils.book_new()
   const ws = XLSX.utils.json_to_sheet(excelData)
-  
+
   // Set column widths
   ws["!cols"] = [
     { wch: 25 }, // Name
-    { wch: 10 }, // Age
+    { wch: 25 }, // Aliases
+    { wch: 12 }, // Age Range
     { wch: 12 }, // Gender
-    { wch: 20 }, // Ethnicity
-    { wch: 10 }, // Scenes
-    { wch: 40 }, // Casting Notes
+    { wch: 50 }, // Description
+    { wch: 10 }, // Scene Count
+    { wch: 60 }, // Scene Appearances
   ]
   
   // Add worksheet to workbook

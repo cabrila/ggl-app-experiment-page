@@ -1,17 +1,26 @@
 "use client"
 
-import { useState, useRef } from "react"
-import { Upload, ArrowLeft, FileText, Loader2, X } from "lucide-react"
+import { useState, useRef, useEffect } from "react"
+import { Upload, ArrowLeft, FileText, Loader2, X, AlertCircle, RefreshCw, PenLine, Download } from "lucide-react"
 import { useLocationScouting } from "./LocationScoutingContext"
-import { LocationProject } from "@/types/location-scouting"
+import { Location, LocationProject } from "@/types/location-scouting"
+import { useImportJob } from "@/hooks/useImportJob"
+import type { LocationOverviewResult } from "@/types/ai"
+import { trackFileUpload, trackExtractClick, trackExtractComplete } from "@/lib/analytics"
 
 export default function LocationUploadView() {
   const { setView, addProject, setCurrentProject } = useLocationScouting()
   const [isDragging, setIsDragging] = useState(false)
   const [file, setFile] = useState<File | null>(null)
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [progress, setProgress] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // Guard so a completed extraction creates its project exactly ONCE (the
+  // completion effect re-fires as addProject's identity changes on re-render).
+  const createdRef = useRef(false)
+
+  // Use the AI service integration hook
+  const { status, message, result, error, run, reset } = useImportJob<LocationOverviewResult>("location-overview")
+
+  const isProcessing = status === "uploading" || status === "running"
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -27,81 +36,97 @@ export default function LocationUploadView() {
     e.preventDefault()
     setIsDragging(false)
     const droppedFile = e.dataTransfer.files[0]
-    if (droppedFile?.type === "application/pdf") {
+    if (droppedFile && isValidFile(droppedFile)) {
       setFile(droppedFile)
     }
   }
 
+  const isValidFile = (file: File) => {
+    const validTypes = [
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+    ]
+    return validTypes.includes(file.type)
+  }
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
-    if (selectedFile?.type === "application/pdf") {
+    if (selectedFile && isValidFile(selectedFile)) {
       setFile(selectedFile)
+      const fileExt = selectedFile.name.split('.').pop()?.toLowerCase() || 'unknown'
+      trackFileUpload(fileExt, "location-overview")
     }
   }
 
-  const handleUpload = async () => {
+  const handleProcess = async () => {
     if (!file) return
 
-    setIsProcessing(true)
-    setProgress(0)
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'unknown'
+    trackExtractClick("location-overview", fileExt)
+    
+    const sourceTitle = file.name.replace(/\.(pdf|docx)$/i, "")
+    await run(file, sourceTitle)
+  }
 
-    // Simulate progress while API processes
-    const progressInterval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 85) {
-          clearInterval(progressInterval)
-          return 85
-        }
-        return prev + Math.random() * 10
-      })
-    }, 800)
-
-    try {
-      const formData = new FormData()
-      formData.append("file", file)
-
-      const response = await fetch("/api/analyze-locations", {
-        method: "POST",
-        body: formData,
-      })
-
-      clearInterval(progressInterval)
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "Failed to analyze script")
-      }
-
-      const data = await response.json()
-      setProgress(100)
-
-      if (!data.locations || !Array.isArray(data.locations)) {
-        throw new Error("Invalid response format from AI")
-      }
+  // Handle successful extraction - use useEffect to avoid setState during render
+  useEffect(() => {
+    if (status === "complete" && result && file && !createdRef.current) {
+      createdRef.current = true
+      // Map AI service result to our Location type
+      const locations: Location[] = result.locations.map((loc, index) => ({
+        id: `${Date.now()}-${index}`,
+        name: loc.name,
+        type: loc.type === "INT/EXT" ? "INT" : (loc.type === "unknown" ? "INT" : loc.type) || "EXT",
+        timeOfDay: loc.time_of_day === "unknown" ? "DAY" : loc.time_of_day || "DAY",
+        description: loc.description || "",
+        scoutingNotes: loc.scouting_notes || "",
+      }))
 
       // Create new project with extracted locations
       const newProject: LocationProject = {
         id: crypto.randomUUID(),
-        name: file.name.replace(".pdf", "").toUpperCase(),
-        locations: data.locations,
+        name: file.name.replace(/\.(pdf|docx)$/i, "").toUpperCase() || "Imported Locations",
+        locations,
         createdAt: new Date(),
         updatedAt: new Date(),
       }
 
       addProject(newProject)
       setCurrentProject(newProject)
-
-      // Small delay before transitioning
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      setIsProcessing(false)
+      trackExtractComplete("location-overview", locations.length)
       setView("results")
-    } catch (error) {
-      clearInterval(progressInterval)
-      console.error("Error processing script:", error)
-      alert(error instanceof Error ? error.message : "Failed to process script. Please try again.")
-      setIsProcessing(false)
-      setProgress(0)
     }
+  }, [status, result, file, addProject, setCurrentProject, setView])
+
+  const handleRetry = () => {
+    reset()
+    createdRef.current = false
+    setFile(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+  }
+
+  const removeFile = () => {
+    setFile(null)
+    reset()
+    createdRef.current = false
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+  }
+
+  const handleCreateManually = () => {
+    const newProject: LocationProject = {
+      id: crypto.randomUUID(),
+      name: "New Location List",
+      locations: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+    addProject(newProject)
+    setCurrentProject(newProject)
+    setView("results")
   }
 
   return (
@@ -113,7 +138,7 @@ export default function LocationUploadView() {
           className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span className="text-sm font-sans">Back to Projects</span>
+          <span className="text-sm font-sans">Back to My Locations</span>
         </button>
       </header>
 
@@ -125,25 +150,62 @@ export default function LocationUploadView() {
             Scout Locations from Scripts
           </h2>
           <p className="text-white/60 text-center mb-8 font-sans">
-            Upload your script (PDF). AI will scan for scenes to create a detailed Location Scouting List.
+            Upload your script (PDF or DOCX). AI will scan for scenes to create a detailed Location Scouting List.
           </p>
+
+          {/* Sample screenplay download */}
+          <div className="flex flex-col items-center -mt-4 mb-8">
+            <a
+              href="/screenplays/A_Dinner_Party_screenplay.pdf"
+              download="A_Dinner_Party_screenplay.pdf"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20 hover:text-amber-200 transition-colors font-sans text-sm"
+            >
+              <Download className="w-4 h-4 shrink-0" />
+              <span>Download a sample screenplay</span>
+            </a>
+            <p className="mt-2 text-white/40 text-xs font-sans text-center max-w-md">
+              No script handy? Test the tools with this screenplay — the material is not copyrighted and free to use.
+            </p>
+          </div>
 
           <div className="w-full h-px bg-white/10 mb-8" />
 
+          {/* Error State */}
+          {status === "failed" && error && (
+            <div className="mb-6 p-4 rounded-xl border border-red-500/30 bg-red-500/10 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-red-400 font-medium font-sans mb-1">Extraction Failed</p>
+                <p className="text-red-400/80 text-sm font-sans">{error}</p>
+              </div>
+              <button
+                onClick={handleRetry}
+                className="flex items-center gap-2 px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-red-400 transition-colors"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span className="text-sm font-sans">Retry</span>
+              </button>
+            </div>
+          )}
+
           {isProcessing ? (
             /* Processing State */
-            <div className="flex flex-col items-center justify-center py-16">
+            <div className="flex flex-col items-center justify-center py-16 rounded-2xl border border-white/10 bg-white/[0.02]">
               <Loader2 className="w-12 h-12 text-amber-400 animate-spin mb-4" />
-              <p className="text-white font-sans mb-2">Analyzing script for locations...</p>
+              <p className="text-white font-sans mb-2">
+                {status === "uploading" ? "Uploading file..." : "Analyzing script for locations..."}
+              </p>
+              <p className="text-white/50 text-sm mb-4 font-sans">
+                {message || "Extracting location details from your script"}
+              </p>
               <div className="w-64 h-2 bg-white/10 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-amber-500 transition-all duration-300"
-                  style={{ width: `${progress}%` }}
+                  className="h-full bg-amber-500 transition-all duration-500 animate-pulse"
+                  style={{ width: status === "uploading" ? "30%" : "70%" }}
                 />
               </div>
-              <p className="text-white/50 text-sm mt-2 font-sans">{Math.round(progress)}%</p>
             </div>
-          ) : file ? (
+          ) : file && status !== "failed" ? (
             /* File Selected State */
             <div className="flex flex-col items-center">
               <div className="flex items-center gap-4 p-4 bg-[#1a2e23] rounded-xl border border-white/10 mb-6 w-full max-w-md">
@@ -157,14 +219,14 @@ export default function LocationUploadView() {
                   </p>
                 </div>
                 <button
-                  onClick={() => setFile(null)}
+                  onClick={removeFile}
                   className="p-2 hover:bg-white/10 rounded-lg transition-colors"
                 >
                   <X className="w-5 h-5 text-white/50" />
                 </button>
               </div>
               <button
-                onClick={handleUpload}
+                onClick={handleProcess}
                 className="px-8 py-3 bg-amber-500 hover:bg-amber-400 text-black font-semibold rounded-xl transition-colors font-sans"
               >
                 Extract Locations
@@ -191,14 +253,27 @@ export default function LocationUploadView() {
               <p className="text-white font-sans font-medium mb-1">
                 Click to upload or drag a file here
               </p>
-              <p className="text-white/50 text-sm font-sans">PDF files only</p>
+              <p className="text-white/50 text-sm font-sans">PDF or DOCX files</p>
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="application/pdf"
+                accept="application/pdf,.docx"
                 onChange={handleFileSelect}
                 className="hidden"
               />
+            </div>
+          )}
+
+          {/* Manual Create Option */}
+          {!isProcessing && (
+            <div className="mt-8 pt-6 border-t border-white/10">
+              <button
+                onClick={handleCreateManually}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 hover:text-white rounded-xl transition-colors font-sans"
+              >
+                <PenLine className="w-4 h-4" />
+                Create Location List Manually
+              </button>
             </div>
           )}
         </div>

@@ -330,6 +330,7 @@ function FloatingField({ label, value, onChange, placeholder, required }: { labe
   return (
     <div className="relative">
       <input
+        autoComplete="off"
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -347,6 +348,7 @@ function FloatingTextarea({ label, value, onChange, rows }: { label: string; val
   return (
     <div className="relative">
       <textarea
+        autoComplete="off"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={rows || 3}
@@ -378,6 +380,7 @@ function FloatingNumber({ label, value, onChange, min }: { label: string; value:
   return (
     <div className="relative">
       <input
+        autoComplete="off"
         type="number"
         value={value}
         min={min || 0}
@@ -702,6 +705,7 @@ export default function ProductionDesignModal({ onClose }: { onClose: () => void
         <div className="relative flex-1 min-w-[160px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
+            autoComplete="off"
             type="text"
             placeholder="Search sets, elements..."
             value={searchTerm}
@@ -1640,7 +1644,7 @@ export default function ProductionDesignModal({ onClose }: { onClose: () => void
 
         {/* Confirm Delete */}
         {confirmDelete && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60]" onClick={() => setConfirmDelete(null)}>
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60]" onMouseDown={(e) => { if (e.target === e.currentTarget) setConfirmDelete(null) }}>
           <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
             <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center mx-auto mb-4">
               <Trash2 className="w-6 h-6 text-red-500" />
@@ -1774,7 +1778,7 @@ function SetFormOverlay({ existingSet, locations, onSave, onClose }: {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60]" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60]" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
           <h3 className="text-base font-bold text-gray-900">{isEdit ? "Edit Set" : "Add New Set"}</h3>
@@ -1826,7 +1830,7 @@ function MoodBoardDropZone({ url, onUrlChange }: { url: string; onUrlChange: (v:
       onDragLeave={() => setDragging(false)}
       onDrop={(e) => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files?.[0]; if (f) handleFile(f) }}
     >
-      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }} />
+      <input autoComplete="off" ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }} />
       {isValidImageUrl(url) ? (
         <div className="aspect-video relative group">
           <img src={url} alt="Preview" className={`w-full h-full object-cover transition-opacity ${dragging ? "opacity-30" : ""}`} />
@@ -1910,7 +1914,7 @@ function SubItemFormOverlay({ type, existingItem, onSave, onClose }: {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60]" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60]" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
           <h3 className="text-base font-bold text-gray-900">{isEdit ? `Edit ${titles[type]}` : `Add ${titles[type]}`}</h3>
@@ -1947,7 +1951,7 @@ function SubItemFormOverlay({ type, existingItem, onSave, onClose }: {
                 <FloatingField label="Wattage" value={lfForm.wattage} onChange={(v) => setLfForm({ ...lfForm, wattage: v })} />
               </div>
               <label className="flex items-center gap-3 px-4 py-3 bg-white border border-gray-300 rounded-xl cursor-pointer">
-                <input type="checkbox" checked={lfForm.dimmable} onChange={(e) => setLfForm({ ...lfForm, dimmable: e.target.checked })} className="w-4 h-4 rounded border-gray-300 text-slate-600 focus:ring-slate-500" />
+                <input autoComplete="off" type="checkbox" checked={lfForm.dimmable} onChange={(e) => setLfForm({ ...lfForm, dimmable: e.target.checked })} className="w-4 h-4 rounded border-gray-300 text-slate-600 focus:ring-slate-500" />
                 <span className="text-sm text-gray-700 font-medium">Dimmable</span>
               </label>
               <FloatingTextarea label="Notes" value={lfForm.notes} onChange={(v) => setLfForm({ ...lfForm, notes: v })} />
@@ -2005,7 +2009,7 @@ function TaskFormOverlay({ existingTask, sets, onSave, onClose }: {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60]" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60]" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
           <h3 className="text-base font-bold text-gray-900">{isEdit ? "Edit Task" : "Add Construction Task"}</h3>

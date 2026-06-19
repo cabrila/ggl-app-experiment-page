@@ -2066,6 +2066,7 @@ const renderGridView = () => (
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
+              autoComplete="off"
               type="text"
               placeholder="Search participants..."
               value={searchQuery}
@@ -2125,6 +2126,7 @@ const renderGridView = () => (
                     <div className="px-3 py-2">
                       <div className="flex gap-2">
                         <input
+                          autoComplete="off"
                           type="text"
                           value={newArchetypeName}
                           onChange={(e) => setNewArchetypeName(e.target.value)}
@@ -2674,6 +2676,7 @@ const renderGridView = () => (
                           <div className={`w-3 h-3 rounded-full ${group.color}`} />
                           {editingGroupId === group.id ? (
                             <input
+                              autoComplete="off"
                               type="text"
                               value={editingGroupName}
                               onChange={(e) => setEditingGroupName(e.target.value)}
@@ -2701,6 +2704,7 @@ const renderGridView = () => (
                           <span className="text-xs text-gray-400">{castSlots.filter(s => s.groupId === group.id).length} slots</span>
                           <label className="flex items-center gap-1 text-xs text-gray-500">
                             <input
+                              autoComplete="off"
                               type="checkbox"
                               checked={group.allowMultiple}
                               onChange={(e) => setCastSlotGroups(prev => prev.map(g => g.id === group.id ? { ...g, allowMultiple: e.target.checked } : g))}
@@ -2728,6 +2732,7 @@ const renderGridView = () => (
                       {showAddGroupForm && (
                         <div className="flex items-center gap-2 p-2 bg-cyan-50 rounded-lg border border-cyan-200">
                           <input
+                            autoComplete="off"
                             type="text"
                             value={newGroupName}
                             onChange={(e) => setNewGroupName(e.target.value)}
@@ -2780,6 +2785,7 @@ const renderGridView = () => (
                           <div className={`w-2.5 h-2.5 rounded-full ${slot.color}`} />
                           {editingSlotId === slot.id ? (
                             <input
+                              autoComplete="off"
                               type="text"
                               value={editingSlotLabel}
                               onChange={(e) => setEditingSlotLabel(e.target.value)}
@@ -2829,6 +2835,7 @@ const renderGridView = () => (
                       {showAddSlotForm && (
                         <div className="col-span-2 flex items-center gap-2 p-2 bg-cyan-50 rounded-lg border border-cyan-200">
                           <input
+                            autoComplete="off"
                             type="text"
                             value={newSlotName}
                             onChange={(e) => setNewSlotName(e.target.value)}
@@ -3116,6 +3123,7 @@ const renderGridView = () => (
                   <div className="relative">
                     <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                     <input
+                      autoComplete="off"
                       type="text"
                       value={castMixSearchQuery}
                       onChange={(e) => setCastMixSearchQuery(e.target.value)}
@@ -3252,7 +3260,7 @@ const renderGridView = () => (
       {/* Advanced Settings Modal */}
       {showAdvancedSettings && (
         <>
-          <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setShowAdvancedSettings(false)} />
+          <div className="fixed inset-0 bg-black/40 z-50" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowAdvancedSettings(false) }} />
           <div className="fixed inset-y-4 right-4 w-96 bg-white rounded-2xl shadow-2xl z-50 flex flex-col">
             <div className="p-4 border-b border-gray-200 flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -3300,6 +3308,7 @@ const renderGridView = () => (
                         
                         {isEditing ? (
                           <input
+                            autoComplete="off"
                             type="text"
                             value={editingStageLabel}
                             onChange={(e) => setEditingStageLabel(e.target.value)}
@@ -3353,6 +3362,7 @@ const renderGridView = () => (
                   <div className="mt-3 p-3 bg-cyan-50 rounded-lg border border-cyan-200">
                     <div className="flex items-center gap-2">
                       <input
+                        autoComplete="off"
                         type="text"
                         value={newStageName}
                         onChange={(e) => setNewStageName(e.target.value)}
@@ -3393,15 +3403,15 @@ const renderGridView = () => (
                 <h4 className="text-sm font-semibold text-gray-700 mb-3">Auto-Advance Rules</h4>
                 <div className="space-y-3">
                   <label className="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500" />
+                    <input autoComplete="off" type="checkbox" className="w-4 h-4 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500" />
                     <span className="text-sm text-gray-600">Auto-advance after phone interview complete</span>
                   </label>
                   <label className="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500" />
+                    <input autoComplete="off" type="checkbox" className="w-4 h-4 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500" />
                     <span className="text-sm text-gray-600">Require background check before Final Mix</span>
                   </label>
                   <label className="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500" defaultChecked />
+                    <input autoComplete="off" type="checkbox" className="w-4 h-4 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500" defaultChecked />
                     <span className="text-sm text-gray-600">Flag participants with social media issues</span>
                   </label>
                 </div>
@@ -3416,28 +3426,28 @@ const renderGridView = () => (
                       <span className="text-gray-600">On-Camera Presence</span>
                       <span className="text-gray-900 font-medium">30%</span>
                     </div>
-                    <input type="range" className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-cyan-600" defaultValue={30} />
+                    <input autoComplete="off" type="range" className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-cyan-600" defaultValue={30} />
                   </div>
                   <div>
                     <div className="flex items-center justify-between text-sm mb-1">
                       <span className="text-gray-600">Story Potential</span>
                       <span className="text-gray-900 font-medium">25%</span>
                     </div>
-                    <input type="range" className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-cyan-600" defaultValue={25} />
+                    <input autoComplete="off" type="range" className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-cyan-600" defaultValue={25} />
                   </div>
                   <div>
                     <div className="flex items-center justify-between text-sm mb-1">
                       <span className="text-gray-600">Social Following</span>
                       <span className="text-gray-900 font-medium">20%</span>
                     </div>
-                    <input type="range" className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-cyan-600" defaultValue={20} />
+                    <input autoComplete="off" type="range" className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-cyan-600" defaultValue={20} />
                   </div>
                   <div>
                     <div className="flex items-center justify-between text-sm mb-1">
                       <span className="text-gray-600">Archetype Fit</span>
                       <span className="text-gray-900 font-medium">25%</span>
                     </div>
-                    <input type="range" className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-cyan-600" defaultValue={25} />
+                    <input autoComplete="off" type="range" className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-cyan-600" defaultValue={25} />
                   </div>
                 </div>
               </div>
@@ -3447,15 +3457,15 @@ const renderGridView = () => (
                 <h4 className="text-sm font-semibold text-gray-700 mb-3">Notifications</h4>
                 <div className="space-y-3">
                   <label className="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500" defaultChecked />
+                    <input autoComplete="off" type="checkbox" className="w-4 h-4 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500" defaultChecked />
                     <span className="text-sm text-gray-600">Email when new applications arrive</span>
                   </label>
                   <label className="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500" defaultChecked />
+                    <input autoComplete="off" type="checkbox" className="w-4 h-4 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500" defaultChecked />
                     <span className="text-sm text-gray-600">Daily digest of pipeline changes</span>
                   </label>
                   <label className="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500" />
+                    <input autoComplete="off" type="checkbox" className="w-4 h-4 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500" />
                     <span className="text-sm text-gray-600">Alert when background check returns</span>
                   </label>
                 </div>
@@ -3482,7 +3492,7 @@ const renderGridView = () => (
       {/* Stage Removal Warning Modal */}
       {stageToRemove && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-[60]" onClick={() => setStageToRemove(null)} />
+          <div className="fixed inset-0 bg-black/50 z-[60]" onMouseDown={(e) => { if (e.target === e.currentTarget) setStageToRemove(null) }} />
           <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm bg-white rounded-2xl shadow-2xl z-[60]">
             <div className="p-5">
               <div className="flex items-center gap-3 mb-4">
@@ -3632,7 +3642,7 @@ const renderGridView = () => (
       {/* Contact Modal */}
       {showContactModal && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setShowContactModal(false)} />
+          <div className="fixed inset-0 bg-black/50 z-50" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowContactModal(false) }} />
           <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-2xl shadow-2xl z-50">
             <div className="p-5 border-b border-gray-100">
               <div className="flex items-center justify-between">
@@ -3670,6 +3680,7 @@ const renderGridView = () => (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Subject</label>
                 <input
+                  autoComplete="off"
                   type="text"
                   placeholder="Enter subject..."
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
@@ -3678,6 +3689,7 @@ const renderGridView = () => (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Message</label>
                 <textarea
+                  autoComplete="off"
                   rows={4}
                   placeholder="Write your message..."
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
@@ -3710,7 +3722,7 @@ const renderGridView = () => (
       {/* Book Audition Modal */}
       {showBookAuditionModal && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setShowBookAuditionModal(false)} />
+          <div className="fixed inset-0 bg-black/50 z-50" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowBookAuditionModal(false) }} />
           <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-2xl shadow-2xl z-50">
             <div className="p-5 border-b border-gray-100">
               <div className="flex items-center justify-between">
@@ -3733,6 +3745,7 @@ const renderGridView = () => (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Date</label>
                   <input
+                    autoComplete="off"
                     type="date"
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
@@ -3740,6 +3753,7 @@ const renderGridView = () => (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Time</label>
                   <input
+                    autoComplete="off"
                     type="time"
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
@@ -3757,6 +3771,7 @@ const renderGridView = () => (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Location / Link</label>
                 <input
+                  autoComplete="off"
                   type="text"
                   placeholder="Enter location or meeting link..."
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -3765,6 +3780,7 @@ const renderGridView = () => (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Notes</label>
                 <textarea
+                  autoComplete="off"
                   rows={2}
                   placeholder="Add any additional notes..."
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
@@ -3772,7 +3788,7 @@ const renderGridView = () => (
               </div>
               <div className="flex items-center gap-2 pt-2">
                 <label className="flex items-center gap-2 text-sm text-gray-600">
-                  <input type="checkbox" defaultChecked className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500" />
+                  <input autoComplete="off" type="checkbox" defaultChecked className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500" />
                   Send calendar invites to participants
                 </label>
               </div>
@@ -3798,7 +3814,7 @@ const renderGridView = () => (
       {/* Advance Stage Modal */}
       {showAdvanceStageModal && selectedParticipant && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-[60]" onClick={() => setShowAdvanceStageModal(false)} />
+          <div className="fixed inset-0 bg-black/50 z-[60]" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowAdvanceStageModal(false) }} />
           <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm bg-white rounded-2xl shadow-2xl z-[60]">
             <div className="p-5 border-b border-gray-100">
               <div className="flex items-center gap-3">
@@ -3847,7 +3863,7 @@ const renderGridView = () => (
       {/* Delete Confirmation Modal */}
       {showDeleteConfirmModal && participantToDelete && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-[60]" onClick={() => { setShowDeleteConfirmModal(false); setParticipantToDelete(null) }} />
+          <div className="fixed inset-0 bg-black/50 z-[60]" onMouseDown={(e) => { if (e.target === e.currentTarget) { setShowDeleteConfirmModal(false); setParticipantToDelete(null) } }} />
           <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm bg-white rounded-2xl shadow-2xl z-[60]">
             <div className="p-5">
               <div className="flex items-center gap-3 mb-4">
@@ -3896,7 +3912,7 @@ const renderGridView = () => (
         if (!scoringParticipant) return null
         return (
           <>
-            <div className="fixed inset-0 bg-black/40 z-[60]" onClick={() => setShowScoringPanel(null)} />
+            <div className="fixed inset-0 bg-black/40 z-[60]" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowScoringPanel(null) }} />
             <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl bg-white rounded-2xl shadow-2xl z-[60] max-h-[85vh] overflow-hidden flex flex-col">
               {/* Header */}
               <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-emerald-50 to-white shrink-0">
@@ -4019,7 +4035,7 @@ const renderGridView = () => (
       {/* Player View Modal */}
       {showPlayerView && currentPlayerParticipant && (
         <>
-          <div className="fixed inset-0 bg-black/80 z-[70]" onClick={() => setShowPlayerView(false)} />
+          <div className="fixed inset-0 bg-black/80 z-[70]" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowPlayerView(false) }} />
           <div className="fixed inset-4 z-[70] flex items-center justify-center">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-full max-h-[90vh] flex flex-col overflow-hidden">
               {/* Header */}
@@ -4298,6 +4314,7 @@ const renderGridView = () => (
                   <div className="p-3 border-t border-gray-200 bg-white">
                     <div className="flex gap-2">
                       <input
+                        autoComplete="off"
                         type="text"
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
@@ -4322,7 +4339,7 @@ const renderGridView = () => (
           {/* Maybe comment prompt */}
           {showMaybeCommentPrompt && (
             <>
-              <div className="fixed inset-0 bg-black/30 z-[80]" onClick={() => setShowMaybeCommentPrompt(false)} />
+              <div className="fixed inset-0 bg-black/30 z-[80]" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowMaybeCommentPrompt(false) }} />
               <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-2xl shadow-2xl z-[80] p-6">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
@@ -4334,6 +4351,7 @@ const renderGridView = () => (
                   </div>
                 </div>
                 <textarea
+                  autoComplete="off"
                   value={maybeCommentText}
                   onChange={(e) => setMaybeCommentText(e.target.value)}
                   placeholder="Share your thoughts..."
@@ -4365,7 +4383,7 @@ const renderGridView = () => (
       {/* Video Add/Edit Modal */}
       {showVideoModal && (
       <>
-          <div className="fixed inset-0 bg-black/50 z-[60]" onClick={() => setShowVideoModal(false)} />
+          <div className="fixed inset-0 bg-black/50 z-[60]" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowVideoModal(false) }} />
           <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-2xl shadow-2xl z-[60] max-h-[90vh] overflow-hidden flex flex-col">
             <div className="p-5 border-b border-gray-100 shrink-0">
               <div className="flex items-center justify-between">
@@ -4393,6 +4411,7 @@ const renderGridView = () => (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Video URL *</label>
                 <input
+                  autoComplete="off"
                   type="url"
                   value={videoForm.url}
                   onChange={(e) => setVideoForm(prev => ({ ...prev, url: e.target.value }))}
@@ -4410,6 +4429,7 @@ const renderGridView = () => (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Title *</label>
                 <input
+                  autoComplete="off"
                   type="text"
                   value={videoForm.title}
                   onChange={(e) => setVideoForm(prev => ({ ...prev, title: e.target.value }))}
@@ -4423,6 +4443,7 @@ const renderGridView = () => (
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Tags</label>
                 <div className="flex gap-2">
                   <input
+                    autoComplete="off"
                     type="text"
                     value={videoForm.tagInput}
                     onChange={(e) => setVideoForm(prev => ({ ...prev, tagInput: e.target.value }))}
@@ -4455,6 +4476,7 @@ const renderGridView = () => (
               <div className="border border-gray-200 rounded-lg p-4">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
+                    autoComplete="off"
                     type="checkbox"
                     checked={videoForm.enableCrop}
                     onChange={(e) => setVideoForm(prev => ({ ...prev, enableCrop: e.target.checked }))}
@@ -4468,6 +4490,7 @@ const renderGridView = () => (
                     <div>
                       <label className="block text-xs font-medium text-gray-500 mb-1">Start time (seconds)</label>
                       <input
+                        autoComplete="off"
                         type="number"
                         min="0"
                         value={videoForm.cropStart}
@@ -4478,6 +4501,7 @@ const renderGridView = () => (
                     <div>
                       <label className="block text-xs font-medium text-gray-500 mb-1">End time (seconds)</label>
                       <input
+                        autoComplete="off"
                         type="number"
                         min="0"
                         value={videoForm.cropEnd}
@@ -4493,6 +4517,7 @@ const renderGridView = () => (
               <div className="border border-gray-200 rounded-lg p-4">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
+                    autoComplete="off"
                     type="checkbox"
                     checked={videoForm.isPasswordProtected}
                     onChange={(e) => setVideoForm(prev => ({ ...prev, isPasswordProtected: e.target.checked }))}
@@ -4506,6 +4531,7 @@ const renderGridView = () => (
                     <label className="block text-xs font-medium text-gray-500 mb-1">Video password</label>
                     <div className="relative">
                       <input
+                        autoComplete="off"
                         type={showPasswordFor === "form" ? "text" : "password"}
                         value={videoForm.password}
                         onChange={(e) => setVideoForm(prev => ({ ...prev, password: e.target.value }))}
@@ -4550,7 +4576,7 @@ const renderGridView = () => (
       {/* Contacts Modal */}
       {showContactsModal && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-[60]" onClick={() => setShowContactsModal(false)} />
+          <div className="fixed inset-0 bg-black/50 z-[60]" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowContactsModal(false) }} />
           <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl bg-white rounded-2xl shadow-2xl z-[60] max-h-[85vh] overflow-hidden flex flex-col">
             {/* Header */}
             <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-white shrink-0">
@@ -4605,6 +4631,7 @@ const renderGridView = () => (
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
+                      autoComplete="off"
                       type="text"
                       placeholder="Search contacts..."
                       className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
@@ -4748,6 +4775,7 @@ const renderGridView = () => (
                     <div className="p-4 border-t border-gray-100">
                       <div className="flex gap-2">
                         <input
+                          autoComplete="off"
                           type="text"
                           value={newMessageContent}
                           onChange={(e) => setNewMessageContent(e.target.value)}
@@ -4783,7 +4811,7 @@ const renderGridView = () => (
       {/* Auditions Modal */}
       {showAuditionsModal && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-[60]" onClick={() => setShowAuditionsModal(false)} />
+          <div className="fixed inset-0 bg-black/50 z-[60]" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowAuditionsModal(false) }} />
           <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl bg-white rounded-2xl shadow-2xl z-[60] max-h-[85vh] overflow-hidden flex flex-col">
             {/* Header */}
             <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-cyan-50 to-white shrink-0">
@@ -4871,6 +4899,7 @@ const renderGridView = () => (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1.5">Date *</label>
                         <input
+                          autoComplete="off"
                           type="date"
                           value={newAuditionForm.date}
                           onChange={(e) => setNewAuditionForm(prev => ({ ...prev, date: e.target.value }))}
@@ -4880,6 +4909,7 @@ const renderGridView = () => (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1.5">Time *</label>
                         <input
+                          autoComplete="off"
                           type="time"
                           value={newAuditionForm.time}
                           onChange={(e) => setNewAuditionForm(prev => ({ ...prev, time: e.target.value }))}
@@ -4920,6 +4950,7 @@ const renderGridView = () => (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">Location</label>
                       <input
+                        autoComplete="off"
                         type="text"
                         value={newAuditionForm.location}
                         onChange={(e) => setNewAuditionForm(prev => ({ ...prev, location: e.target.value }))}
@@ -4932,6 +4963,7 @@ const renderGridView = () => (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1.5">Meeting Link</label>
                         <input
+                          autoComplete="off"
                           type="url"
                           value={newAuditionForm.meetingLink}
                           onChange={(e) => setNewAuditionForm(prev => ({ ...prev, meetingLink: e.target.value }))}
@@ -4944,6 +4976,7 @@ const renderGridView = () => (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">Notes</label>
                       <textarea
+                        autoComplete="off"
                         value={newAuditionForm.notes}
                         onChange={(e) => setNewAuditionForm(prev => ({ ...prev, notes: e.target.value }))}
                         placeholder="Any special instructions or notes..."
@@ -5094,7 +5127,7 @@ const renderGridView = () => (
       {/* Add Participant Modal */}
       {showAddParticipantModal && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-[60]" onClick={() => { setShowAddParticipantModal(false); resetNewParticipantForm() }} />
+          <div className="fixed inset-0 bg-black/50 z-[60]" onMouseDown={(e) => { if (e.target === e.currentTarget) { setShowAddParticipantModal(false); resetNewParticipantForm() } }} />
           <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-2xl shadow-2xl z-[60] max-h-[90vh] overflow-hidden flex flex-col">
             <div className="px-6 py-4 border-b border-gray-100 shrink-0 bg-gradient-to-r from-cyan-50 to-white">
               <div className="flex items-center justify-between">
@@ -5123,6 +5156,7 @@ const renderGridView = () => (
                   Full Name <span className="text-red-500">*</span>
                 </label>
                 <input
+                  autoComplete="off"
                   type="text"
                   value={newParticipantForm.name}
                   onChange={(e) => setNewParticipantForm(prev => ({ ...prev, name: e.target.value }))}
@@ -5137,6 +5171,7 @@ const renderGridView = () => (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Age</label>
                   <input
+                    autoComplete="off"
                     type="number"
                     value={newParticipantForm.age}
                     onChange={(e) => setNewParticipantForm(prev => ({ ...prev, age: e.target.value }))}
@@ -5149,6 +5184,7 @@ const renderGridView = () => (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Location</label>
                   <input
+                    autoComplete="off"
                     type="text"
                     value={newParticipantForm.location}
                     onChange={(e) => setNewParticipantForm(prev => ({ ...prev, location: e.target.value }))}
@@ -5162,6 +5198,7 @@ const renderGridView = () => (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Occupation / Role</label>
                 <input
+                  autoComplete="off"
                   type="text"
                   value={newParticipantForm.occupation}
                   onChange={(e) => setNewParticipantForm(prev => ({ ...prev, occupation: e.target.value }))}
@@ -5177,6 +5214,7 @@ const renderGridView = () => (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
                     <input
+                      autoComplete="off"
                       type="email"
                       value={newParticipantForm.email}
                       onChange={(e) => setNewParticipantForm(prev => ({ ...prev, email: e.target.value }))}
@@ -5187,6 +5225,7 @@ const renderGridView = () => (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">Phone</label>
                     <input
+                      autoComplete="off"
                       type="tel"
                       value={newParticipantForm.phone}
                       onChange={(e) => setNewParticipantForm(prev => ({ ...prev, phone: e.target.value }))}
@@ -5203,6 +5242,7 @@ const renderGridView = () => (
                 <div className="relative">
                   <Instagram className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
+                    autoComplete="off"
                     type="text"
                     value={newParticipantForm.instagram}
                     onChange={(e) => setNewParticipantForm(prev => ({ ...prev, instagram: e.target.value }))}
@@ -5244,6 +5284,7 @@ const renderGridView = () => (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Notes</label>
                 <textarea
+                  autoComplete="off"
                   value={newParticipantForm.notes}
                   onChange={(e) => setNewParticipantForm(prev => ({ ...prev, notes: e.target.value }))}
                   placeholder="Any additional notes about this participant..."
@@ -5281,7 +5322,7 @@ const renderGridView = () => (
       {/* Add New List Modal */}
       {showAddListModal && (
       <>
-      <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setShowAddListModal(false)} />
+      <div className="fixed inset-0 bg-black/40 z-50" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowAddListModal(false) }} />
           <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-2xl shadow-2xl z-50">
             <div className="p-4 border-b border-gray-200 flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -5296,6 +5337,7 @@ const renderGridView = () => (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">List Name</label>
                 <input
+                  autoComplete="off"
                   type="text"
                   value={newListName}
                   onChange={(e) => setNewListName(e.target.value)}
@@ -5307,6 +5349,7 @@ const renderGridView = () => (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description (optional)</label>
                 <textarea
+                  autoComplete="off"
                   value={newListDescription}
                   onChange={(e) => setNewListDescription(e.target.value)}
                   placeholder="Brief description of this list..."
@@ -5349,7 +5392,7 @@ const renderGridView = () => (
       {/* Edit Participant Modal */}
       {showEditModal && editingParticipant && (
         <>
-          <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setShowEditModal(false)} />
+          <div className="fixed inset-0 bg-black/40 z-50" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowEditModal(false) }} />
           <div className="fixed inset-y-4 left-1/2 -translate-x-1/2 w-full max-w-2xl bg-white rounded-2xl shadow-2xl z-50 flex flex-col max-h-[calc(100vh-2rem)]">
             <div className="p-4 border-b border-gray-200 flex items-center justify-between shrink-0">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -5392,6 +5435,7 @@ const renderGridView = () => (
                     )}
                   </div>
                   <input 
+                    autoComplete="off" 
                     ref={fileInputRef}
                     type="file" 
                     accept="image/*" 
@@ -5429,6 +5473,7 @@ const renderGridView = () => (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
                   <input
+                    autoComplete="off"
                     type="text"
                     value={editingParticipant.name}
                     onChange={(e) => setEditingParticipant({ ...editingParticipant, name: e.target.value })}
@@ -5438,6 +5483,7 @@ const renderGridView = () => (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
                   <input
+                    autoComplete="off"
                     type="number"
                     value={editingParticipant.age}
                     onChange={(e) => setEditingParticipant({ ...editingParticipant, age: parseInt(e.target.value) || 0 })}
@@ -5447,6 +5493,7 @@ const renderGridView = () => (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
                   <input
+                    autoComplete="off"
                     type="text"
                     value={editingParticipant.location}
                     onChange={(e) => setEditingParticipant({ ...editingParticipant, location: e.target.value })}
@@ -5456,6 +5503,7 @@ const renderGridView = () => (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Occupation</label>
                   <input
+                    autoComplete="off"
                     type="text"
                     value={editingParticipant.occupation}
                     onChange={(e) => setEditingParticipant({ ...editingParticipant, occupation: e.target.value })}
@@ -5474,6 +5522,7 @@ const renderGridView = () => (
                   <div>
                     <label className="block text-xs text-gray-500 mb-1">Email</label>
                     <input
+                      autoComplete="off"
                       type="email"
                       value={editingParticipant.email || ""}
                       onChange={(e) => setEditingParticipant({ ...editingParticipant, email: e.target.value })}
@@ -5484,6 +5533,7 @@ const renderGridView = () => (
                   <div>
                     <label className="block text-xs text-gray-500 mb-1">Phone</label>
                     <input
+                      autoComplete="off"
                       type="tel"
                       value={editingParticipant.phone || ""}
                       onChange={(e) => setEditingParticipant({ ...editingParticipant, phone: e.target.value })}
@@ -5548,6 +5598,7 @@ const renderGridView = () => (
                   <div className="flex items-center gap-2">
                     <Instagram className="w-4 h-4 text-pink-600 shrink-0" />
                     <input
+                      autoComplete="off"
                       type="text"
                       value={editingParticipant.socialHandles.instagram || ""}
                       onChange={(e) => setEditingParticipant({
@@ -5561,6 +5612,7 @@ const renderGridView = () => (
                   <div className="flex items-center gap-2">
                     <Video className="w-4 h-4 text-gray-800 shrink-0" />
                     <input
+                      autoComplete="off"
                       type="text"
                       value={editingParticipant.socialHandles.tiktok || ""}
                       onChange={(e) => setEditingParticipant({
@@ -5574,6 +5626,7 @@ const renderGridView = () => (
                   <div className="flex items-center gap-2">
                     <Twitter className="w-4 h-4 text-blue-500 shrink-0" />
                     <input
+                      autoComplete="off"
                       type="text"
                       value={editingParticipant.socialHandles.twitter || ""}
                       onChange={(e) => setEditingParticipant({
@@ -5587,6 +5640,7 @@ const renderGridView = () => (
                   <div className="flex items-center gap-2">
                     <Youtube className="w-4 h-4 text-red-600 shrink-0" />
                     <input
+                      autoComplete="off"
                       type="text"
                       value={editingParticipant.socialHandles.youtube || ""}
                       onChange={(e) => setEditingParticipant({
@@ -5600,6 +5654,7 @@ const renderGridView = () => (
                   <div className="flex items-center gap-2">
                     <Globe className="w-4 h-4 text-cyan-600 shrink-0" />
                     <input
+                      autoComplete="off"
                       type="text"
                       value={editingParticipant.socialHandles.website || ""}
                       onChange={(e) => setEditingParticipant({
@@ -5613,6 +5668,7 @@ const renderGridView = () => (
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-gray-500 shrink-0" />
                     <input
+                      autoComplete="off"
                       type="number"
                       value={editingParticipant.socialHandles.followerCount || ""}
                       onChange={(e) => setEditingParticipant({
@@ -5630,6 +5686,7 @@ const renderGridView = () => (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea
+                  autoComplete="off"
                   value={editingParticipant.notes || ""}
                   onChange={(e) => setEditingParticipant({ ...editingParticipant, notes: e.target.value })}
                   placeholder="Additional notes about this participant..."

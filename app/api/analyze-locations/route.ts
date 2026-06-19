@@ -27,7 +27,9 @@ export async function POST(request: NextRequest) {
     const mimeType = file.type || "application/pdf"
 
     const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" })
+    const model = genAI.getGenerativeModel({
+      model: process.env.GEMINI_MODEL ?? "gemini-3.5-flash",
+    })
 
     const prompt = `Analyze this screenplay/script document and extract all locations/settings. For each location, provide:
 - name: The location name as it appears in scene headings (e.g., "COFFEE SHOP", "JOHN'S APARTMENT")

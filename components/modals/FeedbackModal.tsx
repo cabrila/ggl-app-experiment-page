@@ -1,13 +1,14 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { X, Send, ImagePlus, Trash2, CheckCircle } from "lucide-react"
+import { X, Send, ImagePlus, Trash2, CheckCircle, UserPlus } from "lucide-react"
 
 interface FeedbackModalProps {
   onClose: () => void
+  onShowFeedbackUserSignup?: () => void
 }
 
-export default function FeedbackModal({ onClose }: FeedbackModalProps) {
+export default function FeedbackModal({ onClose, onShowFeedbackUserSignup }: FeedbackModalProps) {
   const [heading, setHeading] = useState("")
   const [message, setMessage] = useState("")
   const [screenshot, setScreenshot] = useState<File | null>(null)
@@ -132,16 +133,32 @@ export default function FeedbackModal({ onClose }: FeedbackModalProps) {
 
         {/* Content */}
         {isSuccess ? (
-          <div className="flex flex-col items-center justify-center py-12 px-5">
+          <div className="flex flex-col items-center justify-center py-10 px-5">
             <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mb-4">
               <CheckCircle className="w-8 h-8 text-emerald-400" />
             </div>
             <h3 className="text-lg font-semibold text-white mb-2 font-sans">
               Thank you!
             </h3>
-            <p className="text-white/60 text-sm text-center font-sans">
+            <p className="text-white/60 text-sm text-center font-sans mb-6">
               Your feedback has been submitted successfully.
             </p>
+
+            {/* Join Feedback Community CTA */}
+            {onShowFeedbackUserSignup && (
+              <div className="w-full border-t border-white/10 pt-5">
+                <p className="text-white/50 text-xs text-center mb-3 font-sans">
+                  Want to help shape the future of GoGreenlight?
+                </p>
+                <button
+                  onClick={onShowFeedbackUserSignup}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-white/10 hover:bg-white/15 border border-white/20 hover:border-emerald-500/40 rounded-xl text-white font-medium text-sm transition-all font-sans"
+                >
+                  <UserPlus className="w-4 h-4 text-emerald-400" />
+                  <span>Join Our Feedback Community</span>
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="p-5 space-y-4">
@@ -161,6 +178,7 @@ export default function FeedbackModal({ onClose }: FeedbackModalProps) {
                 Subject <span className="text-white/40">(optional)</span>
               </label>
               <input
+                autoComplete="off"
                 id="feedback-heading"
                 type="text"
                 value={heading}
@@ -179,6 +197,7 @@ export default function FeedbackModal({ onClose }: FeedbackModalProps) {
                 Message <span className="text-red-400">*</span>
               </label>
               <textarea
+                autoComplete="off"
                 id="feedback-message"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
@@ -223,6 +242,7 @@ export default function FeedbackModal({ onClose }: FeedbackModalProps) {
               )}
               
               <input
+                autoComplete="off"
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"

@@ -869,6 +869,7 @@ export default function UploadCSVModal({ onClose, characterId }: UploadCSVModalP
                 <span className="mt-1 block text-sm text-gray-500">CSV files up to 5MB, Excel files up to 10MB</span>
               </label>
               <input
+                autoComplete="off"
                 ref={fileInputRef}
                 id="file-upload"
                 name="file-upload"
@@ -1000,6 +1001,7 @@ export default function UploadCSVModal({ onClose, characterId }: UploadCSVModalP
             <div className="flex-1 min-w-0">
               {isEditing ? (
                 <input
+                  autoComplete="off"
                   type="text"
                   value={editData?.name || ""}
                   onChange={(e) => updateEditingField(actor.rowNumber, "name", e.target.value)}
@@ -1015,6 +1017,7 @@ export default function UploadCSVModal({ onClose, characterId }: UploadCSVModalP
             <div className="w-16 flex-shrink-0">
               {isEditing ? (
                 <input
+                  autoComplete="off"
                   type="text"
                   value={editData?.age || ""}
                   onChange={(e) => updateEditingField(actor.rowNumber, "age", e.target.value)}
@@ -1101,6 +1104,7 @@ export default function UploadCSVModal({ onClose, characterId }: UploadCSVModalP
                     </div>
                     <div className="flex flex-col gap-2">
                       <input
+                        autoComplete="off"
                         type="file"
                         ref={(el) => {
                           imageUploadRefs.current[actor.rowNumber] = el
@@ -1143,6 +1147,7 @@ export default function UploadCSVModal({ onClose, characterId }: UploadCSVModalP
                   <label className="block text-xs font-medium text-gray-700 mb-1">Playing Age</label>
                   {isEditing ? (
                     <input
+                      autoComplete="off"
                       type="text"
                       value={editData?.playingAge || ""}
                       onChange={(e) => updateEditingField(actor.rowNumber, "playingAge", e.target.value)}
@@ -1159,6 +1164,7 @@ export default function UploadCSVModal({ onClose, characterId }: UploadCSVModalP
                   <label className="block text-xs font-medium text-gray-700 mb-1">Contact Number</label>
                   {isEditing ? (
                     <input
+                      autoComplete="off"
                       type="text"
                       value={editData?.contactNumber || ""}
                       onChange={(e) => updateEditingField(actor.rowNumber, "contactNumber", e.target.value)}
@@ -1175,6 +1181,7 @@ export default function UploadCSVModal({ onClose, characterId }: UploadCSVModalP
                   <label className="block text-xs font-medium text-gray-700 mb-1">Contact Email</label>
                   {isEditing ? (
                     <input
+                      autoComplete="off"
                       type="email"
                       value={editData?.contactMail || ""}
                       onChange={(e) => updateEditingField(actor.rowNumber, "contactMail", e.target.value)}
@@ -1191,6 +1198,7 @@ export default function UploadCSVModal({ onClose, characterId }: UploadCSVModalP
                   <div className="md:col-span-2">
                     <label className="block text-xs font-medium text-gray-700 mb-1">Headshot URL</label>
                     <input
+                      autoComplete="off"
                       type="text"
                       value={editData?.headshot || ""}
                       onChange={(e) => updateEditingField(actor.rowNumber, "headshot", e.target.value)}

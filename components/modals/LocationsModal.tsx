@@ -277,7 +277,7 @@ function generateMockLocations(): ProjectLocation[] {
 function FloatingField({ label, value, onChange, placeholder, type = "text" }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string }) {
   return (
     <div className="relative">
-      <input type={type} value={value} onChange={(e) => onChange(e.target.value)} className="w-full px-4 pt-6 pb-2 bg-white border border-gray-300 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 peer placeholder-transparent" placeholder={placeholder || label} />
+      <input autoComplete="off" type={type} value={value} onChange={(e) => onChange(e.target.value)} className="w-full px-4 pt-6 pb-2 bg-white border border-gray-300 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 peer placeholder-transparent" placeholder={placeholder || label} />
       <label className="absolute left-4 top-2 text-xs text-gray-500 transition-all pointer-events-none">{label}</label>
     </div>
   )
@@ -286,7 +286,7 @@ function FloatingField({ label, value, onChange, placeholder, type = "text" }: {
 function FloatingTextarea({ label, value, onChange, rows = 3 }: { label: string; value: string; onChange: (v: string) => void; rows?: number }) {
   return (
     <div className="relative">
-      <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={rows} className="w-full px-4 pt-6 pb-2 bg-white border border-gray-300 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 resize-none peer placeholder-transparent" placeholder={label} />
+      <textarea autoComplete="off" value={value} onChange={(e) => onChange(e.target.value)} rows={rows} className="w-full px-4 pt-6 pb-2 bg-white border border-gray-300 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 resize-none peer placeholder-transparent" placeholder={label} />
       <label className="absolute left-4 top-2 text-xs text-gray-500 transition-all pointer-events-none">{label}</label>
     </div>
   )
@@ -419,12 +419,12 @@ function PhotoDropZone({ media, onAdd, onDelete, onUpdateCaption, showCaptions =
         <Upload className="w-5 h-5 mx-auto mb-1 text-gray-400" />
         <p className="text-xs text-gray-500">Drop scouting photos here or click to upload</p>
         {media.length > 0 && <p className="text-[10px] text-gray-400 mt-0.5">{media.length} image{media.length !== 1 ? "s" : ""} uploaded</p>}
-        <input ref={inputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { if (e.target.files) processFiles(e.target.files); e.target.value = "" }} />
+        <input autoComplete="off" ref={inputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { if (e.target.files) processFiles(e.target.files); e.target.value = "" }} />
       </div>
 
       {/* Lightbox preview */}
       {previewItem && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[90] p-6" onClick={() => setPreviewId(null)}>
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[90] p-6" onMouseDown={(e) => { if (e.target === e.currentTarget) setPreviewId(null) }}>
           <div className="relative max-w-3xl w-full max-h-[80vh] flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
             {isValidImageUrl(previewItem.url) ? (
               <img src={previewItem.url} alt={previewItem.caption || ""} className="max-w-full max-h-[70vh] rounded-xl object-contain shadow-2xl" />
@@ -461,10 +461,11 @@ function PhotoDropZone({ media, onAdd, onDelete, onUpdateCaption, showCaptions =
 
       {/* Caption edit inline modal */}
       {editCaptionId && onUpdateCaption && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[95] p-4" onClick={() => setEditCaptionId(null)}>
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[95] p-4" onMouseDown={(e) => { if (e.target === e.currentTarget) setEditCaptionId(null) }}>
           <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-4" onClick={(e) => e.stopPropagation()}>
             <h4 className="text-sm font-semibold text-gray-900 mb-2">Edit Caption</h4>
             <input
+              autoComplete="off"
               type="text" value={captionDraft} onChange={(e) => setCaptionDraft(e.target.value)}
               className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 text-gray-900 placeholder-gray-400"
               placeholder="Enter caption..."
@@ -899,7 +900,7 @@ function InteractiveMap({
               </div>
             )}
             <div className="flex items-center gap-1.5">
-              <input type="text" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} placeholder="Write a note..." className="flex-1 px-2.5 py-1.5 text-[11px] bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 placeholder-gray-400 text-gray-900" />
+              <input autoComplete="off" type="text" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} placeholder="Write a note..." className="flex-1 px-2.5 py-1.5 text-[11px] bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 placeholder-gray-400 text-gray-900" />
               <button onClick={handleSubmit} disabled={!text.trim()} className="p-1.5 text-teal-600 hover:bg-teal-50 rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
                 <Send className="w-3.5 h-3.5" />
               </button>
@@ -1126,7 +1127,7 @@ function InteractiveMap({
 
       {/* Gallery modal */}
       {showGallery && loc.media.length > 0 && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[80] p-4" onClick={(e) => { e.stopPropagation(); setShowGallery(false) }}>
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[80] p-4" onMouseDown={(e) => { if (e.target === e.currentTarget) { e.stopPropagation(); setShowGallery(false) } }}>
           <div className="relative w-full max-w-2xl aspect-[4/3] rounded-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <ImageCarousel media={loc.media} size="large" />
             <button onClick={(e) => { e.stopPropagation(); setShowGallery(false) }} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition-colors z-50">
@@ -1343,7 +1344,7 @@ function AddLocationModal({ onClose, onAdd, existingLocations, prefillCoords }: 
             <div>
               <p className="text-xs text-gray-500 mb-2 flex items-center gap-1"><Link className="w-3 h-3" /> Paste a Google Maps Link</p>
               <div className="flex gap-2">
-                <input type="text" value={mapsLink} onChange={(e) => { setMapsLink(e.target.value); setMapsAutoFilled(false) }}
+                <input autoComplete="off" type="text" value={mapsLink} onChange={(e) => { setMapsLink(e.target.value); setMapsAutoFilled(false) }}
                   placeholder="https://maps.google.com/..."
                   className="flex-1 px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-500 placeholder-gray-400" />
                 <button onClick={handleParseMapsLink} disabled={!mapsLink.trim()} className="px-4 py-2.5 bg-teal-600 text-white text-sm font-medium rounded-xl hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Auto-Fill</button>
@@ -1352,12 +1353,12 @@ function AddLocationModal({ onClose, onAdd, existingLocations, prefillCoords }: 
             </div>
           )}
           <div className="grid grid-cols-2 gap-4">
-            <FloatingField label="Location Name" value={form.name} onChange={(v) => update("name", v)} />
-            <FloatingField label="Address" value={form.address} onChange={(v) => update("address", v)} />
+            <FloatingField label="Location Name" value={form.name} onChange={(v) => update("name", v)} placeholder="e.g. Central Park" />
+            <FloatingField label="Address" value={form.address} onChange={(v) => update("address", v)} placeholder="e.g. 123 Main St, New York, NY" />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <FloatingField label="Latitude" value={form.lat} onChange={(v) => update("lat", v)} type="number" />
-            <FloatingField label="Longitude" value={form.lng} onChange={(v) => update("lng", v)} type="number" />
+            <FloatingField label="Latitude" value={form.lat} onChange={(v) => update("lat", v)} type="number" placeholder="e.g. 40.7812" />
+            <FloatingField label="Longitude" value={form.lng} onChange={(v) => update("lng", v)} type="number" placeholder="e.g. -73.9665" />
           </div>
           <div>
             <p className="text-xs text-gray-500 mb-2 flex items-center gap-1"><Tag className="w-3 h-3" /> Vibe Tags</p>
@@ -1373,39 +1374,39 @@ function AddLocationModal({ onClose, onAdd, existingLocations, prefillCoords }: 
               showCaptions
             />
           </div>
-          <FloatingTextarea label="Notes" value={form.notes} onChange={(v) => update("notes", v)} />
+          <FloatingTextarea label="Notes" value={form.notes} onChange={(v) => update("notes", v)} placeholder="e.g. Great lighting in the morning, requires generator for extra power." />
           <div>
             <h3 className="text-base font-bold text-gray-900">Costing</h3>
             <div className="grid grid-cols-3 gap-4 mt-2">
-              <FloatingField label="Daily Rate" value={form.dailyRate} onChange={(v) => update("dailyRate", v)} placeholder="$0" />
-              <FloatingField label="Overtime Rate" value={form.overtimeRate} onChange={(v) => update("overtimeRate", v)} placeholder="$0/hr" />
-              <FloatingField label="Security Deposit" value={form.securityDeposit} onChange={(v) => update("securityDeposit", v)} placeholder="$0" />
+              <FloatingField label="Daily Rate" value={form.dailyRate} onChange={(v) => update("dailyRate", v)} placeholder="e.g. $1500" />
+              <FloatingField label="Overtime Rate" value={form.overtimeRate} onChange={(v) => update("overtimeRate", v)} placeholder="e.g. $250/hr" />
+              <FloatingField label="Security Deposit" value={form.securityDeposit} onChange={(v) => update("securityDeposit", v)} placeholder="e.g. $500" />
             </div>
           </div>
           {locType === "on-location" ? (
             <div>
               <h3 className="text-base font-bold text-gray-900">Logistics</h3>
               <div className="grid grid-cols-2 gap-4 mt-2">
-                <FloatingField label="Basecamp Parking" value={form.basecampParking} onChange={(v) => update("basecampParking", v)} />
-                <FloatingField label="Crew Parking Capacity" value={form.crewParkingCapacity} onChange={(v) => update("crewParkingCapacity", v)} type="number" />
-                <FloatingField label="Sun Path Notes" value={form.sunPathNotes} onChange={(v) => update("sunPathNotes", v)} />
-                <FloatingField label="Noise Profile" value={form.noiseProfile} onChange={(v) => update("noiseProfile", v)} />
+                <FloatingField label="Basecamp Parking" value={form.basecampParking} onChange={(v) => update("basecampParking", v)} placeholder="e.g. Nearby lot, 5 min walk" />
+                <FloatingField label="Crew Parking Capacity" value={form.crewParkingCapacity} onChange={(v) => update("crewParkingCapacity", v)} type="number" placeholder="e.g. 50" />
+                <FloatingField label="Sun Path Notes" value={form.sunPathNotes} onChange={(v) => update("sunPathNotes", v)} placeholder="e.g. Good morning light, blocked in afternoon" />
+                <FloatingField label="Noise Profile" value={form.noiseProfile} onChange={(v) => update("noiseProfile", v)} placeholder="e.g. Quiet, occasional traffic" />
                 <FloatingSelect label="Load-in Difficulty" value={form.loadInDifficulty} onChange={(v) => update("loadInDifficulty", v)} options={LOAD_IN_OPTIONS} />
-                <FloatingField label="Bathrooms" value={form.bathroomCount} onChange={(v) => update("bathroomCount", v)} type="number" />
+                <FloatingField label="Bathrooms" value={form.bathroomCount} onChange={(v) => update("bathroomCount", v)} type="number" placeholder="e.g. 2" />
               </div>
             </div>
           ) : (
             <div>
               <h3 className="text-base font-bold text-gray-900">Technical Specs</h3>
               <div className="grid grid-cols-4 gap-3 mt-2 mb-4">
-                <FloatingField label="Length (ft)" value={form.dimL} onChange={(v) => update("dimL", v)} type="number" />
-                <FloatingField label="Width (ft)" value={form.dimW} onChange={(v) => update("dimW", v)} type="number" />
-                <FloatingField label="Height (ft)" value={form.dimH} onChange={(v) => update("dimH", v)} type="number" />
-                <FloatingField label="Grid Height" value={form.gridHeight} onChange={(v) => update("gridHeight", v)} type="number" />
+                <FloatingField label="Length (ft)" value={form.dimL} onChange={(v) => update("dimL", v)} type="number" placeholder="e.g. 100" />
+                <FloatingField label="Width (ft)" value={form.dimW} onChange={(v) => update("dimW", v)} type="number" placeholder="e.g. 50" />
+                <FloatingField label="Height (ft)" value={form.dimH} onChange={(v) => update("dimH", v)} type="number" placeholder="e.g. 30" />
+                <FloatingField label="Grid Height" value={form.gridHeight} onChange={(v) => update("gridHeight", v)} type="number" placeholder="e.g. 20" />
               </div>
               <div className="grid grid-cols-3 gap-4 mb-4">
                 <FloatingSelect label="Floor Type" value={form.floorType} onChange={(v) => update("floorType", v)} options={FLOOR_TYPE_OPTIONS} />
-                <FloatingField label="Amperage" value={form.amperage} onChange={(v) => update("amperage", v)} />
+                <FloatingField label="Amperage" value={form.amperage} onChange={(v) => update("amperage", v)} placeholder="e.g. 200A" />
                 <FloatingSelect label="Sound Rating" value={form.soundRating} onChange={(v) => update("soundRating", v)} options={SOUND_RATING_OPTIONS} />
               </div>
               <div className="flex flex-wrap gap-3">
@@ -1471,11 +1472,11 @@ function EditLocationModal({ location, onClose, onSave }: { location: ProjectLoc
         </div>
         <div className="px-6 pb-6 space-y-5">
           <div className="grid grid-cols-2 gap-4">
-            <FloatingField label="Location Name" value={form.name} onChange={(v) => update("name", v)} />
+            <FloatingField label="Location Name" value={form.name} onChange={(v) => update("name", v)} placeholder="e.g. Central Park" />
             <FloatingSelect label="Status" value={form.status} onChange={(v) => update("status", v)} options={LOCATION_STATUSES.map((s) => ({ value: s.value, label: s.label }))} />
           </div>
-          <FloatingField label="Address" value={form.address} onChange={(v) => update("address", v)} />
-          <FloatingTextarea label="Notes" value={form.notes} onChange={(v) => update("notes", v)} />
+          <FloatingField label="Address" value={form.address} onChange={(v) => update("address", v)} placeholder="e.g. 123 Main St, New York, NY" />
+          <FloatingTextarea label="Notes" value={form.notes} onChange={(v) => update("notes", v)} placeholder="e.g. Good morning light, requires generator" />
           <div>
             <h3 className="text-base font-bold text-gray-900">Vibe Tags</h3>
             <TagPicker selected={vibeTags} onChange={setVibeTags} options={VIBE_TAG_OPTIONS} />
@@ -1496,9 +1497,9 @@ function EditLocationModal({ location, onClose, onSave }: { location: ProjectLoc
           <div>
             <h3 className="text-base font-bold text-gray-900">Costing</h3>
             <div className="grid grid-cols-3 gap-4 mt-2">
-              <FloatingField label="Daily Rate" value={form.dailyRate} onChange={(v) => update("dailyRate", v)} />
-              <FloatingField label="Overtime Rate" value={form.overtimeRate} onChange={(v) => update("overtimeRate", v)} />
-              <FloatingField label="Security Deposit" value={form.securityDeposit} onChange={(v) => update("securityDeposit", v)} />
+              <FloatingField label="Daily Rate" value={form.dailyRate} onChange={(v) => update("dailyRate", v)} placeholder="e.g. $1500" />
+              <FloatingField label="Overtime Rate" value={form.overtimeRate} onChange={(v) => update("overtimeRate", v)} placeholder="e.g. $250/hr" />
+              <FloatingField label="Security Deposit" value={form.securityDeposit} onChange={(v) => update("securityDeposit", v)} placeholder="e.g. $500" />
             </div>
           </div>
           <div>
@@ -1512,7 +1513,7 @@ function EditLocationModal({ location, onClose, onSave }: { location: ProjectLoc
               ))}
             </div>
             <div className="flex gap-2">
-              <input type="text" value={newSceneNumber} onChange={(e) => setNewSceneNumber(e.target.value)} placeholder="Scene #" className="px-3 py-2 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 text-gray-900 placeholder-gray-400 w-32" />
+              <input autoComplete="off" type="text" value={newSceneNumber} onChange={(e) => setNewSceneNumber(e.target.value)} placeholder="Scene #" className="px-3 py-2 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 text-gray-900 placeholder-gray-400 w-32" />
               <button onClick={() => { if (newSceneNumber.trim()) { setSceneTags((p) => [...p, { sceneNumber: newSceneNumber.trim() }]); setNewSceneNumber("") } }} disabled={!newSceneNumber.trim()} className="px-3 py-2 bg-teal-600 text-white text-xs font-medium rounded-xl hover:bg-teal-700 transition-colors disabled:opacity-50">Add</button>
             </div>
           </div>
@@ -1523,9 +1524,9 @@ function EditLocationModal({ location, onClose, onSave }: { location: ProjectLoc
                 <select value={b.type} onChange={(e) => { const u = [...scheduleBlocks]; u[idx] = { ...b, type: e.target.value as "prep" | "shoot" | "strike" }; setScheduleBlocks(u) }} className="px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 appearance-none w-24">
                   <option value="prep">Prep</option><option value="shoot">Shoot</option><option value="strike">Strike</option>
                 </select>
-                <input type="date" value={b.startDate} onChange={(e) => { const u = [...scheduleBlocks]; u[idx] = { ...b, startDate: e.target.value }; setScheduleBlocks(u) }} className="px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs text-gray-700" />
+                <input autoComplete="off" type="date" value={b.startDate} onChange={(e) => { const u = [...scheduleBlocks]; u[idx] = { ...b, startDate: e.target.value }; setScheduleBlocks(u) }} className="px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs text-gray-700" />
                 <span className="text-xs text-gray-400">to</span>
-                <input type="date" value={b.endDate} onChange={(e) => { const u = [...scheduleBlocks]; u[idx] = { ...b, endDate: e.target.value }; setScheduleBlocks(u) }} className="px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs text-gray-700" />
+                <input autoComplete="off" type="date" value={b.endDate} onChange={(e) => { const u = [...scheduleBlocks]; u[idx] = { ...b, endDate: e.target.value }; setScheduleBlocks(u) }} className="px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs text-gray-700" />
                 <button onClick={() => setScheduleBlocks((p) => p.filter((s) => s.id !== b.id))} className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
               </div>
             ))}
@@ -1537,8 +1538,8 @@ function EditLocationModal({ location, onClose, onSave }: { location: ProjectLoc
             <h3 className="text-base font-bold text-gray-900">Blackout Dates</h3>
             {blackoutDates.map((bd, idx) => (
               <div key={bd.id} className="flex items-center gap-2 mb-2 mt-2">
-                <input type="date" value={bd.date} onChange={(e) => { const u = [...blackoutDates]; u[idx] = { ...bd, date: e.target.value }; setBlackoutDates(u) }} className="px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs text-gray-700" />
-                <input type="text" value={bd.reason || ""} onChange={(e) => { const u = [...blackoutDates]; u[idx] = { ...bd, reason: e.target.value }; setBlackoutDates(u) }} placeholder="Reason" className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 placeholder-gray-400" />
+                <input autoComplete="off" type="date" value={bd.date} onChange={(e) => { const u = [...blackoutDates]; u[idx] = { ...bd, date: e.target.value }; setBlackoutDates(u) }} className="px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs text-gray-700" />
+                <input autoComplete="off" type="text" value={bd.reason || ""} onChange={(e) => { const u = [...blackoutDates]; u[idx] = { ...bd, reason: e.target.value }; setBlackoutDates(u) }} placeholder="Reason" className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 placeholder-gray-400" />
                 <button onClick={() => setBlackoutDates((p) => p.filter((d) => d.id !== bd.id))} className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
               </div>
             ))}
@@ -1877,7 +1878,7 @@ return (
 
         <div className="relative flex-1 min-w-[160px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search locations, tags..." className="w-full pl-9 pr-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 placeholder-gray-400 text-gray-900" />
+          <input autoComplete="off" type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search locations, tags..." className="w-full pl-9 pr-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 placeholder-gray-400 text-gray-900" />
         </div>
 
         <div className="flex items-center gap-2 ml-auto">
@@ -1902,12 +1903,12 @@ return (
           </select>
           <div className="flex items-center gap-1.5">
             <span className="text-[11px] text-gray-500">Within</span>
-            <input type="number" value={maxDistance} onChange={(e) => setMaxDistance(e.target.value)} placeholder="mi" className="w-16 px-2 py-1.5 bg-gray-100 rounded-lg text-[11px] text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-500 placeholder-gray-400" />
+            <input autoComplete="off" type="number" value={maxDistance} onChange={(e) => setMaxDistance(e.target.value)} placeholder="mi" className="w-16 px-2 py-1.5 bg-gray-100 rounded-lg text-[11px] text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-500 placeholder-gray-400" />
             <span className="text-[11px] text-gray-500">mi</span>
           </div>
           <div className="flex items-center gap-1.5">
             <Tag className="w-3 h-3 text-gray-400" />
-            <input type="text" value={tagFilter} onChange={(e) => setTagFilter(e.target.value)} placeholder="Vibe tag..." className="w-24 px-2 py-1.5 bg-gray-100 rounded-lg text-[11px] text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-500 placeholder-gray-400" />
+            <input autoComplete="off" type="text" value={tagFilter} onChange={(e) => setTagFilter(e.target.value)} placeholder="Vibe tag..." className="w-24 px-2 py-1.5 bg-gray-100 rounded-lg text-[11px] text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-500 placeholder-gray-400" />
           </div>
           <button onClick={() => setHasPower(!hasPower)} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${hasPower ? "bg-teal-100 text-teal-700" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>
             <Zap className="w-3 h-3" /> 3-Phase Power

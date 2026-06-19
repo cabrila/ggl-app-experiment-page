@@ -9,10 +9,26 @@ interface LocationCardProps {
   location: Location
   onUpdate: (location: Location) => void
   onDelete: () => void
+  /** When true, the card is rendered inside the detail modal. */
+  forceExpanded?: boolean
+  /** When provided (and not forceExpanded), clicking the location name opens the detail modal. */
+  onNameClick?: () => void
+  /** When provided (and not forceExpanded), clicking the edit button opens the detail modal in edit mode. */
+  onEditClick?: () => void
+  /** When true, the card mounts directly in edit mode (used by the modal's edit flow). */
+  startInEdit?: boolean
 }
 
-export default function LocationCard({ location, onUpdate, onDelete }: LocationCardProps) {
-  const [isEditing, setIsEditing] = useState(false)
+export default function LocationCard({
+  location,
+  onUpdate,
+  onDelete,
+  forceExpanded = false,
+  onNameClick,
+  onEditClick,
+  startInEdit = false,
+}: LocationCardProps) {
+  const [isEditing, setIsEditing] = useState(startInEdit)
   const [editData, setEditData] = useState<Location>(location)
   const [showMapModal, setShowMapModal] = useState(false)
 
@@ -35,6 +51,7 @@ export default function LocationCard({ location, onUpdate, onDelete }: LocationC
         </label>
         <input
           type="text"
+          autoComplete="off"
           value={editData.name}
           onChange={(e) => setEditData({ ...editData, name: e.target.value })}
           className="w-full px-4 py-3 bg-[#0f1f17] rounded-lg text-white font-sans mb-4 border border-white/10 focus:border-amber-500/50 focus:outline-none"
@@ -51,8 +68,8 @@ export default function LocationCard({ location, onUpdate, onDelete }: LocationC
               onChange={(e) => setEditData({ ...editData, type: e.target.value as "INT" | "EXT" })}
               className="w-full px-4 py-3 bg-[#0f1f17] rounded-lg text-white font-sans border border-white/10 focus:border-amber-500/50 focus:outline-none"
             >
-              <option value="INT">INT.</option>
-              <option value="EXT">EXT.</option>
+              <option value="INT" className="bg-[#0f1f17] text-white">INT.</option>
+              <option value="EXT" className="bg-[#0f1f17] text-white">EXT.</option>
             </select>
           </div>
           <div>
@@ -69,10 +86,10 @@ export default function LocationCard({ location, onUpdate, onDelete }: LocationC
               }
               className="w-full px-4 py-3 bg-[#0f1f17] rounded-lg text-white font-sans border border-white/10 focus:border-amber-500/50 focus:outline-none"
             >
-              <option value="DAY">DAY</option>
-              <option value="NIGHT">NIGHT</option>
-              <option value="DAWN">DAWN</option>
-              <option value="DUSK">DUSK</option>
+              <option value="DAY" className="bg-[#0f1f17] text-white">DAY</option>
+              <option value="NIGHT" className="bg-[#0f1f17] text-white">NIGHT</option>
+              <option value="DAWN" className="bg-[#0f1f17] text-white">DAWN</option>
+              <option value="DUSK" className="bg-[#0f1f17] text-white">DUSK</option>
             </select>
           </div>
         </div>
@@ -82,6 +99,7 @@ export default function LocationCard({ location, onUpdate, onDelete }: LocationC
           Description
         </label>
         <textarea
+          autoComplete="off"
           value={editData.description}
           onChange={(e) => setEditData({ ...editData, description: e.target.value })}
           rows={3}
@@ -93,6 +111,7 @@ export default function LocationCard({ location, onUpdate, onDelete }: LocationC
           Scouting Notes
         </label>
         <textarea
+          autoComplete="off"
           value={editData.scoutingNotes}
           onChange={(e) => setEditData({ ...editData, scoutingNotes: e.target.value })}
           rows={3}
@@ -111,6 +130,7 @@ export default function LocationCard({ location, onUpdate, onDelete }: LocationC
           </label>
           <input
             type="url"
+            autoComplete="off"
             value={editData.locationIdeaMapUrl || ""}
             onChange={(e) => setEditData({ ...editData, locationIdeaMapUrl: e.target.value })}
             placeholder="https://maps.google.com/..."
@@ -123,6 +143,7 @@ export default function LocationCard({ location, onUpdate, onDelete }: LocationC
           </label>
           <input
             type="url"
+            autoComplete="off"
             value={editData.locationIdeaLink || ""}
             onChange={(e) => setEditData({ ...editData, locationIdeaLink: e.target.value })}
             placeholder="https://example.com/location-reference"
@@ -166,7 +187,7 @@ export default function LocationCard({ location, onUpdate, onDelete }: LocationC
       {/* Hover Actions */}
       <div className="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
-          onClick={() => setIsEditing(true)}
+          onClick={() => (onEditClick && !forceExpanded ? onEditClick() : setIsEditing(true))}
           className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
           title="Edit location"
         >
@@ -187,9 +208,17 @@ export default function LocationCard({ location, onUpdate, onDelete }: LocationC
           <MapPin className="w-5 h-5 text-amber-400" />
         </div>
         <div className="flex-1 min-w-0 pr-16">
-          <h3 className="text-lg font-bold text-white font-sans uppercase tracking-wide leading-tight">
-            {location.name}
-          </h3>
+          {onNameClick && !forceExpanded ? (
+            <button onClick={onNameClick} className="text-left max-w-full" title="View full location details">
+              <h3 className="text-lg font-bold text-white font-sans uppercase tracking-wide leading-tight hover:text-amber-300 transition-colors cursor-pointer">
+                {location.name}
+              </h3>
+            </button>
+          ) : (
+            <h3 className="text-lg font-bold text-white font-sans uppercase tracking-wide leading-tight">
+              {location.name}
+            </h3>
+          )}
           <div className="flex items-center gap-2 mt-1">
             <span className="text-xs text-white/60 font-sans">{location.type}.</span>
             <span className="text-xs text-white/40">•</span>

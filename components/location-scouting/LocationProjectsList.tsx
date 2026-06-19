@@ -1,17 +1,21 @@
 "use client"
 
 import { useState } from "react"
-import { MapPin, Calendar, Plus, Pencil, Trash2 } from "lucide-react"
+import { MapPin, Calendar, Plus, Pencil, Trash2, Share2 } from "lucide-react"
 import { useLocationScouting } from "./LocationScoutingContext"
 import { LocationProject } from "@/types/location-scouting"
 import DeleteConfirmationModal from "@/components/ui/DeleteConfirmationModal"
 import EditProjectWithThumbnailModal from "@/components/ui/EditProjectWithThumbnailModal"
+import { trackListCreated, trackDelete } from "@/lib/analytics"
+import { Badge } from "@/components/ui/badge"
+import ShareModal from "@/components/modals/ShareModal"
 
 export default function LocationProjectsList() {
   const { projects, setView, setCurrentProject, deleteProject, updateProject } = useLocationScouting()
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<LocationProject | null>(null)
   const [editTarget, setEditTarget] = useState<LocationProject | null>(null)
+  const [shareTarget, setShareTarget] = useState<LocationProject | null>(null)
 
   const handleProjectClick = (projectId: string) => {
     const project = projects.find((p) => p.id === projectId)
@@ -31,8 +35,14 @@ export default function LocationProjectsList() {
     setEditTarget(project)
   }
 
+  const handleShareProject = (e: React.MouseEvent, project: LocationProject) => {
+    e.stopPropagation()
+    setShareTarget(project)
+  }
+
   const handleConfirmDelete = () => {
     if (deleteTarget) {
+      trackDelete("location-overview", "list")
       deleteProject(deleteTarget.id)
     }
   }
@@ -84,11 +94,18 @@ export default function LocationProjectsList() {
             {/* Content Section - 2/3 width */}
             <button
               onClick={() => handleProjectClick(project.id)}
-              className="flex-1 flex flex-col justify-center p-5 text-left"
+              className="flex-1 min-w-0 flex flex-col justify-center p-5 text-left"
             >
               {/* Hover Actions */}
               {hoveredId === project.id && (
                 <div className="absolute top-3 right-3 flex items-center gap-1">
+                  <button
+                    onClick={(e) => handleShareProject(e, project)}
+                    className="p-2 bg-indigo-500/20 hover:bg-indigo-500/30 rounded-lg text-indigo-400 hover:text-indigo-300 transition-colors"
+                    title="Share"
+                  >
+                    <Share2 className="w-4 h-4" />
+                  </button>
                   <button
                     onClick={(e) => handleEditProject(e, project)}
                     className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
@@ -107,19 +124,26 @@ export default function LocationProjectsList() {
               )}
 
               {/* Project Name */}
-              <h3 className="text-base font-bold text-white font-sans mb-2 pr-16 line-clamp-1">
-                {project.name}
-              </h3>
+              <div className="mb-2 pr-16">
+                <h3 className="text-base font-bold text-white font-sans leading-snug break-words line-clamp-2">
+                  {project.name}
+                </h3>
+                {project.isDemo && (
+                  <Badge className="mt-1.5 bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px] px-1.5 py-0">
+                    Demo
+                  </Badge>
+                )}
+              </div>
 
               {/* Meta Info */}
-              <div className="flex flex-wrap items-center gap-3 text-xs text-white/50">
-                <div className="flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5" />
-                  <span>{project.locations.length} locations</span>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/50">
+                <div className="flex items-center gap-1 min-w-0">
+                  <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="truncate">{project.locations.length} locations</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span>
+                <div className="flex items-center gap-1 min-w-0">
+                  <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="truncate">
                     {project.createdAt.toLocaleDateString("en-US", {
                       month: "short",
                       day: "numeric",
@@ -134,7 +158,10 @@ export default function LocationProjectsList() {
 
         {/* New Location List Card */}
         <button
-          onClick={() => setView("upload")}
+          onClick={() => {
+            trackListCreated("location-overview")
+            setView("upload")
+          }}
           className="flex flex-col items-center justify-center p-8 rounded-xl border-2 border-dashed border-white/20 hover:border-white/40 bg-transparent hover:bg-white/[0.02] transition-all min-h-[200px]"
         >
           <Plus className="w-8 h-8 text-white/40 mb-3" />
@@ -163,6 +190,16 @@ export default function LocationProjectsList() {
         label="Location List Name"
         accentColor="amber"
       />
+
+      {/* Share Modal */}
+      {shareTarget && (
+        <ShareModal
+          onClose={() => setShareTarget(null)}
+          toolType="location-overview"
+          projectName={shareTarget.name}
+          data={shareTarget.locations}
+        />
+      )}
       </div>
     </div>
   )

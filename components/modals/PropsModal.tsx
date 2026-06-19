@@ -111,6 +111,7 @@ function FloatingField({ label, value, onChange, placeholder }: { label: string;
   return (
     <div className="relative">
       <input
+        autoComplete="off"
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -175,7 +176,7 @@ function ImageUploadBox({ imageUrl, onImageChange, className }: { imageUrl: stri
           </div>
         </>
       )}
-      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { if (e.target.files?.[0]) handleFile(e.target.files[0]); e.target.value = "" }} />
+      <input autoComplete="off" ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { if (e.target.files?.[0]) handleFile(e.target.files[0]); e.target.value = "" }} />
     </div>
   )
 }
@@ -251,21 +252,21 @@ function AddItemModal({ onClose, onAdd, scenes, characters, characterActorMap }:
         <div className="px-6 pb-6 space-y-5">
           {/* Row 1 */}
           <div className="flex gap-4">
-            <div className="flex-1"><FloatingField label="Name" value={form.name} onChange={(v) => update("name", v)} /></div>
-            <div className="flex-1"><FloatingField label="Model" value={form.model} onChange={(v) => update("model", v)} /></div>
+            <div className="flex-1"><FloatingField label="Name" value={form.name} onChange={(v) => update("name", v)} placeholder="e.g. Coffee Mug" /></div>
+            <div className="flex-1"><FloatingField label="Model" value={form.model} onChange={(v) => update("model", v)} placeholder="e.g. Ceramic, White" /></div>
             <ImageUploadBox imageUrl={imageUrl} onImageChange={setImageUrl} />
           </div>
 
           {/* Row 2 */}
           <div className="grid grid-cols-2 gap-4">
             <FloatingSelect label="Category" value={form.category} onChange={(v) => update("category", v)} options={CATEGORIES} />
-            <FloatingField label="Serial Number" value={form.serialNumber} onChange={(v) => update("serialNumber", v)} />
+            <FloatingField label="Serial Number" value={form.serialNumber} onChange={(v) => update("serialNumber", v)} placeholder="e.g. SN-12345" />
           </div>
 
           {/* Row 3 */}
           <div className="grid grid-cols-2 gap-4">
-            <FloatingField label="Brand" value={form.brand} onChange={(v) => update("brand", v)} />
-            <FloatingField label="Sku / Barcode" value={form.skuBarcode} onChange={(v) => update("skuBarcode", v)} />
+            <FloatingField label="Brand" value={form.brand} onChange={(v) => update("brand", v)} placeholder="e.g. Acme Corp" />
+            <FloatingField label="Sku / Barcode" value={form.skuBarcode} onChange={(v) => update("skuBarcode", v)} placeholder="e.g. 0123456789" />
           </div>
 
           {/* Scene Assignment */}
@@ -293,7 +294,7 @@ function AddItemModal({ onClose, onAdd, scenes, characters, characterActorMap }:
               <div className="bg-white border border-gray-300 rounded-xl overflow-hidden">
                 <div className="relative border-b border-gray-200">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-                  <input value={sceneSearch} onChange={(e) => setSceneSearch(e.target.value)} placeholder="Search scenes..." className="w-full pl-8 pr-3 py-2.5 text-xs bg-gray-50 focus:outline-none focus:bg-white text-gray-900 placeholder-gray-400" />
+                  <input autoComplete="off" value={sceneSearch} onChange={(e) => setSceneSearch(e.target.value)} placeholder="Search scenes..." className="w-full pl-8 pr-3 py-2.5 text-xs bg-gray-50 focus:outline-none focus:bg-white text-gray-900 placeholder-gray-400" />
                 </div>
                 <div className="max-h-40 overflow-y-auto divide-y divide-gray-100">
                   {filteredScenes.map((scene) => {
@@ -372,7 +373,7 @@ function AddItemModal({ onClose, onAdd, scenes, characters, characterActorMap }:
 
           {/* Notes */}
           <div className="relative">
-            <textarea value={form.notes} onChange={(e) => update("notes", e.target.value)} rows={3} className="w-full px-4 pt-6 pb-2 bg-white border border-gray-300 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none peer placeholder-transparent" placeholder="Notes" />
+            <textarea autoComplete="off" value={form.notes} onChange={(e) => update("notes", e.target.value)} rows={3} className="w-full px-4 pt-6 pb-2 bg-white border border-gray-300 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none peer placeholder-transparent" placeholder="Notes" />
             <label className="absolute left-4 top-2 text-xs text-gray-500 transition-all pointer-events-none">Notes</label>
           </div>
 
@@ -419,8 +420,8 @@ function AddItemModal({ onClose, onAdd, scenes, characters, characterActorMap }:
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 </div>
-                <input type="time" value={slot.startTime} onChange={(e) => { const u = [...availSlots]; u[idx] = { ...u[idx], startTime: e.target.value }; setAvailSlots(u) }} className="px-4 py-3 bg-white border border-gray-300 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-                <input type="time" value={slot.endTime} onChange={(e) => { const u = [...availSlots]; u[idx] = { ...u[idx], endTime: e.target.value }; setAvailSlots(u) }} className="px-4 py-3 bg-white border border-gray-300 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                <input autoComplete="off" type="time" value={slot.startTime} onChange={(e) => { const u = [...availSlots]; u[idx] = { ...u[idx], startTime: e.target.value }; setAvailSlots(u) }} className="px-4 py-3 bg-white border border-gray-300 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                <input autoComplete="off" type="time" value={slot.endTime} onChange={(e) => { const u = [...availSlots]; u[idx] = { ...u[idx], endTime: e.target.value }; setAvailSlots(u) }} className="px-4 py-3 bg-white border border-gray-300 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
               </div>
             ))}
             <div className="flex gap-3">
@@ -516,26 +517,26 @@ function EditItemModal({ item, onClose, onSave, scenes, characters, characterAct
         <div className="px-6 pb-6 space-y-5">
           {/* Row 1 */}
           <div className="flex gap-4">
-            <div className="flex-1"><FloatingField label="Name" value={form.name} onChange={(v) => update("name", v)} /></div>
-            <div className="flex-1"><FloatingField label="Model" value={form.model} onChange={(v) => update("model", v)} /></div>
+            <div className="flex-1"><FloatingField label="Name" value={form.name} onChange={(v) => update("name", v)} placeholder="e.g. Coffee Mug" /></div>
+            <div className="flex-1"><FloatingField label="Model" value={form.model} onChange={(v) => update("model", v)} placeholder="e.g. Ceramic, White" /></div>
             <ImageUploadBox imageUrl={imageUrl} onImageChange={setImageUrl} />
           </div>
 
           {/* Row 2 */}
           <div className="grid grid-cols-2 gap-4">
             <FloatingSelect label="Category" value={form.category} onChange={(v) => update("category", v)} options={CATEGORIES} />
-            <FloatingField label="Serial Number" value={form.serialNumber} onChange={(v) => update("serialNumber", v)} />
+            <FloatingField label="Serial Number" value={form.serialNumber} onChange={(v) => update("serialNumber", v)} placeholder="e.g. SN-12345" />
           </div>
 
           {/* Row 3 */}
           <div className="grid grid-cols-2 gap-4">
-            <FloatingField label="Brand" value={form.brand} onChange={(v) => update("brand", v)} />
-            <FloatingField label="Sku / Barcode" value={form.skuBarcode} onChange={(v) => update("skuBarcode", v)} />
+            <FloatingField label="Brand" value={form.brand} onChange={(v) => update("brand", v)} placeholder="e.g. Acme Corp" />
+            <FloatingField label="Sku / Barcode" value={form.skuBarcode} onChange={(v) => update("skuBarcode", v)} placeholder="e.g. 0123456789" />
           </div>
 
           {/* Notes */}
           <div className="relative">
-            <textarea value={form.notes} onChange={(e) => update("notes", e.target.value)} rows={3} className="w-full px-4 pt-6 pb-2 bg-white border border-gray-300 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none peer placeholder-transparent" placeholder="Notes" />
+            <textarea autoComplete="off" value={form.notes} onChange={(e) => update("notes", e.target.value)} rows={3} className="w-full px-4 pt-6 pb-2 bg-white border border-gray-300 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none peer placeholder-transparent" placeholder="Notes" />
             <label className="absolute left-4 top-2 text-xs text-gray-500 transition-all pointer-events-none">Notes</label>
           </div>
 
@@ -564,7 +565,7 @@ function EditItemModal({ item, onClose, onSave, scenes, characters, characterAct
               <div className="bg-white border border-gray-300 rounded-xl overflow-hidden">
                 <div className="relative border-b border-gray-200">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-                  <input value={sceneSearch} onChange={(e) => setSceneSearch(e.target.value)} placeholder="Search scenes..." className="w-full pl-8 pr-3 py-2.5 text-xs bg-gray-50 focus:outline-none focus:bg-white text-gray-900 placeholder-gray-400" />
+                  <input autoComplete="off" value={sceneSearch} onChange={(e) => setSceneSearch(e.target.value)} placeholder="Search scenes..." className="w-full pl-8 pr-3 py-2.5 text-xs bg-gray-50 focus:outline-none focus:bg-white text-gray-900 placeholder-gray-400" />
                 </div>
                 <div className="max-h-40 overflow-y-auto divide-y divide-gray-100">
                   {filteredScenes.map((scene) => {
@@ -690,8 +691,8 @@ function EditItemModal({ item, onClose, onSave, scenes, characters, characterAct
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 </div>
-                <input type="time" value={slot.startTime} onChange={(e) => { const u = [...availSlots]; u[idx] = { ...u[idx], startTime: e.target.value }; setAvailSlots(u) }} className="px-4 py-3 bg-white border border-gray-300 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-                <input type="time" value={slot.endTime} onChange={(e) => { const u = [...availSlots]; u[idx] = { ...u[idx], endTime: e.target.value }; setAvailSlots(u) }} className="px-4 py-3 bg-white border border-gray-300 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                <input autoComplete="off" type="time" value={slot.startTime} onChange={(e) => { const u = [...availSlots]; u[idx] = { ...u[idx], startTime: e.target.value }; setAvailSlots(u) }} className="px-4 py-3 bg-white border border-gray-300 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                <input autoComplete="off" type="time" value={slot.endTime} onChange={(e) => { const u = [...availSlots]; u[idx] = { ...u[idx], endTime: e.target.value }; setAvailSlots(u) }} className="px-4 py-3 bg-white border border-gray-300 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
                 <button onClick={() => handleDeleteSlot(slot.id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors shrink-0" title="Delete slot">
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -779,7 +780,7 @@ function CommentSection({ comments, onAddComment }: { comments: PropComment[]; o
             </div>
           )}
           <div className="flex items-center gap-1.5">
-            <input type="text" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} placeholder="Write a comment..." className="flex-1 px-2.5 py-1.5 text-[11px] bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 placeholder-gray-400 text-gray-900" />
+            <input autoComplete="off" type="text" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} placeholder="Write a comment..." className="flex-1 px-2.5 py-1.5 text-[11px] bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 placeholder-gray-400 text-gray-900" />
             <button onClick={handleSubmit} disabled={!text.trim()} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
               <Send className="w-3.5 h-3.5" />
             </button>
@@ -1594,6 +1595,7 @@ const [isSidebarOpen, setIsSidebarOpen] = useState(false)
               <div className="relative flex-1 min-w-[160px] max-w-xs">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
+                  autoComplete="off"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search props..."
@@ -2500,6 +2502,7 @@ function PropsPurchaseFormModal({
                 Description *
               </label>
               <input
+                autoComplete="off"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="w-full pt-5 pb-2 px-3 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-1 focus:ring-emerald-300"
@@ -2513,6 +2516,7 @@ function PropsPurchaseFormModal({
                   Quantity
                 </label>
                 <input
+                  autoComplete="off"
                   type="number"
                   min="1"
                   value={quantity}
@@ -2525,6 +2529,7 @@ function PropsPurchaseFormModal({
                   Estimated Price
                 </label>
                 <input
+                  autoComplete="off"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
                   placeholder="$0.00"
@@ -2539,6 +2544,7 @@ function PropsPurchaseFormModal({
                 Vendor / Supplier
               </label>
               <input
+                autoComplete="off"
                 value={vendor}
                 onChange={(e) => setVendor(e.target.value)}
                 className="w-full pt-5 pb-2 px-3 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-1 focus:ring-emerald-300"
@@ -2645,6 +2651,7 @@ function PropsPurchaseFormModal({
                 Design Notes
               </label>
               <textarea
+                autoComplete="off"
                 value={designNotes}
                 onChange={(e) => setDesignNotes(e.target.value)}
                 placeholder="Dimensions, materials, references, aging instructions..."

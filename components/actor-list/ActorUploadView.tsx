@@ -1,17 +1,27 @@
 "use client"
 
-import { useState, useRef } from "react"
-import { Upload, ArrowLeft, FileText, X, Loader2 } from "lucide-react"
+import { useState, useRef, useEffect } from "react"
+import { Upload, ArrowLeft, FileText, X, Loader2, AlertCircle, RefreshCw, PenLine } from "lucide-react"
 import { useActorList } from "./ActorListContext"
 import { Actor } from "@/types/actor-list"
+import { useImportJob } from "@/hooks/useImportJob"
+import type { ActorExtractResult } from "@/types/ai"
+import { trackFileUpload, trackExtractClick, trackExtractComplete } from "@/lib/analytics"
 
 export default function ActorUploadView() {
   const { createProject, goBack } = useActorList()
   const [isDragging, setIsDragging] = useState(false)
   const [file, setFile] = useState<File | null>(null)
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [progress, setProgress] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // Guard so a completed extraction creates its project exactly ONCE. Without
+  // this, createProject's changing identity re-fires the effect (each create →
+  // Firestore write → re-render → new createProject), spawning duplicate lists.
+  const createdRef = useRef(false)
+
+  // Use the AI service integration hook
+  const { status, message, result, error, run, reset } = useImportJob<ActorExtractResult>("actor-extract")
+
+  const isProcessing = status === "uploading" || status === "running"
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -46,83 +56,57 @@ export default function ActorUploadView() {
     const selectedFile = e.target.files?.[0]
     if (selectedFile && isValidFile(selectedFile)) {
       setFile(selectedFile)
+      const fileExt = selectedFile.name.split('.').pop()?.toLowerCase() || 'unknown'
+      trackFileUpload(fileExt, "actor-list")
     }
   }
 
   const handleProcess = async () => {
     if (!file) return
 
-    setIsProcessing(true)
-    setProgress(0)
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'unknown'
+    trackExtractClick("actor-list", fileExt)
+    
+    const sourceTitle = file.name.replace(/\.[^/.]+$/, "")
+    await run(file, sourceTitle)
+  }
 
-    // Simulate AI processing with progress
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval)
-          return 100
-        }
-        return prev + Math.random() * 15
-      })
-    }, 300)
+  // Handle successful extraction - use useEffect to avoid setState during render
+  useEffect(() => {
+    if (status === "complete" && result && file && !createdRef.current) {
+      createdRef.current = true
+      // Map AI service result to our Actor type
+      const actors: Actor[] = result.actors.map((actor, index) => ({
+        id: `${Date.now()}-${index}`,
+        name: actor.name,
+        age: actor.age || 0,
+        playingAge: actor.playing_age || "",
+        phone: actor.phone || "",
+        email: actor.email || "",
+        headshotUrl: actor.headshot_url || "",
+        notes: actor.notes || "",
+      }))
 
-    // Simulate processing delay
-    await new Promise((resolve) => setTimeout(resolve, 3000))
+      // Create project with extracted actors
+      const projectName = file.name.replace(/\.[^/.]+$/, "") || "Imported Actors"
+      trackExtractComplete("actor-list", actors.length)
+      createProject(projectName, actors)
+    }
+  }, [status, result, file, createProject])
 
-    clearInterval(interval)
-    setProgress(100)
-
-    // Generate demo actors from "extracted" data
-    const extractedActors: Actor[] = [
-      {
-        id: Date.now().toString() + "-1",
-        name: "Sarah Mitchell",
-        age: 28,
-        playingAge: "22-32",
-        phone: "+1-555-0201",
-        email: "sarah.m@actors.com",
-        headshotUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face",
-        notes: "Trained in classical theater, strong dramatic range",
-      },
-      {
-        id: Date.now().toString() + "-2",
-        name: "Marcus Chen",
-        age: 35,
-        playingAge: "28-40",
-        phone: "+1-555-0202",
-        email: "marcus.c@actors.com",
-        headshotUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-        notes: "Action specialist, stunt training certified",
-      },
-      {
-        id: Date.now().toString() + "-3",
-        name: "Elena Rodriguez",
-        age: 42,
-        playingAge: "35-50",
-        phone: "+1-555-0203",
-        email: "elena.r@actors.com",
-        headshotUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
-        notes: "Bilingual (Spanish/English), experienced in telenovelas",
-      },
-      {
-        id: Date.now().toString() + "-4",
-        name: "David Park",
-        age: 31,
-        playingAge: "25-35",
-        phone: "+1-555-0204",
-        email: "david.p@actors.com",
-        headshotUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face",
-        notes: "Comedy background, improv trained at UCB",
-      },
-    ]
-
-    // Create project with extracted actors
-    const projectName = file.name.replace(/\.[^/.]+$/, "")
-    createProject(projectName, extractedActors)
+  const handleRetry = () => {
+    reset()
+    createdRef.current = false
+    setFile(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
   }
 
   const removeFile = () => {
     setFile(null)
+    reset()
+    createdRef.current = false
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
@@ -137,7 +121,7 @@ export default function ActorUploadView() {
           className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span className="text-sm font-sans">Back to Projects</span>
+          <span className="text-sm font-sans">Back to My Actors</span>
         </button>
       </div>
 
@@ -157,27 +141,42 @@ export default function ActorUploadView() {
           {/* Divider */}
           <div className="border-t border-white/10 mb-8" />
 
+          {/* Error State */}
+          {status === "failed" && error && (
+            <div className="mb-6 p-4 rounded-xl border border-red-500/30 bg-red-500/10 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-red-400 font-medium font-sans mb-1">Extraction Failed</p>
+                <p className="text-red-400/80 text-sm font-sans">{error}</p>
+              </div>
+              <button
+                onClick={handleRetry}
+                className="flex items-center gap-2 px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-red-400 transition-colors"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span className="text-sm font-sans">Retry</span>
+              </button>
+            </div>
+          )}
+
           {isProcessing ? (
             /* Processing State */
             <div className="p-12 rounded-2xl border border-white/10 bg-[#1a2e23] text-center">
               <Loader2 className="w-12 h-12 text-emerald-400 animate-spin mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-white mb-2 font-sans">
-                Extracting Actor Data...
+                {status === "uploading" ? "Uploading file..." : "Extracting Actor Data..."}
               </h3>
               <p className="text-white/50 text-sm mb-4 font-sans">
-                AI is analyzing the file and structuring actor information
+                {message || "AI is analyzing the file and structuring actor information"}
               </p>
               <div className="w-full bg-white/10 rounded-full h-2">
                 <div
-                  className="bg-emerald-500 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${Math.min(progress, 100)}%` }}
+                  className="bg-emerald-500 h-2 rounded-full transition-all duration-500 animate-pulse"
+                  style={{ width: status === "uploading" ? "30%" : "70%" }}
                 />
               </div>
-              <p className="text-white/40 text-xs mt-2 font-sans">
-                {Math.round(Math.min(progress, 100))}% complete
-              </p>
             </div>
-          ) : file ? (
+          ) : file && status !== "failed" ? (
             /* File Selected State */
             <div className="p-8 rounded-2xl border border-white/10 bg-[#1a2e23]">
               <div className="flex items-center gap-4 mb-6">
@@ -235,6 +234,19 @@ export default function ActorUploadView() {
                 onChange={handleFileSelect}
                 className="hidden"
               />
+            </div>
+          )}
+
+          {/* Manual Create Option */}
+          {!isProcessing && (
+            <div className="mt-8 pt-6 border-t border-white/10">
+              <button
+                onClick={() => createProject("New Actor List", [])}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 hover:text-white rounded-xl transition-colors font-sans"
+              >
+                <PenLine className="w-4 h-4" />
+                Create Actor List Manually
+              </button>
             </div>
           )}
         </div>

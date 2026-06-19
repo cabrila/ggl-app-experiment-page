@@ -1,26 +1,70 @@
 "use client"
 
 import { useState } from "react"
-import { Trash2, X, Save, Pencil } from "lucide-react"
+import { Trash2, X, Save, Pencil, ChevronDown, ChevronUp } from "lucide-react"
 import { Character } from "@/types/character-bible"
 
 interface CharacterCardProps {
   character: Character
   onUpdate: (updates: Partial<Character>) => void
   onDelete: () => void
+  /** When true, collapsible sections are rendered fully expanded (used inside the detail modal). */
+  forceExpanded?: boolean
+  /** When provided (and not forceExpanded), clicking the character name opens the detail modal. */
+  onNameClick?: () => void
+  /** When provided (and not forceExpanded), clicking the edit button opens the detail modal in edit mode. */
+  onEditClick?: () => void
+  /** When true, the card mounts directly in edit mode (used by the modal's edit flow). */
+  startInEdit?: boolean
 }
 
-export default function CharacterCard({ character, onUpdate, onDelete }: CharacterCardProps) {
-  const [isEditing, setIsEditing] = useState(false)
-  const [editState, setEditState] = useState<Character>(character)
+// Treat unknown / empty as "no value" for display purposes.
+function isMeaningful(value: string | undefined | null): boolean {
+  if (!value) return false
+  return value.trim().toLowerCase() !== "unknown"
+}
+
+export default function CharacterCard({
+  character,
+  onUpdate,
+  onDelete,
+  forceExpanded = false,
+  onNameClick,
+  onEditClick,
+  startInEdit = false,
+}: CharacterCardProps) {
+  const [isEditing, setIsEditing] = useState(startInEdit)
+  const [isAppearancesOpen, setIsAppearancesOpen] = useState(false)
+  const [editState, setEditState] = useState({
+    name: character.name,
+    aliases: (character.aliases || []).join(", "),
+    gender: character.gender === "unknown" ? "" : (character.gender || ""),
+    ageRange: character.ageRange === "unknown" ? "" : (character.ageRange || ""),
+    description: character.description || "",
+  })
 
   const handleSave = () => {
-    onUpdate(editState)
+    const updates: Partial<Character> = {
+      name: editState.name,
+      aliases: editState.aliases
+        ? editState.aliases.split(",").map((s) => s.trim()).filter(Boolean)
+        : [],
+      gender: editState.gender || "unknown",
+      ageRange: editState.ageRange || "unknown",
+      description: editState.description || "",
+    }
+    onUpdate(updates)
     setIsEditing(false)
   }
 
   const handleCancel = () => {
-    setEditState(character)
+    setEditState({
+      name: character.name,
+      aliases: (character.aliases || []).join(", "),
+      gender: character.gender === "unknown" ? "" : (character.gender || ""),
+      ageRange: character.ageRange === "unknown" ? "" : (character.ageRange || ""),
+      description: character.description || "",
+    })
     setIsEditing(false)
   }
 
@@ -34,22 +78,41 @@ export default function CharacterCard({ character, onUpdate, onDelete }: Charact
           </label>
           <input
             type="text"
+            autoComplete="off"
             value={editState.name}
             onChange={(e) => setEditState({ ...editState, name: e.target.value })}
+            placeholder="e.g. John Doe"
             className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans focus:outline-none focus:border-emerald-500/50"
           />
         </div>
 
-        {/* Age & Gender Row */}
+        {/* Aliases */}
+        <div className="mb-4">
+          <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-2">
+            Aliases (comma-separated)
+          </label>
+          <input
+            type="text"
+            autoComplete="off"
+            value={editState.aliases}
+            onChange={(e) => setEditState({ ...editState, aliases: e.target.value })}
+            placeholder="e.g. BOB, ROBERTO"
+            className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans focus:outline-none focus:border-emerald-500/50"
+          />
+        </div>
+
+        {/* Age Range & Gender Row */}
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
             <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-2">
-              Age
+              Age Range
             </label>
             <input
               type="text"
-              value={editState.age}
-              onChange={(e) => setEditState({ ...editState, age: e.target.value })}
+              autoComplete="off"
+              value={editState.ageRange}
+              onChange={(e) => setEditState({ ...editState, ageRange: e.target.value })}
+              placeholder="e.g. 30s, 25-35"
               className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans focus:outline-none focus:border-emerald-500/50"
             />
           </div>
@@ -59,48 +122,26 @@ export default function CharacterCard({ character, onUpdate, onDelete }: Charact
             </label>
             <input
               type="text"
+              autoComplete="off"
               value={editState.gender}
               onChange={(e) => setEditState({ ...editState, gender: e.target.value })}
+              placeholder="e.g. Male, Female, Non-binary"
               className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans focus:outline-none focus:border-emerald-500/50"
             />
           </div>
         </div>
 
-        {/* Ethnicity & Scenes Row */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div>
-            <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-2">
-              Ethnicity
-            </label>
-            <input
-              type="text"
-              value={editState.ethnicity}
-              onChange={(e) => setEditState({ ...editState, ethnicity: e.target.value })}
-              className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans focus:outline-none focus:border-emerald-500/50"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-2">
-              Scenes
-            </label>
-            <input
-              type="number"
-              value={editState.scenes}
-              onChange={(e) => setEditState({ ...editState, scenes: parseInt(e.target.value) || 0 })}
-              className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans focus:outline-none focus:border-emerald-500/50"
-            />
-          </div>
-        </div>
-
-        {/* Casting Notes */}
+        {/* Description */}
         <div className="mb-5">
           <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-2">
-            Casting Notes
+            Description
           </label>
           <textarea
-            value={editState.castingNotes}
-            onChange={(e) => setEditState({ ...editState, castingNotes: e.target.value })}
+            autoComplete="off"
+            value={editState.description}
+            onChange={(e) => setEditState({ ...editState, description: e.target.value })}
             rows={4}
+            placeholder="e.g. A brief description of the character's traits, backstory, etc."
             className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans resize-none focus:outline-none focus:border-emerald-500/50"
           />
         </div>
@@ -136,12 +177,18 @@ export default function CharacterCard({ character, onUpdate, onDelete }: Charact
   }
 
   // View Mode
+  const hasAliases = character.aliases && character.aliases.length > 0
+  const hasAppearances = character.sceneAppearances && character.sceneAppearances.length > 0
+  const showAge = isMeaningful(character.ageRange)
+  const showGender = isMeaningful(character.gender)
+  const appearanceCount = character.sceneAppearances?.length || 0
+
   return (
     <div className="group relative p-5 rounded-xl border border-white/10 bg-[#1a2e23] hover:border-white/20 transition-colors">
       {/* Hover Actions */}
       <div className="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
-          onClick={() => setIsEditing(true)}
+          onClick={() => (onEditClick && !forceExpanded ? onEditClick() : setIsEditing(true))}
           className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
           title="Edit character"
         >
@@ -157,55 +204,111 @@ export default function CharacterCard({ character, onUpdate, onDelete }: Charact
       </div>
 
       {/* Character Name */}
-      <h3 className="text-xl font-bold text-white mb-4 font-sans uppercase tracking-wide pr-20">
-        {character.name}
-      </h3>
+      <div className="mb-2 pr-20">
+        {onNameClick && !forceExpanded ? (
+          <button onClick={onNameClick} className="text-left max-w-full" title="View full character details">
+            <h3 className="text-xl font-bold text-white font-sans uppercase tracking-wide hover:text-emerald-300 transition-colors cursor-pointer">
+              {character.name}
+            </h3>
+          </button>
+        ) : (
+          <h3 className="text-xl font-bold text-white font-sans uppercase tracking-wide">
+            {character.name}
+          </h3>
+        )}
+      </div>
+
+      {/* Aliases */}
+      {hasAliases && (
+        <p className="text-sm text-white/50 mb-3 font-sans">
+          also: {character.aliases.join(", ")}
+        </p>
+      )}
 
       {/* Attributes Grid */}
-      <div className="grid grid-cols-4 gap-2 mb-4 p-3 bg-[#0f1f17] rounded-lg">
-        <div>
-          <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1">
-            Age
-          </p>
-          <p className="text-sm text-white font-sans truncate" title={character.age}>
-            {character.age}
-          </p>
-        </div>
-        <div>
-          <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1">
-            Gender
-          </p>
-          <p className="text-sm text-white font-sans truncate" title={character.gender}>
-            {character.gender}
-          </p>
-        </div>
-        <div>
-          <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1">
-            Ethnicity
-          </p>
-          <p className="text-sm text-white font-sans truncate" title={character.ethnicity}>
-            {character.ethnicity}
-          </p>
-        </div>
-        <div>
-          <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1">
-            Scenes
-          </p>
-          <p className="text-sm text-white font-sans">
-            {character.scenes}
-          </p>
-        </div>
-      </div>
+      {(showAge || showGender || hasAppearances) && (
+        <div className="grid grid-cols-3 gap-2 mb-4 p-3 bg-[#0f1f17] rounded-lg">
+          {showAge && (
+            <div>
+              <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1">
+                Age
+              </p>
+              <p className="text-sm text-white font-sans truncate">
+                {character.ageRange}
+              </p>
+            </div>
+          )}
 
-      {/* Casting Notes */}
-      <div className="p-3 bg-[#0f1f17] rounded-lg">
-        <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-2">
-          Casting Notes & Character Traits
-        </p>
-        <p className="text-sm text-white/80 font-sans leading-relaxed">
-          {character.castingNotes}
-        </p>
-      </div>
+          {showGender && (
+            <div>
+              <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1">
+                Gender
+              </p>
+              <p className="text-sm text-white font-sans truncate">
+                {character.gender}
+              </p>
+            </div>
+          )}
+
+          {hasAppearances && (
+            <div>
+              <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1">
+                Scenes
+              </p>
+              <p className="text-sm text-white font-sans truncate">
+                {appearanceCount}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Description */}
+      {character.description && (
+        <div className="p-3 bg-[#0f1f17] rounded-lg mb-3">
+          <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-2">
+            Description
+          </p>
+          <p className="text-sm text-white/80 font-sans leading-relaxed">
+            {character.description}
+          </p>
+        </div>
+      )}
+
+      {/* Scene Appearances (collapsible) */}
+      {hasAppearances && (
+        <div className="mt-3">
+          {!forceExpanded && (
+            <button
+              onClick={() => setIsAppearancesOpen(!isAppearancesOpen)}
+              className="flex items-center gap-2 text-sm text-white/50 hover:text-white/70 transition-colors w-full"
+            >
+              {isAppearancesOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              <span className="font-sans">
+                Scene Appearances ({appearanceCount})
+              </span>
+            </button>
+          )}
+
+          {(forceExpanded || isAppearancesOpen) && (
+            <div className="mt-3 space-y-3">
+              {character.sceneAppearances.map((sa, idx) => (
+                <div
+                  key={`${sa.sceneHeading}-${idx}`}
+                  className="p-3 bg-[#0f1f17] rounded-lg border border-white/5"
+                >
+                  <p className="text-xs font-semibold text-emerald-400/80 uppercase tracking-wider mb-1.5 font-sans">
+                    {sa.sceneHeading}
+                  </p>
+                  <p className="text-xs text-white/70 font-mono whitespace-pre-wrap leading-relaxed">
+                    {sa.citation}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

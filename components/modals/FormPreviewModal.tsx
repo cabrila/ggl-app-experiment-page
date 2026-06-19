@@ -397,8 +397,7 @@ export default function FormPreviewModal({
   return (
     <div
       className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[10000] p-4"
-      onClick={(e) => {
-        // Only close if clicking the backdrop, not the modal content
+      onMouseDown={(e) => {
         if (e.target === e.currentTarget) {
           handleClose()
         }
@@ -487,6 +486,7 @@ export default function FormPreviewModal({
                     Full Name <span className="text-red-500">*</span>
                   </label>
                   <input
+                    autoComplete="off"
                     type="text"
                     value={formData.name}
                     onChange={(e) => handleInputChange("name", e.target.value)}
@@ -500,6 +500,7 @@ export default function FormPreviewModal({
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Age</label>
                   <input
+                    autoComplete="off"
                     type="text"
                     value={formData.age}
                     onChange={(e) => handleInputChange("age", e.target.value)}
@@ -512,6 +513,7 @@ export default function FormPreviewModal({
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Playing Age</label>
                   <input
+                    autoComplete="off"
                     type="text"
                     value={formData.playingAge}
                     onChange={(e) => handleInputChange("playingAge", e.target.value)}
@@ -524,6 +526,7 @@ export default function FormPreviewModal({
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Gender</label>
                   <input
+                    autoComplete="off"
                     type="text"
                     value={formData.gender}
                     onChange={(e) => handleInputChange("gender", e.target.value)}
@@ -536,6 +539,7 @@ export default function FormPreviewModal({
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Ethnicity</label>
                   <input
+                    autoComplete="off"
                     type="text"
                     value={formData.ethnicity}
                     onChange={(e) => handleInputChange("ethnicity", e.target.value)}
@@ -548,6 +552,7 @@ export default function FormPreviewModal({
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
                   <input
+                    autoComplete="off"
                     type="text"
                     value={formData.location}
                     onChange={(e) => handleInputChange("location", e.target.value)}
@@ -569,6 +574,7 @@ export default function FormPreviewModal({
                     Email <span className="text-red-500">*</span>
                   </label>
                   <input
+                    autoComplete="off"
                     type="email"
                     value={formData.contactEmail}
                     onChange={(e) => handleInputChange("contactEmail", e.target.value)}
@@ -582,6 +588,7 @@ export default function FormPreviewModal({
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
                   <input
+                    autoComplete="off"
                     type="tel"
                     value={formData.contactPhone}
                     onChange={(e) => handleInputChange("contactPhone", e.target.value)}
@@ -594,6 +601,7 @@ export default function FormPreviewModal({
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Agent/Representative</label>
                   <input
+                    autoComplete="off"
                     type="text"
                     value={formData.agent}
                     onChange={(e) => handleInputChange("agent", e.target.value)}
@@ -620,6 +628,7 @@ export default function FormPreviewModal({
                   }`}
                 >
                   <input
+                    autoComplete="off"
                     type="file"
                     multiple
                     accept="image/*"
@@ -688,6 +697,7 @@ export default function FormPreviewModal({
 
                 <div className="flex space-x-2">
                   <input
+                    autoComplete="off"
                     type="text"
                     value={newVideoUrl}
                     onChange={(e) => setNewVideoUrl(e.target.value)}
@@ -741,6 +751,7 @@ export default function FormPreviewModal({
 
               <div className="flex space-x-2">
                 <input
+                  autoComplete="off"
                   type="text"
                   value={newSkill}
                   onChange={(e) => setNewSkill(e.target.value)}
@@ -788,6 +799,7 @@ export default function FormPreviewModal({
 
               <div className="flex space-x-2">
                 <input
+                  autoComplete="off"
                   type="text"
                   value={newAvailability}
                   onChange={(e) => setNewAvailability(e.target.value)}
@@ -838,6 +850,7 @@ export default function FormPreviewModal({
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Experience & Background</label>
                 <textarea
+                  autoComplete="off"
                   value={formData.experience}
                   onChange={(e) => handleInputChange("experience", e.target.value)}
                   rows={4}
@@ -850,6 +863,7 @@ export default function FormPreviewModal({
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Additional Notes</label>
                 <textarea
+                  autoComplete="off"
                   value={formData.notes}
                   onChange={(e) => handleInputChange("notes", e.target.value)}
                   rows={3}

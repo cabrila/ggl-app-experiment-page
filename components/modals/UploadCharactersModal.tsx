@@ -486,6 +486,7 @@ export default function UploadCharactersModal({ onClose }: UploadCharactersModal
           <p className="text-xs text-gray-400 mt-2">Maximum file size: 10MB for Excel, 5MB for CSV</p>
         </div>
         <input
+          autoComplete="off"
           ref={fileInputRef}
           type="file"
           accept=".csv,.xlsx,.xls"

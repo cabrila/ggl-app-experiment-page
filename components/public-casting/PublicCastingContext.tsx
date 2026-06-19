@@ -1,7 +1,10 @@
 "use client"
 
-import { createContext, useContext, useState, ReactNode, useCallback } from "react"
+import { createContext, useContext, useState, ReactNode, useCallback, useEffect } from "react"
 import { CastingCall, CastingCallField, CastingSubmission, PublicCastingProject } from "@/types/public-casting"
+import { loadDemoData, saveDemoData, DEMO_STORAGE_KEYS } from "@/utils/demoPersistence"
+import { getProfilePictureFromData } from "@/utils/profilePicture"
+import { useFirebaseUser } from "@/hooks/useFirebaseUser"
 
 interface PublicCastingState {
   projects: PublicCastingProject[]
@@ -16,7 +19,7 @@ interface PublicCastingContextType {
   selectProject: (id: string) => void
   updateProject: (id: string, updates: Partial<PublicCastingProject>) => void
   deleteProject: (id: string) => void
-  createCastingCall: (projectId: string, title: string, description: string, projectName: string, fields: CastingCallField[]) => CastingCall
+  createCastingCall: (projectId: string, title: string, description: string, projectName: string, fields: CastingCallField[], headerImageUrl?: string, consent?: { talentPoolConsentEnabled?: boolean; talentPoolConsentText?: string }) => CastingCall
   updateCastingCall: (projectId: string, castingCallId: string, updates: Partial<CastingCall>) => void
   deleteCastingCall: (projectId: string, castingCallId: string) => void
   selectCastingCall: (id: string) => void
@@ -141,24 +144,368 @@ const createDemoData = (): PublicCastingProject[] => {
     },
   ]
 
-  return [
+  // ---- Additional demo casting calls + submissions ----
+  const headshotPool = [
+    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop",
+    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop",
+    "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop",
+    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop",
+    "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop",
+    "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop",
+    "https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=150&h=150&fit=crop",
+    "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&h=150&fit=crop",
+  ]
+
+  // Build a submission with both nested data and flattened top-level fields.
+  const buildSubmission = (
+    key: string,
+    index: number,
+    castingCallId: string,
+    castingCallTitle: string,
+    data: Record<string, string>,
+    hoursAgo: number,
+    isNew: boolean,
+  ): CastingSubmission => ({
+    id: `${key}-sub-${index}`,
+    castingCallId,
+    castingCallTitle,
+    data,
+    submittedAt: new Date(Date.now() - hoursAgo * 60 * 60 * 1000),
+    isNew,
+    ...data,
+    name: data.name ?? "",
+    email: data.email ?? "",
+  })
+
+  const extraCastingCalls: CastingCall[] = [
     {
-      id: "proj-1",
-      name: "Midnight Echo",
-      castingCalls: demoCastingCalls,
-      submissions: demoSubmissions,
-      createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
+      id: "cc-3",
+      title: "Antagonist - The Collector",
+      description: "Seeking a charismatic and menacing actor to play the central antagonist in our psychological thriller.",
+      projectName: "Midnight Echo",
+      fields: [
+        { id: "f1", label: "Full Name", type: "text", required: true, placeholder: "Enter your full name" },
+        { id: "f2", label: "Email", type: "email", required: true, placeholder: "your@email.com" },
+        { id: "f3", label: "Phone", type: "phone", required: true, placeholder: "+1-555-0000" },
+        { id: "f4", label: "Age", type: "number", required: true, placeholder: "Your age" },
+        { id: "f5", label: "Playing Age Range", type: "text", required: false, placeholder: "e.g., 40-55" },
+        { id: "f6", label: "Headshot URL", type: "url", required: false, placeholder: "Link to your headshot" },
+        { id: "f7", label: "Reel URL", type: "url", required: false, placeholder: "Link to your demo reel" },
+        { id: "f8", label: "Additional Notes", type: "textarea", required: false, placeholder: "Tell us about yourself..." },
+      ],
+      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      isActive: true,
+      shareableLink: "https://gogreenlight.ai/cast/ghi789",
+      talentPoolConsentEnabled: true,
+      talentPoolConsentText: "I consent to being added to the talent pool to be considered for future projects.",
+    },
+    {
+      id: "cc-4",
+      title: "Young Lead - Riley",
+      description: "Looking for a fresh, energetic performer for the youthful co-lead. Recent grads encouraged to apply.",
+      projectName: "Midnight Echo",
+      fields: [
+        { id: "f1", label: "Full Name", type: "text", required: true, placeholder: "Enter your full name" },
+        { id: "f2", label: "Email", type: "email", required: true, placeholder: "your@email.com" },
+        { id: "f3", label: "Age", type: "number", required: true, placeholder: "Your age" },
+        { id: "f4", label: "Playing Age Range", type: "text", required: false, placeholder: "e.g., 18-24" },
+        { id: "f5", label: "Headshot URL", type: "url", required: false, placeholder: "Link to your headshot" },
+        { id: "f6", label: "Training / Experience", type: "textarea", required: true, placeholder: "Describe your training" },
+      ],
+      createdAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000),
+      isActive: true,
+      shareableLink: "https://gogreenlight.ai/cast/jkl012",
+    },
+    {
+      id: "cc-5",
+      title: "Featured Extra - Nightclub Patrons",
+      description: "Casting featured background performers for an upscale nightclub sequence. Multiple roles available.",
+      projectName: "Midnight Echo",
+      fields: [
+        { id: "f1", label: "Full Name", type: "text", required: true, placeholder: "Enter your full name" },
+        { id: "f2", label: "Email", type: "email", required: true, placeholder: "your@email.com" },
+        { id: "f3", label: "Phone", type: "phone", required: true, placeholder: "+1-555-0000" },
+        { id: "f4", label: "Headshot URL", type: "url", required: false, placeholder: "Link to your headshot" },
+      ],
+      createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
+      isActive: true,
+      shareableLink: "https://gogreenlight.ai/cast/mno345",
+    },
+    {
+      id: "cc-6",
+      title: "Narrator Voice - Pilot",
+      description: "Completed search for a distinctive narrator voice for the series pilot. Role now cast.",
+      projectName: "Midnight Echo",
+      fields: [
+        { id: "f1", label: "Full Name", type: "text", required: true, placeholder: "Enter your full name" },
+        { id: "f2", label: "Email", type: "email", required: true, placeholder: "your@email.com" },
+        { id: "f3", label: "Voice Sample URL", type: "url", required: true, placeholder: "Link to a voice sample" },
+        { id: "f4", label: "Additional Notes", type: "textarea", required: false, placeholder: "Tell us about your voice work" },
+      ],
+      createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000),
+      isActive: false,
+      isCompleted: true,
+      shareableLink: "https://gogreenlight.ai/cast/pqr678",
+    },
+    {
+      id: "cc-7",
+      title: "Stunt Double - Action Sequence",
+      description: "Closed casting for a stunt double for the rooftop chase. Position has been filled.",
+      projectName: "Midnight Echo",
+      fields: [
+        { id: "f1", label: "Full Name", type: "text", required: true, placeholder: "Enter your full name" },
+        { id: "f2", label: "Email", type: "email", required: true, placeholder: "your@email.com" },
+        { id: "f3", label: "Phone", type: "phone", required: true, placeholder: "+1-555-0000" },
+        { id: "f4", label: "Height", type: "text", required: true, placeholder: "e.g., 5'10\"" },
+        { id: "f5", label: "Certifications", type: "textarea", required: true, placeholder: "List your stunt certifications" },
+      ],
+      createdAt: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000),
+      isActive: false,
+      isCompleted: true,
+      shareableLink: "https://gogreenlight.ai/cast/stu901",
     },
   ]
+
+  const cc1Names = [
+    "Isabella Moreno", "Chloe Bennett", "Ava Richardson", "Mia Castellano", "Sophia Lang",
+    "Amelia Hart", "Charlotte Vega", "Layla Brooks", "Ruby Ellison", "Scarlett Nolan", "Penelope Shaw",
+  ]
+  const cc2Names = [
+    "Frank Delgado", "Marcus Boone", "Trevor Nash", "Hank Whitmore", "Carl Petersen",
+    "Roland Estes", "Bruno Salas", "Dwight Carver", "Lou Ferraro", "Sid Halloran", "Mickey Doyle",
+  ]
+  const cc3Names = [
+    "Vincent Marlowe", "Adrian Cole", "Theo Sandoval", "Damien Hart", "Lucas Renn",
+    "Sebastian Vance", "Marcus Webb", "Julian Frost", "Gideon Pierce", "Nathaniel Stone", "Felix Drake",
+    "Roman Vasquez", "Caleb Mercer", "Dominic Vale", "Ezra Lockwood", "Silas Crane",
+    "Victor Hale", "Maxim Orlov", "Ronan Briggs", "Cassius Dunn", "Leon Pratt",
+    "Ambrose Kent", "Magnus Reyes", "Dorian Slade", "Hugo Vance", "Tobias Quint",
+  ]
+  const cc4Names = [
+    "Riley Quinn", "Maya Brennan", "Jasmine Lee", "Cody Alvarez", "Harper Quinn",
+    "Devon Park", "Sienna Ross", "Eli Carter", "Nora Bell", "Tate Sullivan",
+  ]
+  const cc5Names = [
+    "Olivia Grant", "Priya Nair", "Sofia Ruiz", "Hannah Cole", "Grace Lin",
+    "Bianca Ferro", "Naomi Reed", "Chloe Banks", "Aria Mendez", "Lila Cross", "Zoe Hart", "Maddie Vaughn",
+    "Elena Sorka", "Tessa Vaughn", "Nadia Khan", "Camila Ortiz", "Freya Bishop",
+    "Daria Volkov", "Selena Cruz", "Wren Halloway", "Iris Caldwell", "Mira Solano",
+    "Talia Reyes", "Eden Marsh", "Juno Castellanos", "Vera Lindqvist",
+  ]
+  const cc6Names = [
+    "Gregory Pike", "Rosalind Vane", "Desmond Clay", "Imogen Frost", "Walter Boyd",
+    "Cassandra Lowe", "Edmund Hale", "Patricia Nash", "Lionel Crane", "Vera Mott",
+  ]
+  const cc7Names = [
+    "Brock Hayes", "Tanya Voss", "Reed Calloway", "Kira Sloane", "Dax Romero",
+    "Mara Quinn", "Cole Bishop", "Nyla Frost", "Garrett Lyne", "Sasha Petrov",
+  ]
+
+  const extraSubmissions: CastingSubmission[] = [
+    ...cc1Names.map((name, i) =>
+      buildSubmission("cc1", i + 1, "cc-1", "Lead Role - Sarah", {
+        name,
+        email: `${name.toLowerCase().replace(/\s+/g, ".")}@email.com`,
+        phone: `+1-555-1${String(100 + i).padStart(3, "0")}`,
+        age: String(25 + (i % 10)),
+        playingAge: `${24 + (i % 4)}-${33 + (i % 4)}`,
+        headshot: headshotPool[i % headshotPool.length],
+        notes: i % 2 === 0 ? "Lead experience in indie features and theater." : "Strong dramatic range; available for callbacks.",
+      }, 4 + i * 5, i < 3),
+    ),
+    ...cc2Names.map((name, i) =>
+      buildSubmission("cc2", i + 1, "cc-2", "Supporting Role - Detective", {
+        name,
+        email: `${name.toLowerCase().replace(/\s+/g, ".")}@email.com`,
+        phone: `+1-555-2${String(100 + i).padStart(3, "0")}`,
+        experience: i % 2 === 0 ? "Years of procedural and crime-drama credits." : "Character actor with stage and screen background.",
+      }, 5 + i * 6, i < 2),
+    ),
+    ...cc3Names.map((name, i) =>
+      buildSubmission("cc3", i + 1, "cc-3", "Antagonist - The Collector", {
+        name,
+        email: `${name.toLowerCase().replace(/\s+/g, ".")}@email.com`,
+        phone: `+1-555-3${String(100 + i).padStart(3, "0")}`,
+        age: String(42 + (i % 12)),
+        playingAge: `${40 + (i % 5)}-${52 + (i % 5)}`,
+        headshot: headshotPool[(i + 1) % headshotPool.length],
+        reel: `https://reels.example.com/${name.toLowerCase().replace(/\s+/g, "-")}`,
+        notes: i % 2 === 0 ? "Extensive villain credits in stage and screen." : "Trained in classical theater; commanding presence.",
+      }, 3 + i * 5, i < 3),
+    ),
+    ...cc4Names.map((name, i) =>
+      buildSubmission("cc4", i + 1, "cc-4", "Young Lead - Riley", {
+        name,
+        email: `${name.toLowerCase().replace(/\s+/g, ".")}@email.com`,
+        age: String(19 + (i % 6)),
+        playingAge: `${18 + (i % 3)}-${24 + (i % 3)}`,
+        headshot: headshotPool[i % headshotPool.length],
+        experience: i % 2 === 0 ? "Recent BFA graduate with festival short-film credits." : "Conservatory-trained; strong improv and movement work.",
+      }, 6 + i * 4, i < 2),
+    ),
+    ...cc5Names.map((name, i) =>
+      buildSubmission("cc5", i + 1, "cc-5", "Featured Extra - Nightclub Patrons", {
+        name,
+        email: `${name.toLowerCase().replace(/\s+/g, ".")}@email.com`,
+        phone: `+1-555-5${String(100 + i).padStart(3, "0")}`,
+        headshot: headshotPool[(i + 2) % headshotPool.length],
+      }, 2 + i * 3, i < 4),
+    ),
+    ...cc6Names.map((name, i) =>
+      buildSubmission("cc6", i + 1, "cc-6", "Narrator Voice - Pilot", {
+        name,
+        email: `${name.toLowerCase().replace(/\s+/g, ".")}@email.com`,
+        voiceSample: `https://voices.example.com/${name.toLowerCase().replace(/\s+/g, "-")}`,
+        notes: i % 2 === 0 ? "Warm baritone; extensive audiobook narration." : "Versatile range; commercial and documentary work.",
+      }, 480 + i * 6, false),
+    ),
+    ...cc7Names.map((name, i) =>
+      buildSubmission("cc7", i + 1, "cc-7", "Stunt Double - Action Sequence", {
+        name,
+        email: `${name.toLowerCase().replace(/\s+/g, ".")}@email.com`,
+        phone: `+1-555-7${String(100 + i).padStart(3, "0")}`,
+        height: `${5 + (i % 2)}'${8 + (i % 4)}"`,
+        certifications: i % 2 === 0 ? "High-fall, wirework, and tactical driving certified." : "Stage combat, parkour, and motorcycle stunt certified.",
+        headshot: headshotPool[(i + 3) % headshotPool.length],
+      }, 600 + i * 6, false),
+    ),
+  ]
+
+  // Each casting call form is its own entry/card on the My Casting Calls page.
+  // Split every casting call into its own project, carrying the submissions
+  // that belong to it (matched by castingCallId).
+  const allCastingCalls = [...demoCastingCalls, ...extraCastingCalls]
+  const allSubmissions = [...demoSubmissions, ...extraSubmissions]
+
+  return allCastingCalls.map((castingCall) => ({
+    id: `proj-${castingCall.id}`,
+    name: castingCall.projectName || castingCall.title,
+    castingCalls: [castingCall],
+    submissions: allSubmissions.filter((s) => s.castingCallId === castingCall.id),
+    createdAt: castingCall.createdAt,
+  }))
 }
 
 export function PublicCastingProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<PublicCastingState>({
-    projects: createDemoData(),
-    currentProject: null,
-    currentCastingCall: null,
-    newSubmissionsCount: 2, // From demo data
+  const user = useFirebaseUser()
+  const [state, setState] = useState<PublicCastingState>(() => {
+    const demo = createDemoData()
+    const persisted = loadDemoData<{ projects: PublicCastingProject[]; newSubmissionsCount: number } | null>(
+      DEMO_STORAGE_KEYS.publicCasting,
+      null
+    )
+    return {
+      projects: persisted?.projects ?? demo,
+      currentProject: null,
+      currentCastingCall: null,
+      newSubmissionsCount: persisted?.newSubmissionsCount ?? 16,
+    }
   })
+
+  // Clear demo data when a real user signs in, and fetch from backend
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadDataFromBackend() {
+      try {
+        // Fetch all casting calls and submissions from our backend service
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL
+        const [callsRes, subsRes] = await Promise.all([
+          fetch(`${backendUrl}/api/casting-calls`),
+          fetch(`${backendUrl}/api/submissions`)
+        ]);
+
+        if (!callsRes.ok || !subsRes.ok) return;
+
+        const calls = await callsRes.json();
+        const submissions = await subsRes.json();
+
+        if (!mounted) return;
+
+        // Group into projects
+        const projectMap = new Map<string, PublicCastingProject>();
+
+        calls.forEach((call: any) => {
+          const pid = call.projectId;
+          if (!projectMap.has(pid)) {
+            projectMap.set(pid, {
+              id: pid,
+              name: call.projectName || 'Project',
+              castingCalls: [],
+              submissions: [],
+              createdAt: new Date(call.createdAt),
+            });
+          }
+          
+          const p = projectMap.get(pid)!;
+          p.castingCalls.push({
+            id: call.id,
+            title: call.title,
+            description: call.description,
+            projectName: call.projectName,
+            fields: call.fields,
+            createdAt: new Date(call.createdAt),
+            isActive: call.status === 'active',
+            shareableLink: `${window.location.origin}/actor-submission/${call.id}`,
+            headerImageUrl: call.headerImageUrl,
+            isCompleted: call.isCompleted,
+            talentPoolConsentEnabled: call.talentPoolConsentEnabled,
+            talentPoolConsentText: call.talentPoolConsentText,
+          });
+        });
+
+        // Attach submissions
+        let unreadCount = 0;
+        submissions.forEach((sub: any) => {
+          const p = projectMap.get(sub.projectId);
+          if (p) {
+            const mappedSub: CastingSubmission = {
+              id: sub.id,
+              castingCallId: sub.castingCallId,
+              castingCallTitle: p.castingCalls.find(cc => cc.id === sub.castingCallId)?.title || "Unknown",
+              data: sub.actorData,
+              submittedAt: new Date(sub.submittedAt),
+              isNew: sub.status === 'new',
+              name: sub.actorData.name || sub.actorData["Full Name"] || sub.actorData["Actor Name"] || "Unknown",
+              email: sub.actorData.email || sub.actorData["Email"] || "",
+              phone: sub.actorData.phone || sub.actorData["Phone"],
+              age: sub.actorData.age || sub.actorData["Age"],
+              playingAge: sub.actorData.playingAge || sub.actorData["Playing Age Range"],
+              headshot: getProfilePictureFromData(sub.actorData) || sub.actorData.headshot || sub.actorData["Headshot URL"],
+              notes: sub.actorData.notes || sub.actorData["Additional Notes"],
+            };
+            if (mappedSub.isNew) unreadCount++;
+            p.submissions.push(mappedSub);
+          }
+        });
+
+        setState(prev => ({
+          ...prev,
+          projects: Array.from(projectMap.values()),
+          newSubmissionsCount: unreadCount
+        }));
+
+      } catch (e) {
+        console.error("Failed to load public casting data from backend", e);
+      }
+    }
+
+    if (user) {
+      loadDataFromBackend();
+    }
+
+    return () => {
+      mounted = false;
+    };
+  }, [user]);
+
+  // Persist projects/submissions so they survive navigation/remounts when no backend is signed in.
+  useEffect(() => {
+    saveDemoData(DEMO_STORAGE_KEYS.publicCasting, {
+      projects: state.projects,
+      newSubmissionsCount: state.newSubmissionsCount,
+    })
+  }, [state.projects, state.newSubmissionsCount])
 
   const createProject = useCallback((name: string): PublicCastingProject => {
     const newProject: PublicCastingProject = {
@@ -201,7 +548,7 @@ export function PublicCastingProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const createCastingCall = useCallback(
-    (projectId: string, title: string, description: string, projectName: string, fields: CastingCallField[]): CastingCall => {
+    (projectId: string, title: string, description: string, projectName: string, fields: CastingCallField[], headerImageUrl?: string, consent?: { talentPoolConsentEnabled?: boolean; talentPoolConsentText?: string }): CastingCall => {
       const newCastingCall: CastingCall = {
         id: `cc-${Date.now()}`,
         title,
@@ -211,6 +558,9 @@ export function PublicCastingProvider({ children }: { children: ReactNode }) {
         createdAt: new Date(),
         isActive: true,
         shareableLink: `https://gogreenlight.ai/cast/${Math.random().toString(36).substring(2, 8)}`,
+        headerImageUrl,
+        talentPoolConsentEnabled: consent?.talentPoolConsentEnabled,
+        talentPoolConsentText: consent?.talentPoolConsentText,
       }
       setState((prev) => ({
         ...prev,
@@ -277,7 +627,7 @@ export function PublicCastingProvider({ children }: { children: ReactNode }) {
         phone: data.phone || data["Phone"],
         age: data.age || data["Age"],
         playingAge: data.playingAge || data["Playing Age Range"],
-        headshot: data.headshot || data["Headshot URL"],
+        headshot: getProfilePictureFromData(data) || data.headshot || data["Headshot URL"],
         notes: data.notes || data["Additional Notes"],
       }
 

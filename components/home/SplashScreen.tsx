@@ -1,9 +1,14 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone, ArrowRight } from "lucide-react"
+import { LogOut, MessageSquarePlus, BookUser, MapPin, Users, Megaphone, ArrowRight, Package, Film, DollarSign, UserPlus, Menu, X, HelpCircle } from "lucide-react"
 import { useCasting } from "@/components/casting/CastingContext"
 import FeedbackModal from "@/components/modals/FeedbackModal"
+import FeedbackUserModal from "@/components/modals/FeedbackUserModal"
+import OnboardingModal from "@/components/modals/OnboardingModal"
+import { trackFeatureClick, type FeatureName } from "@/lib/analytics"
+import { useFirebaseUser } from "@/hooks/useFirebaseUser"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 const featureButtons = [
   {
@@ -23,9 +28,25 @@ const featureButtons = [
     iconColor: "text-amber-400",
   },
   {
+    id: "prop-list",
+    title: "Prop List",
+    description: "Extract every prop and set dressing item from your script with scene-by-scene appearances.",
+    icon: Package,
+    iconBg: "bg-rose-500/20",
+    iconColor: "text-rose-400",
+  },
+  {
+    id: "scene-list",
+    title: "Scene List",
+    description: "Generate a structured scene-by-scene breakdown of your script for production planning.",
+    icon: Film,
+    iconBg: "bg-teal-500/20",
+    iconColor: "text-teal-400",
+  },
+  {
     id: "actor-database",
-    title: "Actor List",
-    description: "Create and manage an easily navigable list of actors for your production.",
+    title: "Actor Management",
+    description: "Create and manage easily navigable list and databases of actors for your productions.",
     icon: Users,
     iconBg: "bg-sky-500/20",
     iconColor: "text-sky-400",
@@ -48,9 +69,16 @@ interface SplashScreenProps {
 export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProps) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false)
+  const [isFeedbackUserModalOpen, setIsFeedbackUserModalOpen] = useState(false)
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const userButtonRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
+  const mobileMenuRef = useRef<HTMLDivElement>(null)
+  const mobileMenuButtonRef = useRef<HTMLButtonElement>(null)
   const { state } = useCasting()
+  const fbUser = useFirebaseUser()
+  void state // legacy CastingContext kept for other home features
 
   const handleUserMenu = () => setIsUserMenuOpen(!isUserMenuOpen)
 
@@ -78,6 +106,25 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
     }
   }, [isUserMenuOpen])
 
+  // Close mobile burger menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(event.target as Node) &&
+        mobileMenuButtonRef.current &&
+        !mobileMenuButtonRef.current.contains(event.target as Node)
+      ) {
+        setIsMobileMenuOpen(false)
+      }
+    }
+
+    if (isMobileMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside)
+      return () => document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [isMobileMenuOpen])
+
   return (
     <div
       className="h-full flex flex-col overflow-hidden"
@@ -87,15 +134,51 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
       }}
     >
       {/* Top Navigation Bar - Only Logo and User Avatar */}
-      <header className="relative flex justify-between items-center px-6 py-3 border-b border-white/10 shrink-0 z-20">
-        <div className="flex items-center">
+      <header className="relative flex justify-between items-center gap-3 px-6 py-3 border-b border-white/10 shrink-0 z-30">
+        <div className="flex items-center gap-3 min-w-0">
           <img
             src="/images/gogreenlight-logo.png"
             alt="GoGreenlight"
-            className="h-9 w-auto"
+            className="h-7 sm:h-9 w-auto shrink-0"
           />
+          <span className="hidden sm:inline text-xl font-semibold text-white tracking-tight">Tools</span>
+          <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-white text-xs font-semibold uppercase tracking-wide shrink-0">Beta</span>
         </div>
-        <div className="flex items-center gap-2">
+
+        {/* Center - Join Feedback Community Button (desktop only) */}
+        <button
+          onClick={() => setIsFeedbackUserModalOpen(true)}
+          className="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center gap-2 px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white hover:bg-white/20 hover:border-emerald-500/40 transition-all duration-200"
+          title="Join our feedback community"
+          aria-label="Sign up as feedback user"
+        >
+          <UserPlus className="w-4 h-4 text-emerald-400" />
+          <span className="text-sm font-medium font-sans">Join Feedback Community</span>
+        </button>
+
+        {/* Desktop action group */}
+        <div className="hidden lg:flex items-center gap-2">
+          {/* Internal-only Usage & Cost button. Visibility-only gate; the
+              /api/usage handler enforces the real access control. */}
+          {fbUser.isInternal && (
+            <TooltipProvider delayDuration={150}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <a
+                    href="/usage"
+                    className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all duration-200"
+                    aria-label="Usage and cost"
+                  >
+                    <DollarSign className="w-5 h-5" />
+                  </a>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs">
+                  This button is only visible for users who have logged in with a @gogreenlight.ai email address
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+
           {/* Feedback & Requests Button */}
           <button
             onClick={() => setIsFeedbackModalOpen(true)}
@@ -104,7 +187,7 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
             aria-label="Open feedback form"
           >
             <MessageSquarePlus className="w-4 h-4" />
-            <span className="text-sm font-medium font-sans hidden sm:inline">Feedback</span>
+            <span className="text-sm font-medium font-sans">Feedback</span>
           </button>
 
           {/* User Avatar */}
@@ -112,19 +195,15 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
             <button
               onClick={handleUserMenu}
               className="relative p-1 rounded-lg hover:bg-white/10 transition-all duration-200"
-              title={state.currentUser?.name || "User"}
+              title={fbUser.displayName}
               aria-label="User menu"
               aria-expanded={isUserMenuOpen}
               aria-haspopup="true"
             >
               <div
-                className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold"
-                style={{
-                  backgroundColor: state.currentUser?.bgColor || "#6B7280",
-                  color: state.currentUser?.color || "#FFFFFF",
-                }}
+                className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold bg-emerald-600 text-white"
               >
-                {state.currentUser?.initials || "??"}
+                {fbUser.initials}
               </div>
             </button>
 
@@ -137,10 +216,10 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
                 {/* User Info */}
                 <div className="px-4 py-3 border-b border-white/10">
                   <p className="text-sm font-medium text-white truncate">
-                    {state.currentUser?.name || "User"}
+                    {fbUser.displayName}
                   </p>
                   <p className="text-xs text-white/50 truncate">
-                    {state.currentUser?.email || ""}
+                    {fbUser.email}
                   </p>
                 </div>
 
@@ -156,65 +235,211 @@ export default function SplashScreen({ onSignOut, onNavigate }: SplashScreenProp
             )}
           </div>
         </div>
+
+        {/* Mobile/Tablet burger menu (below lg) */}
+        <div className="lg:hidden relative shrink-0">
+          <button
+            ref={mobileMenuButtonRef}
+            onClick={() => setIsMobileMenuOpen((v) => !v)}
+            className="flex items-center justify-center w-10 h-10 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-all duration-200"
+            aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={isMobileMenuOpen}
+            aria-haspopup="true"
+          >
+            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+
+          {isMobileMenuOpen && (
+            <div
+              ref={mobileMenuRef}
+              className="absolute right-0 top-full mt-2 w-64 bg-[#1a3a25] border border-white/15 rounded-lg shadow-xl overflow-hidden z-50"
+            >
+              {/* User Info */}
+              <div className="px-4 py-3 border-b border-white/10">
+                <p className="text-sm font-medium text-white truncate">{fbUser.displayName}</p>
+                <p className="text-xs text-white/50 truncate">{fbUser.email}</p>
+              </div>
+
+              <div className="py-1">
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false)
+                    setIsFeedbackUserModalOpen(true)
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white/80 hover:bg-white/5 transition-colors"
+                >
+                  <UserPlus className="w-4 h-4 text-emerald-400" />
+                  <span>Join Feedback Community</span>
+                </button>
+
+                {fbUser.isInternal && (
+                  <a
+                    href="/usage"
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white/80 hover:bg-white/5 transition-colors"
+                    aria-label="Usage and cost"
+                  >
+                    <DollarSign className="w-4 h-4" />
+                    <span>Usage &amp; Cost</span>
+                  </a>
+                )}
+
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false)
+                    setIsFeedbackModalOpen(true)
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white/80 hover:bg-white/5 transition-colors"
+                >
+                  <MessageSquarePlus className="w-4 h-4" />
+                  <span>Feedback &amp; Requests</span>
+                </button>
+              </div>
+
+              <div className="border-t border-white/10">
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false)
+                    handleSignOut()
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-white/5 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </header>
 
       {/* Main Content - Hero and Feature Buttons */}
-      <main className="flex-1 flex flex-col items-center justify-center relative z-10 overflow-y-auto py-8">
-        <div className="text-center px-6 max-w-2xl mb-10">
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 text-balance leading-tight">
-            Every creative asset.{" "}
-            <span className="text-emerald-300">One platform.</span>
-          </h1>
-          <p className="text-white/50 text-base md:text-lg leading-relaxed text-pretty max-w-xl mx-auto">
-            Organize characters, actors, locations and casting calls in one streamlined and efficient workflow.
-          </p>
-        </div>
+      <main className="flex-1 relative z-10 overflow-y-auto">
+        <div className="min-h-full flex flex-col items-center justify-center py-8">
+          <div className="text-center px-6 max-w-2xl mb-10">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 text-balance leading-tight">
+              Every creative asset.{" "}
+              <span className="text-emerald-300">One platform.</span>
+            </h1>
+            <p className="text-base md:text-lg text-white/60 max-w-2xl mx-auto text-pretty">
+              Upload your script. Get detailed breakdowns, cast actors, and manage
+              your production - all in one place.
+            </p>
+          </div>
 
-        {/* Feature Buttons Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-6 w-full max-w-3xl">
-          {featureButtons.map((feature) => {
-            const IconComponent = feature.icon
-            return (
-              <button
-                key={feature.id}
-                onClick={() => {
-                  onNavigate?.(feature.id)
-                }}
-                className="group flex items-start gap-4 p-5 bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 hover:border-white/20 rounded-xl text-left transition-all duration-200"
-              >
-                {/* Icon */}
-                <div className={`shrink-0 w-12 h-12 rounded-lg ${feature.iconBg} flex items-center justify-center`}>
-                  <IconComponent className={`w-6 h-6 ${feature.iconColor}`} />
-                </div>
-
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-base font-semibold text-white font-sans">
-                      {feature.title}
-                    </h3>
-                    <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-white/70 group-hover:translate-x-0.5 transition-all duration-200" />
+          {/* Feature Buttons Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl w-full px-4">
+            {featureButtons.map((feature) => {
+              const IconComponent = feature.icon
+              return (
+                <button
+                  key={feature.id}
+                  onClick={() => {
+                    trackFeatureClick(feature.id as FeatureName)
+                    onNavigate?.(feature.id)
+                  }}
+                  className="group relative flex flex-col items-start p-5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-emerald-500/30 transition-all duration-300 text-left"
+                >
+                  <div
+                    className={`w-10 h-10 rounded-lg ${feature.iconBg} flex items-center justify-center mb-3`}
+                  >
+                    <IconComponent className={`w-5 h-5 ${feature.iconColor}`} />
                   </div>
-                  <p className="text-sm text-white/50 leading-relaxed font-sans">
+                  <h3 className="text-base font-semibold text-white mb-1 flex items-center gap-2">
+                    {feature.title}
+                    <ArrowRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-emerald-400" />
+                  </h3>
+                  <p className="text-sm text-white/50 leading-relaxed">
                     {feature.description}
                   </p>
-                </div>
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Feedback callout */}
+          <div className="mt-10 px-6 text-center max-w-2xl">
+            <p className="text-base md:text-lg font-medium text-white/70 leading-relaxed">
+              We&apos;re offering these tools for free because your feedback helps us build something great. 
+              Found a bug or have an idea? Hit the{" "}
+              <button
+                onClick={() => setIsFeedbackModalOpen(true)}
+                className="font-semibold text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition-colors"
+              >
+                Feedback
               </button>
-            )
-          })}
+              {" "}button in the top right corner.
+            </p>
+          </div>
         </div>
       </main>
 
+      {/* Help / Onboarding tour - bottom left, just above the footer */}
+      <div className="shrink-0 px-6 pb-2 flex justify-start">
+        <button
+          onClick={() => setIsOnboardingOpen(true)}
+          className="w-9 h-9 rounded-full flex items-center justify-center bg-white/5 border border-white/15 text-white/60 hover:text-white hover:bg-white/15 hover:border-white/30 transition-all"
+          title="How it works"
+          aria-label="Open the getting started guide"
+        >
+          <HelpCircle className="w-5 h-5" />
+        </button>
+      </div>
+
       {/* Bottom tagline */}
-      <footer className="text-center py-6 shrink-0">
-        <p className="text-[11px] text-white/20 tracking-wide">
-          © 2026 GoGreenlight. All rights reserved.
-        </p>
+      <footer className="py-3 px-6 shrink-0 border-t border-white/10">
+        <div className="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+          {/* Left side - CTA */}
+          <div className="text-center md:text-left">
+            <a 
+              href="https://www.gogreenlight.ai/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-semibold rounded-lg transition-colors"
+            >
+              Try GoGreenlight Casting Platform
+              <ArrowRight className="w-4 h-4" />
+            </a>
+          </div>
+
+          {/* Center - Legal Links */}
+          <div className="flex items-center gap-4">
+            <a href="https://www.gogreenlight.ai/legalstack" target="_blank" rel="noopener noreferrer" className="text-xs text-white/50 hover:text-white/80 transition-colors">
+              Legal Stack
+            </a>
+            <a href="https://www.gogreenlight.ai/privacypolicy" target="_blank" rel="noopener noreferrer" className="text-xs text-white/50 hover:text-white/80 transition-colors">
+              Privacy Policy
+            </a>
+            <a href="https://www.gogreenlight.ai/terms" target="_blank" rel="noopener noreferrer" className="text-xs text-white/50 hover:text-white/80 transition-colors">
+              Terms
+            </a>
+          </div>
+
+          {/* Right side - Copyright */}
+          <p className="text-[11px] text-white/20 tracking-wide">
+            © 2026 GoGreenlight
+          </p>
+        </div>
       </footer>
 
       {/* Feedback Modal */}
       {isFeedbackModalOpen && (
-        <FeedbackModal onClose={() => setIsFeedbackModalOpen(false)} />
+        <FeedbackModal 
+          onClose={() => setIsFeedbackModalOpen(false)} 
+          onShowFeedbackUserSignup={() => {
+            setIsFeedbackModalOpen(false)
+            setIsFeedbackUserModalOpen(true)
+          }}
+        />
+      )}
+
+      {/* Feedback User Sign-up Modal */}
+      {isFeedbackUserModalOpen && (
+        <FeedbackUserModal onClose={() => setIsFeedbackUserModalOpen(false)} />
+      )}
+
+      {/* Onboarding / Getting Started Modal */}
+      {isOnboardingOpen && (
+        <OnboardingModal onClose={() => setIsOnboardingOpen(false)} />
       )}
     </div>
   )

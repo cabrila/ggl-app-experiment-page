@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { ArrowLeft, Plus, Trash2, GripVertical, Copy, Check, ExternalLink, Eye, X } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { ArrowLeft, Plus, Trash2, GripVertical, Copy, Check, ExternalLink, Eye, X, ChevronDown, ImageIcon } from "lucide-react"
 import { usePublicCasting } from "./PublicCastingContext"
 import { CastingCallField, CastingCall, PublicCastingProject } from "@/types/public-casting"
 import CastingCallPreviewModal from "./CastingCallPreviewModal"
@@ -25,6 +25,7 @@ const fieldTypeOptions = [
 ]
 
 const defaultFields: CastingCallField[] = [
+  { id: "f0", label: "Profile picture", type: "image", required: false, placeholder: "Click or drag to upload a profile picture" },
   { id: "f1", label: "Full Name", type: "text", required: true, placeholder: "Enter your full name" },
   { id: "f2", label: "Email", type: "email", required: true, placeholder: "your@email.com" },
   { id: "f3", label: "Phone", type: "phone", required: false, placeholder: "+1-555-0000" },
@@ -33,6 +34,9 @@ const defaultFields: CastingCallField[] = [
   { id: "f6", label: "Headshot URL", type: "url", required: false, placeholder: "Link to your headshot" },
   { id: "f7", label: "About You", type: "textarea", required: false, placeholder: "Tell us about yourself..." },
 ]
+
+const DEFAULT_CONSENT_TEXT =
+  "I consent to being added to the talent pool to be considered for future projects."
 
 export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall, editingProject }: CastingCallSetupProps) {
   const { state, createProject, createCastingCall, updateCastingCall } = usePublicCasting()
@@ -43,12 +47,32 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
   const [title, setTitle] = useState(editingCastingCall?.title || "")
   const [description, setDescription] = useState(editingCastingCall?.description || "")
   const [projectName, setProjectName] = useState(editingCastingCall?.projectName || editingProject?.name || "")
+  const [headerImageUrl, setHeaderImageUrl] = useState(editingCastingCall?.headerImageUrl || "")
+  const [isCompleted, setIsCompleted] = useState(editingCastingCall?.isCompleted || false)
+  const [talentPoolConsentEnabled, setTalentPoolConsentEnabled] = useState(
+    editingCastingCall?.talentPoolConsentEnabled ?? true
+  )
+  const [talentPoolConsentText, setTalentPoolConsentText] = useState(
+    editingCastingCall?.talentPoolConsentText || DEFAULT_CONSENT_TEXT
+  )
   const [fields, setFields] = useState<CastingCallField[]>(editingCastingCall?.fields || defaultFields)
   const [createdLink, setCreatedLink] = useState(editingCastingCall?.shareableLink || "")
   const [copied, setCopied] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
+  const [showTypePicker, setShowTypePicker] = useState(false)
+  const [isHeaderDragOver, setIsHeaderDragOver] = useState(false)
+  const headerImageInputRef = useRef<HTMLInputElement | null>(null)
+
+  const setHeaderImageFromFile = (file: File | undefined) => {
+    if (!file || !file.type.startsWith("image/")) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      setHeaderImageUrl(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
 
   // Create a preview casting call object for the modal
   const previewCastingCall: CastingCall = {
@@ -59,18 +83,25 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
     fields,
     createdAt: editingCastingCall?.createdAt || new Date(),
     isActive: true,
-    shareableLink: createdLink || "https://gogreenlight.ai/cast/preview",
+    shareableLink: createdLink || `${window.location.origin}/actor-submission/${editingCastingCall?.id || "preview"}`,
+    headerImageUrl: headerImageUrl || undefined,
+    isCompleted,
+    talentPoolConsentEnabled,
+    talentPoolConsentText,
   }
 
-  const addField = () => {
+  const addField = (type: CastingCallField["type"]) => {
     const newField: CastingCallField = {
       id: `f${Date.now()}`,
       label: "New Field",
-      type: "text",
+      type,
       required: false,
       placeholder: "",
+      // Seed dropdown fields with two empty options to fill in.
+      ...(type === "select" ? { options: ["", ""] } : {}),
     }
     setFields([...fields, newField])
+    setShowTypePicker(false)
   }
 
   const updateField = (id: string, updates: Partial<CastingCallField>) => {
@@ -79,6 +110,33 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
 
   const removeField = (id: string) => {
     setFields(fields.filter((f) => f.id !== id))
+  }
+
+  // Dropdown option management (only relevant for "select" fields)
+  const addOption = (fieldId: string) => {
+    setFields(
+      fields.map((f) =>
+        f.id === fieldId ? { ...f, options: [...(f.options || []), ""] } : f
+      )
+    )
+  }
+
+  const updateOption = (fieldId: string, index: number, value: string) => {
+    setFields(
+      fields.map((f) =>
+        f.id === fieldId
+          ? { ...f, options: (f.options || []).map((opt, i) => (i === index ? value : opt)) }
+          : f
+      )
+    )
+  }
+
+  const removeOption = (fieldId: string, index: number) => {
+    setFields(
+      fields.map((f) =>
+        f.id === fieldId ? { ...f, options: (f.options || []).filter((_, i) => i !== index) } : f
+      )
+    )
   }
 
   // Drag and drop handlers
@@ -117,29 +175,80 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
     setDragOverIndex(null)
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!title.trim() || !projectName.trim()) return
 
-    if (isEditing && editingProject && editingCastingCall) {
-      // Update existing casting call
-      updateCastingCall(editingProject.id, editingCastingCall.id, {
-        title,
-        description,
-        projectName,
-        fields,
-      })
-      setCreatedLink(editingCastingCall.shareableLink)
-      setStep("success")
-    } else {
-      // Create new casting call
-      let project = state.projects.find((p) => p.name === projectName)
-      if (!project) {
-        project = createProject(projectName)
-      }
+    try {
+      if (isEditing && editingProject && editingCastingCall) {
+        // Update existing casting call via API
+        await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/casting-calls/${editingCastingCall.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title,
+            description,
+            projectName,
+            fields,
+            headerImageUrl: headerImageUrl || undefined,
+            isCompleted,
+            talentPoolConsentEnabled,
+            talentPoolConsentText,
+          })
+        })
 
-      const castingCall = createCastingCall(project.id, title, description, projectName, fields)
-      setCreatedLink(castingCall.shareableLink)
-      setStep("success")
+        // Also update local mocked context for now so UI doesn't break
+        updateCastingCall(editingProject.id, editingCastingCall.id, {
+          title,
+          description,
+          projectName,
+          fields,
+          headerImageUrl: headerImageUrl || undefined,
+          isCompleted,
+          talentPoolConsentEnabled,
+          talentPoolConsentText,
+        })
+        setCreatedLink(editingCastingCall.shareableLink)
+        setStep("success")
+      } else {
+        // Create new casting call via API
+        let project = state.projects.find((p) => p.name === projectName)
+        if (!project) {
+          project = createProject(projectName)
+        }
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/casting-calls`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-user-id': 'current-user-id' 
+          },
+          body: JSON.stringify({
+            projectId: project.id,
+            title,
+            description,
+            projectName,
+            fields,
+            headerImageUrl: headerImageUrl || undefined,
+            talentPoolConsentEnabled,
+            talentPoolConsentText,
+          })
+        })
+        
+        const newDbCastingCall = await response.json()
+
+        // Also create in local mocked context
+        const castingCall = createCastingCall(project.id, title, description, projectName, fields, headerImageUrl || undefined, {
+          talentPoolConsentEnabled,
+          talentPoolConsentText,
+        })
+        
+        // Use the ID from the backend to construct the link
+        setCreatedLink(`${window.location.origin}/actor-submission/${newDbCastingCall.id}`)
+        setStep("success")
+      }
+    } catch (error) {
+      console.error("Failed to save casting call to backend:", error)
+      alert("Failed to save to database. Check console.")
     }
   }
 
@@ -180,6 +289,7 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
                   value={createdLink}
                   readOnly
                   className="flex-1 bg-transparent text-white/80 text-sm font-mono truncate outline-none"
+                  autoComplete="off"
                 />
                 <button
                   onClick={handleCopyLink}
@@ -275,6 +385,17 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
           </button>
         </div>
 
+        {/* Header Image Banner - reflects uploaded header image */}
+        {headerImageUrl && (
+          <div className="w-full h-48 rounded-xl overflow-hidden mb-8 border border-white/10">
+            <img
+              src={headerImageUrl || "/placeholder.svg"}
+              alt="Casting call header"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+
         {/* Form */}
         <div className="space-y-6">
           {/* Basic Info */}
@@ -282,6 +403,70 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
             <h2 className="text-lg font-semibold text-white mb-4 font-sans">Basic Information</h2>
             
             <div className="space-y-4">
+              {/* Header Image Upload */}
+              <div>
+                <label className="block text-xs font-semibold text-violet-400 uppercase tracking-wider mb-2">
+                  Header Image (Optional)
+                </label>
+                <div
+                  onClick={() => headerImageInputRef.current?.click()}
+                  onDragOver={(e) => {
+                    e.preventDefault()
+                    setIsHeaderDragOver(true)
+                  }}
+                  onDragLeave={() => setIsHeaderDragOver(false)}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    setIsHeaderDragOver(false)
+                    setHeaderImageFromFile(e.dataTransfer.files?.[0])
+                  }}
+                  className={`relative h-40 w-full rounded-lg overflow-hidden cursor-pointer border-2 border-dashed transition-colors group ${
+                    isHeaderDragOver
+                      ? "border-violet-500 bg-violet-500/10"
+                      : "border-white/15 hover:border-violet-500/50 bg-[#0f1f17]"
+                  }`}
+                  title="Click or drag an image to set the casting call header"
+                >
+                  {headerImageUrl ? (
+                    <>
+                      <img
+                        src={headerImageUrl || "/placeholder.svg"}
+                        alt="Casting call header"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                        <span className="opacity-0 group-hover:opacity-100 text-white text-sm font-sans transition-opacity">
+                          Click or drag to replace
+                        </span>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setHeaderImageUrl("")
+                        }}
+                        className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 rounded-lg text-white transition-colors"
+                        title="Remove image"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </>
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-white/40">
+                      <ImageIcon className="w-7 h-7" />
+                      <span className="text-sm font-sans">Click or drag an image to upload header</span>
+                    </div>
+                  )}
+                  <input
+                    ref={headerImageInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => setHeaderImageFromFile(e.target.files?.[0])}
+                    autoComplete="off"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-semibold text-violet-400 uppercase tracking-wider mb-2">
                   Casting Call Title *
@@ -292,6 +477,7 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g., Lead Role - Sarah"
                   className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-violet-500/50 focus:outline-none transition-colors font-sans"
+                  autoComplete="off"
                 />
               </div>
 
@@ -305,6 +491,7 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
                   onChange={(e) => setProjectName(e.target.value)}
                   placeholder="e.g., Midnight Echo"
                   className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-violet-500/50 focus:outline-none transition-colors font-sans"
+                  autoComplete="off"
                 />
               </div>
 
@@ -317,8 +504,49 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Brief description of the role or casting call..."
                   rows={3}
+                  autoComplete="off"
                   className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-violet-500/50 focus:outline-none transition-colors font-sans resize-none"
                 />
+              </div>
+
+              {/* Talent Pool Consent */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs font-semibold text-violet-400 uppercase tracking-wider">
+                    Talent Pool Consent
+                  </label>
+                  {/* On/Off toggle controlling visibility on the generated form */}
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={talentPoolConsentEnabled}
+                    onClick={() => setTalentPoolConsentEnabled((v) => !v)}
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/50 ${
+                      talentPoolConsentEnabled ? "bg-violet-500" : "bg-white/15"
+                    }`}
+                    title={talentPoolConsentEnabled ? "Shown on form" : "Hidden from form"}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        talentPoolConsentEnabled ? "translate-x-6" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+                <textarea
+                  value={talentPoolConsentText}
+                  onChange={(e) => setTalentPoolConsentText(e.target.value)}
+                  disabled={!talentPoolConsentEnabled}
+                  placeholder="Consent checkbox label shown at the end of the form..."
+                  rows={2}
+                  autoComplete="off"
+                  className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-violet-500/50 focus:outline-none transition-colors font-sans resize-none disabled:opacity-40 disabled:cursor-not-allowed"
+                />
+                <p className="text-xs text-white/40 mt-1.5 font-sans">
+                  {talentPoolConsentEnabled
+                    ? "This checkbox appears at the very end of the generated form."
+                    : "The consent checkbox is hidden from the generated form."}
+                </p>
               </div>
             </div>
           </div>
@@ -327,19 +555,59 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
           <div className="bg-[#1a2e23] border border-white/10 rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-white font-sans">Form Fields</h2>
-              <button
-                onClick={addField}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 rounded-lg text-sm transition-colors font-sans"
-              >
-                <Plus className="w-4 h-4" />
-                Add Field
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => setShowTypePicker((v) => !v)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 rounded-lg text-sm transition-colors font-sans"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Field
+                  <ChevronDown className="w-3.5 h-3.5" />
+                </button>
+
+                {showTypePicker && (
+                  <>
+                    {/* Click-away overlay */}
+                    <div
+                      className="fixed inset-0 z-10"
+                      onClick={() => setShowTypePicker(false)}
+                    />
+                    <div className="absolute top-full right-0 mt-1 w-44 bg-[#13261c] border border-white/10 rounded-lg overflow-hidden shadow-xl z-20 py-1">
+                      <p className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-white/40 font-sans">
+                        Select field type
+                      </p>
+                      {fieldTypeOptions.map((opt) => (
+                        <button
+                          key={opt.value}
+                          onClick={() => addField(opt.value as CastingCallField["type"])}
+                          className="w-full px-3 py-2 text-left text-sm text-white/80 hover:bg-violet-500/20 hover:text-violet-200 transition-colors font-sans"
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
 
             <div className="space-y-3">
+              {/* Column Headings */}
+              {fields.length > 0 && (
+                <div className="hidden md:flex items-center gap-3 px-4">
+                  {/* Spacer to align with drag handle */}
+                  <div className="w-4 flex-shrink-0" />
+                  <div className="flex-1 grid grid-cols-4 gap-3">
+                    <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wider font-sans">Type</span>
+                    <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wider font-sans">Title</span>
+                    <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wider font-sans">Input field</span>
+                    <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wider font-sans">Options</span>
+                  </div>
+                </div>
+              )}
               {fields.map((field, index) => (
+                <div key={field.id}>
                 <div
-                  key={field.id}
                   draggable
                   onDragStart={() => handleDragStart(index)}
                   onDragOver={(e) => handleDragOver(e, index)}
@@ -361,25 +629,21 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
 
                   {/* Field Config */}
                   <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div
+                      className="flex items-center px-3 py-2 bg-[#1a2e23] border border-white/10 rounded-lg text-white/60 text-sm font-sans"
+                      title="Field type cannot be changed after the field is added"
+                    >
+                      {fieldTypeOptions.find((opt) => opt.value === field.type)?.label || field.type}
+                    </div>
+
                     <input
                       type="text"
                       value={field.label}
                       onChange={(e) => updateField(field.id, { label: e.target.value })}
                       placeholder="Field label"
                       className="px-3 py-2 bg-[#1a2e23] border border-white/10 rounded-lg text-white text-sm placeholder-white/30 focus:border-violet-500/50 focus:outline-none font-sans"
+                      autoComplete="off"
                     />
-                    
-                    <select
-                      value={field.type}
-                      onChange={(e) => updateField(field.id, { type: e.target.value as CastingCallField["type"] })}
-                      className="px-3 py-2 bg-[#1a2e23] border border-white/10 rounded-lg text-white text-sm focus:border-violet-500/50 focus:outline-none font-sans"
-                    >
-                      {fieldTypeOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
 
                     <input
                       type="text"
@@ -387,6 +651,7 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
                       onChange={(e) => updateField(field.id, { placeholder: e.target.value })}
                       placeholder="Placeholder text"
                       className="px-3 py-2 bg-[#1a2e23] border border-white/10 rounded-lg text-white text-sm placeholder-white/30 focus:border-violet-500/50 focus:outline-none font-sans"
+                      autoComplete="off"
                     />
 
                     <div className="flex items-center gap-3">
@@ -396,6 +661,7 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
                           checked={field.required}
                           onChange={(e) => updateField(field.id, { required: e.target.checked })}
                           className="w-4 h-4 rounded border-white/20 bg-[#1a2e23] text-violet-500 focus:ring-violet-500/50"
+                          autoComplete="off"
                         />
                         Required
                       </label>
@@ -410,6 +676,48 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
                     </div>
                   </div>
                 </div>
+
+                {/* Dropdown options editor - only for "select" (Dropdown) fields */}
+                {field.type === "select" && (
+                  <div className="ml-7 mt-1 rounded-lg border border-violet-500/20 bg-[#13261c] p-3">
+                    <p className="text-[10px] font-semibold text-violet-300/80 uppercase tracking-wider mb-2 font-sans">
+                      Dropdown Options
+                    </p>
+                    <div className="space-y-2">
+                      {(field.options || []).map((option, optIndex) => (
+                        <div key={optIndex} className="flex items-center gap-2">
+                          <span className="text-xs text-white/30 font-sans w-5 flex-shrink-0 text-right">
+                            {optIndex + 1}.
+                          </span>
+                          <input
+                            type="text"
+                            value={option}
+                            onChange={(e) => updateOption(field.id, optIndex, e.target.value)}
+                            placeholder={`Option ${optIndex + 1}`}
+                            className="flex-1 px-3 py-1.5 bg-[#1a2e23] border border-white/10 rounded-lg text-white text-sm placeholder-white/30 focus:border-violet-500/50 focus:outline-none font-sans"
+                            autoComplete="off"
+                          />
+                          <button
+                            onClick={() => removeOption(field.id, optIndex)}
+                            disabled={(field.options || []).length <= 1}
+                            className="p-1.5 text-red-400/60 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                            title="Remove option"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => addOption(field.id)}
+                      className="mt-2 flex items-center gap-1.5 px-3 py-1.5 bg-violet-500/15 hover:bg-violet-500/25 text-violet-300 rounded-lg text-xs transition-colors font-sans"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Add Option
+                    </button>
+                  </div>
+                )}
+              </div>
               ))}
             </div>
           </div>

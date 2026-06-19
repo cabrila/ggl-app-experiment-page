@@ -208,6 +208,7 @@ export default function CreateActorFormModal({ onClose, characterId }: CreateAct
               <label className="block text-sm font-medium text-gray-700 mb-2">Shareable Link</label>
               <div className="flex items-center space-x-2">
                 <input
+                  autoComplete="off"
                   type="text"
                   value={generatedLink}
                   readOnly
@@ -335,6 +336,7 @@ export default function CreateActorFormModal({ onClose, characterId }: CreateAct
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Form Title</label>
             <input
+              autoComplete="off"
               type="text"
               value={formSettings.title}
               onChange={(e) => handleInputChange("title", e.target.value)}
@@ -346,6 +348,7 @@ export default function CreateActorFormModal({ onClose, characterId }: CreateAct
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
             <textarea
+              autoComplete="off"
               value={formSettings.description}
               onChange={(e) => handleInputChange("description", e.target.value)}
               placeholder="Provide instructions or details about the submission process..."
@@ -357,6 +360,7 @@ export default function CreateActorFormModal({ onClose, characterId }: CreateAct
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Submission Deadline (Optional)</label>
             <input
+              autoComplete="off"
               type="date"
               value={formSettings.deadline}
               onChange={(e) => handleInputChange("deadline", e.target.value)}
@@ -372,6 +376,7 @@ export default function CreateActorFormModal({ onClose, characterId }: CreateAct
           <div className="space-y-3">
             <label className="flex items-center space-x-3">
               <input
+                autoComplete="off"
                 type="checkbox"
                 checked={formSettings.isPublic}
                 onChange={(e) => handleInputChange("isPublic", e.target.checked)}
@@ -385,6 +390,7 @@ export default function CreateActorFormModal({ onClose, characterId }: CreateAct
 
             <label className="flex items-center space-x-3">
               <input
+                autoComplete="off"
                 type="checkbox"
                 checked={formSettings.requireApproval}
                 onChange={(e) => handleInputChange("requireApproval", e.target.checked)}
@@ -398,6 +404,7 @@ export default function CreateActorFormModal({ onClose, characterId }: CreateAct
 
             <label className="flex items-center space-x-3">
               <input
+                autoComplete="off"
                 type="checkbox"
                 checked={formSettings.allowMultipleSubmissions}
                 onChange={(e) => handleInputChange("allowMultipleSubmissions", e.target.checked)}
@@ -418,6 +425,7 @@ export default function CreateActorFormModal({ onClose, characterId }: CreateAct
           <div className="space-y-3">
             <label className="flex items-center space-x-3">
               <input
+                autoComplete="off"
                 type="checkbox"
                 checked={formSettings.collectPhotos}
                 onChange={(e) => handleInputChange("collectPhotos", e.target.checked)}
@@ -431,6 +439,7 @@ export default function CreateActorFormModal({ onClose, characterId }: CreateAct
 
             <label className="flex items-center space-x-3">
               <input
+                autoComplete="off"
                 type="checkbox"
                 checked={formSettings.collectVideos}
                 onChange={(e) => handleInputChange("collectVideos", e.target.checked)}

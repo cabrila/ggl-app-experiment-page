@@ -312,6 +312,7 @@ export default function AssignToProjectModal({
             <label className="relative flex items-start gap-4 p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl cursor-pointer hover:shadow-md transition-all duration-300 border-2 border-transparent hover:border-emerald-300 group">
               <div className="flex items-center h-6">
                 <input
+                  autoComplete="off"
                   type="checkbox"
                   checked={addToCanvas}
                   onChange={(e) => setAddToCanvas(e.target.checked)}

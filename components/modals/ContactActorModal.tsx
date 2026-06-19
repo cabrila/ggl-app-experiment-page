@@ -524,16 +524,16 @@ export default function ContactActorModal({ onClose, actorIds, characterId }: Co
         <div key="audition-date" className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Audition Date</label>
-            <input type="date" value={customFields.auditionDate} onChange={(e) => setCustomFields({ ...customFields, auditionDate: e.target.value })} className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400" />
+            <input autoComplete="off" type="date" value={customFields.auditionDate} onChange={(e) => setCustomFields({ ...customFields, auditionDate: e.target.value })} className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400" />
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Audition Time</label>
-            <input type="time" value={customFields.auditionTime} onChange={(e) => setCustomFields({ ...customFields, auditionTime: e.target.value })} className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400" />
+            <input autoComplete="off" type="time" value={customFields.auditionTime} onChange={(e) => setCustomFields({ ...customFields, auditionTime: e.target.value })} className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400" />
           </div>
         </div>,
         <div key="audition-location">
           <label className="block text-xs font-medium text-gray-600 mb-1">Audition Location</label>
-          <input type="text" value={customFields.auditionLocation} onChange={(e) => setCustomFields({ ...customFields, auditionLocation: e.target.value })} placeholder="Studio address or virtual meeting link" className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400" />
+          <input autoComplete="off" type="text" value={customFields.auditionLocation} onChange={(e) => setCustomFields({ ...customFields, auditionLocation: e.target.value })} placeholder="Studio address or virtual meeting link" className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400" />
         </div>,
       )
     }
@@ -543,20 +543,20 @@ export default function ContactActorModal({ onClose, actorIds, characterId }: Co
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Callback Date</label>
-              <input type="date" value={customFields.callbackDate} onChange={(e) => setCustomFields({ ...customFields, callbackDate: e.target.value })} className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400" />
+              <input autoComplete="off" type="date" value={customFields.callbackDate} onChange={(e) => setCustomFields({ ...customFields, callbackDate: e.target.value })} className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Callback Time</label>
-              <input type="time" value={customFields.callbackTime} onChange={(e) => setCustomFields({ ...customFields, callbackTime: e.target.value })} className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400" />
+              <input autoComplete="off" type="time" value={customFields.callbackTime} onChange={(e) => setCustomFields({ ...customFields, callbackTime: e.target.value })} className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400" />
             </div>
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Scene Reference</label>
-            <input type="text" value={customFields.sceneReference} onChange={(e) => setCustomFields({ ...customFields, sceneReference: e.target.value })} placeholder="e.g., Act 2, Scene 3" className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400" />
+            <input autoComplete="off" type="text" value={customFields.sceneReference} onChange={(e) => setCustomFields({ ...customFields, sceneReference: e.target.value })} placeholder="e.g., Act 2, Scene 3" className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400" />
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Additional Preparation</label>
-            <textarea value={customFields.additionalPreparation} onChange={(e) => setCustomFields({ ...customFields, additionalPreparation: e.target.value })} placeholder="Any specific preparation instructions" rows={2} className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400 resize-none" />
+            <textarea autoComplete="off" value={customFields.additionalPreparation} onChange={(e) => setCustomFields({ ...customFields, additionalPreparation: e.target.value })} placeholder="Any specific preparation instructions" rows={2} className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400 resize-none" />
           </div>
         </div>,
       )
@@ -567,16 +567,16 @@ export default function ContactActorModal({ onClose, actorIds, characterId }: Co
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Start Date</label>
-              <input type="date" value={customFields.startDate} onChange={(e) => setCustomFields({ ...customFields, startDate: e.target.value })} className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400" />
+              <input autoComplete="off" type="date" value={customFields.startDate} onChange={(e) => setCustomFields({ ...customFields, startDate: e.target.value })} className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Response Deadline</label>
-              <input type="date" value={customFields.responseDeadline} onChange={(e) => setCustomFields({ ...customFields, responseDeadline: e.target.value })} className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400" />
+              <input autoComplete="off" type="date" value={customFields.responseDeadline} onChange={(e) => setCustomFields({ ...customFields, responseDeadline: e.target.value })} className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400" />
             </div>
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Compensation Details</label>
-            <input type="text" value={customFields.compensationDetails} onChange={(e) => setCustomFields({ ...customFields, compensationDetails: e.target.value })} placeholder="e.g., $500/week + benefits" className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400" />
+            <input autoComplete="off" type="text" value={customFields.compensationDetails} onChange={(e) => setCustomFields({ ...customFields, compensationDetails: e.target.value })} placeholder="e.g., $500/week + benefits" className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400" />
           </div>
         </div>,
       )
@@ -585,7 +585,7 @@ export default function ContactActorModal({ onClose, actorIds, characterId }: Co
       fields.push(
         <div key="custom-message">
           <label className="block text-xs font-medium text-gray-600 mb-1">Your Message</label>
-          <textarea value={customFields.customMessage} onChange={(e) => setCustomFields({ ...customFields, customMessage: e.target.value })} placeholder="Enter your custom message here..." rows={3} className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400 resize-none" />
+          <textarea autoComplete="off" value={customFields.customMessage} onChange={(e) => setCustomFields({ ...customFields, customMessage: e.target.value })} placeholder="Enter your custom message here..." rows={3} className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400 resize-none" />
         </div>,
       )
     }
@@ -783,6 +783,7 @@ export default function ContactActorModal({ onClose, actorIds, characterId }: Co
                         <label className="text-[10px] text-gray-500 font-medium">Subject</label>
                         {isEditing ? (
                           <input
+                            autoComplete="off"
                             type="text"
                             value={emailSubject}
                             onChange={(e) => setEmailSubject(e.target.value)}
@@ -807,6 +808,7 @@ export default function ContactActorModal({ onClose, actorIds, characterId }: Co
                     <div className="flex-1 min-h-0 p-5 overflow-y-auto">
                       {isEditing ? (
                         <textarea
+                          autoComplete="off"
                           value={emailContent}
                           onChange={(e) => setEmailContent(e.target.value)}
                           className="w-full h-full min-h-[250px] px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-400 font-mono resize-none"
@@ -888,6 +890,7 @@ export default function ContactActorModal({ onClose, actorIds, characterId }: Co
                   <div className="relative">
                     <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                     <input
+                      autoComplete="off"
                       value={historySearch}
                       onChange={(e) => setHistorySearch(e.target.value)}
                       placeholder="Search messages..."
@@ -1258,6 +1261,7 @@ export default function ContactActorModal({ onClose, actorIds, characterId }: Co
                         <div>
                           <label className="block text-xs font-medium text-gray-600 mb-1.5">Template Name *</label>
                           <input
+                            autoComplete="off"
                             type="text"
                             value={templateForm.name}
                             onChange={(e) => setTemplateForm({ ...templateForm, name: e.target.value })}
@@ -1285,6 +1289,7 @@ export default function ContactActorModal({ onClose, actorIds, characterId }: Co
                       <div>
                         <label className="block text-xs font-medium text-gray-600 mb-1.5">Subject Line *</label>
                         <input
+                          autoComplete="off"
                           type="text"
                           value={templateForm.subject}
                           onChange={(e) => setTemplateForm({ ...templateForm, subject: e.target.value })}
@@ -1320,6 +1325,7 @@ export default function ContactActorModal({ onClose, actorIds, characterId }: Co
                       <div>
                         <label className="block text-xs font-medium text-gray-600 mb-1.5">Template Content</label>
                         <textarea
+                          autoComplete="off"
                           value={templateForm.content}
                           onChange={(e) => setTemplateForm({ ...templateForm, content: e.target.value })}
                           placeholder={"Dear {{ACTOR_NAME}},\n\nYour message here...\n\nBest regards,\n{{SENDER_NAME}}"}

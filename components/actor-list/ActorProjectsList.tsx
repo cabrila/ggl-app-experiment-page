@@ -1,17 +1,21 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Users, Calendar, Pencil, Trash2 } from "lucide-react"
+import { Plus, Users, Calendar, Pencil, Trash2, Share2, Database, ChevronRight } from "lucide-react"
 import { useActorList } from "./ActorListContext"
 import { ActorListProject } from "@/types/actor-list"
 import DeleteConfirmationModal from "@/components/ui/DeleteConfirmationModal"
 import EditProjectWithThumbnailModal from "@/components/ui/EditProjectWithThumbnailModal"
+import { trackListCreated, trackDelete } from "@/lib/analytics"
+import { Badge } from "@/components/ui/badge"
+import ShareModal from "@/components/modals/ShareModal"
 
 export default function ActorProjectsList() {
-  const { projects, selectProject, deleteProject, updateProject, setView } = useActorList()
+  const { projects, allActors, selectProject, deleteProject, updateProject, setView } = useActorList()
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ActorListProject | null>(null)
   const [editTarget, setEditTarget] = useState<ActorListProject | null>(null)
+  const [shareTarget, setShareTarget] = useState<ActorListProject | null>(null)
 
   const handleDeleteProject = (e: React.MouseEvent, project: ActorListProject) => {
     e.stopPropagation()
@@ -23,8 +27,14 @@ export default function ActorProjectsList() {
     setEditTarget(project)
   }
 
+  const handleShareProject = (e: React.MouseEvent, project: ActorListProject) => {
+    e.stopPropagation()
+    setShareTarget(project)
+  }
+
   const handleConfirmDelete = () => {
     if (deleteTarget) {
+      trackDelete("actor-list", "list")
       deleteProject(deleteTarget.id)
     }
   }
@@ -56,6 +66,39 @@ export default function ActorProjectsList() {
 
       {/* Projects Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* All Actors - permanent aggregated card */}
+        <button
+          onClick={() => setView("all-actors")}
+          className="group relative flex rounded-xl border-2 border-sky-500/30 bg-gradient-to-br from-sky-500/10 to-sky-600/5 hover:border-sky-500/50 transition-all overflow-hidden text-left"
+        >
+          {/* Icon Section - 1/3 width */}
+          <div className="w-1/3 min-h-[140px] bg-sky-500/10 border-r border-sky-500/20 flex-shrink-0 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-xl bg-sky-500/20 flex items-center justify-center">
+              <Database className="w-8 h-8 text-sky-400" />
+            </div>
+          </div>
+
+          {/* Content Section - 2/3 width */}
+          <div className="flex-1 flex flex-col justify-center p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <h3 className="text-base font-semibold text-white font-sans">All Actors</h3>
+              <ChevronRight className="w-4 h-4 text-sky-400 group-hover:translate-x-0.5 transition-transform" />
+            </div>
+            <p className="text-xs text-white/50 mb-3 font-sans">
+              Aggregated view of all actors across your lists
+            </p>
+            <div className="flex flex-wrap items-center gap-3 text-xs text-sky-300/80">
+              <div className="flex items-center gap-1">
+                <Users className="w-3.5 h-3.5" />
+                <span>{allActors.length} actors</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span>{projects.length} lists</span>
+              </div>
+            </div>
+          </div>
+        </button>
+
         {/* Existing Projects */}
         {projects.map((project) => (
           <div
@@ -84,11 +127,18 @@ export default function ActorProjectsList() {
             {/* Content Section - 2/3 width */}
             <button
               onClick={() => selectProject(project.id)}
-              className="flex-1 flex flex-col justify-center p-5 text-left cursor-pointer"
+              className="flex-1 min-w-0 flex flex-col justify-center p-5 text-left cursor-pointer"
             >
               {/* Hover Actions */}
               {hoveredId === project.id && (
                 <div className="absolute top-3 right-3 flex items-center gap-1 z-10">
+                  <button
+                    onClick={(e) => handleShareProject(e, project)}
+                    className="p-2 bg-indigo-500/20 hover:bg-indigo-500/30 rounded-lg text-indigo-400 hover:text-indigo-300 transition-colors"
+                    title="Share"
+                  >
+                    <Share2 className="w-4 h-4" />
+                  </button>
                   <button
                     onClick={(e) => handleEditProject(e, project)}
                     className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
@@ -107,19 +157,26 @@ export default function ActorProjectsList() {
               )}
 
               {/* Project Name */}
-              <h3 className="text-base font-semibold text-white mb-2 font-sans pr-16 line-clamp-1">
-                {project.name}
-              </h3>
+              <div className="mb-2 pr-16">
+                <h3 className="text-base font-semibold text-white font-sans leading-snug break-words line-clamp-2">
+                  {project.name}
+                </h3>
+                {project.isDemo && (
+                  <Badge className="mt-1.5 bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px] px-1.5 py-0">
+                    Demo
+                  </Badge>
+                )}
+              </div>
 
               {/* Meta Info */}
-              <div className="flex flex-wrap items-center gap-3 text-xs text-white/50">
-                <div className="flex items-center gap-1">
-                  <Users className="w-3.5 h-3.5" />
-                  <span>{project.actors.length} actors</span>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/50">
+                <div className="flex items-center gap-1 min-w-0">
+                  <Users className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="truncate">{project.actors.length} actors</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span>{formatDate(project.createdAt)}</span>
+                <div className="flex items-center gap-1 min-w-0">
+                  <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="truncate">{formatDate(project.createdAt)}</span>
                 </div>
               </div>
             </button>
@@ -128,7 +185,10 @@ export default function ActorProjectsList() {
 
         {/* New Actor List Card */}
         <button
-          onClick={() => setView("upload")}
+          onClick={() => {
+            trackListCreated("actor-list")
+            setView("upload")
+          }}
           className="p-5 rounded-xl border-2 border-dashed border-white/20 hover:border-white/40 bg-transparent hover:bg-white/5 transition-all flex flex-col items-center justify-center min-h-[180px] group"
         >
           <div className="w-12 h-12 rounded-full border-2 border-dashed border-white/30 group-hover:border-white/50 flex items-center justify-center mb-4 transition-colors">
@@ -161,6 +221,16 @@ export default function ActorProjectsList() {
         label="Actor List Name"
         accentColor="emerald"
       />
+
+      {/* Share Modal */}
+      {shareTarget && (
+        <ShareModal
+          onClose={() => setShareTarget(null)}
+          toolType="actor-list"
+          projectName={shareTarget.name}
+          data={shareTarget.actors}
+        />
+      )}
       </div>
     </div>
   )

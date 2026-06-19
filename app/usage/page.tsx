@@ -78,7 +78,8 @@ export default function UsagePage() {
       if (from) qs.set("from", from)
       if (to) qs.set("to", to)
 
-      const res = await fetch(`/api/usage?${qs.toString()}`, {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ''
+      const res = await fetch(`${backendUrl}/usage?${qs.toString()}`, {
         headers: { Authorization: `Bearer ${idToken}` },
         cache: "no-store",
       })

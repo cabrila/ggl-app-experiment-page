@@ -32,7 +32,7 @@ export default function FeedbackUserModal({ onClose }: FeedbackUserModalProps) {
     setError(null)
 
     try {
-      const response = await fetch("/api/feedback-user", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/feedback/user`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

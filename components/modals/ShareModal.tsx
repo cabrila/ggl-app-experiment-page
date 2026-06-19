@@ -78,7 +78,7 @@ Best regards`
     setError(null)
 
     try {
-      const response = await fetch("/api/share", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/share`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

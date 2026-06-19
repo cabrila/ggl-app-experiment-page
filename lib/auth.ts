@@ -43,6 +43,10 @@ export async function sendMagicLink(email: string): Promise<void> {
     handleCodeInApp: true,
   }
   
+  if (process.env.NEXT_PUBLIC_RESTRICT_AUTH_DOMAIN && !email.endsWith(`@${process.env.NEXT_PUBLIC_RESTRICT_AUTH_DOMAIN}`)) {
+    throw new Error(`Access restricted to @${process.env.NEXT_PUBLIC_RESTRICT_AUTH_DOMAIN} accounts.`)
+  }
+
   try {
     await sendSignInLinkToEmail(auth, email, settings)
     if (typeof window !== "undefined") {

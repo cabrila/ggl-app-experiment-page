@@ -68,7 +68,7 @@ export default function FeedbackModal({ onClose, onShowFeedbackUserSignup }: Fee
         formData.append("screenshotUrl", screenshotPreview)
       }
 
-      const response = await fetch("/api/feedback", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/feedback`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

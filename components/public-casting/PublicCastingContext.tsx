@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, ReactNode, useCallback, useEffect } from "react"
+import { createContext, useContext, useState, useRef, ReactNode, useCallback, useEffect } from "react"
 import { CastingCall, CastingCallField, CastingSubmission, PublicCastingProject } from "@/types/public-casting"
 import { loadDemoData, saveDemoData, DEMO_STORAGE_KEYS } from "@/utils/demoPersistence"
 import { getProfilePictureFromData } from "@/utils/profilePicture"
@@ -388,6 +388,7 @@ const createDemoData = (): PublicCastingProject[] => {
 
 export function PublicCastingProvider({ children }: { children: ReactNode }) {
   const user = useFirebaseUser()
+  const hasFetched = useRef(false)
   const [state, setState] = useState<PublicCastingState>(() => {
     const demo = createDemoData()
     const persisted = loadDemoData<{ projects: PublicCastingProject[]; newSubmissionsCount: number } | null>(
@@ -402,11 +403,14 @@ export function PublicCastingProvider({ children }: { children: ReactNode }) {
     }
   })
 
-  // Clear demo data when a real user signs in, and fetch from backend
+  // AI: Clear demo data when a real user signs in, and fetch from backend (runs once per user)
   useEffect(() => {
     let mounted = true;
 
     async function loadDataFromBackend() {
+      if (hasFetched.current) return
+      hasFetched.current = true
+
       // AI: Clear demo data immediately — never show fake data to signed-in users
       if (mounted) {
         setState(prev => ({ ...prev, projects: [], newSubmissionsCount: 0 }))

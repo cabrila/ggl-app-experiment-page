@@ -407,8 +407,12 @@ export function PublicCastingProvider({ children }: { children: ReactNode }) {
     let mounted = true;
 
     async function loadDataFromBackend() {
+      // AI: Clear demo data immediately — never show fake data to signed-in users
+      if (mounted) {
+        setState(prev => ({ ...prev, projects: [], newSubmissionsCount: 0 }))
+      }
+
       try {
-        // Fetch all casting calls and submissions from our backend service
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL
         const [callsRes, subsRes] = await Promise.all([
           fetch(`${backendUrl}/api/casting-calls`),

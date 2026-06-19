@@ -83,7 +83,7 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
     fields,
     createdAt: editingCastingCall?.createdAt || new Date(),
     isActive: true,
-    shareableLink: createdLink || "https://gogreenlight.ai/cast/preview",
+    shareableLink: createdLink || `${window.location.origin}/actor-submission/${editingCastingCall?.id || "preview"}`,
     headerImageUrl: headerImageUrl || undefined,
     isCompleted,
     talentPoolConsentEnabled,
@@ -175,36 +175,80 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
     setDragOverIndex(null)
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!title.trim() || !projectName.trim()) return
 
-    if (isEditing && editingProject && editingCastingCall) {
-      // Update existing casting call
-      updateCastingCall(editingProject.id, editingCastingCall.id, {
-        title,
-        description,
-        projectName,
-        fields,
-        headerImageUrl: headerImageUrl || undefined,
-        isCompleted,
-        talentPoolConsentEnabled,
-        talentPoolConsentText,
-      })
-      setCreatedLink(editingCastingCall.shareableLink)
-      setStep("success")
-    } else {
-      // Create new casting call
-      let project = state.projects.find((p) => p.name === projectName)
-      if (!project) {
-        project = createProject(projectName)
-      }
+    try {
+      if (isEditing && editingProject && editingCastingCall) {
+        // Update existing casting call via API
+        await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/casting-calls/${editingCastingCall.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title,
+            description,
+            projectName,
+            fields,
+            headerImageUrl: headerImageUrl || undefined,
+            isCompleted,
+            talentPoolConsentEnabled,
+            talentPoolConsentText,
+          })
+        })
 
-      const castingCall = createCastingCall(project.id, title, description, projectName, fields, headerImageUrl || undefined, {
-        talentPoolConsentEnabled,
-        talentPoolConsentText,
-      })
-      setCreatedLink(castingCall.shareableLink)
-      setStep("success")
+        // Also update local mocked context for now so UI doesn't break
+        updateCastingCall(editingProject.id, editingCastingCall.id, {
+          title,
+          description,
+          projectName,
+          fields,
+          headerImageUrl: headerImageUrl || undefined,
+          isCompleted,
+          talentPoolConsentEnabled,
+          talentPoolConsentText,
+        })
+        setCreatedLink(editingCastingCall.shareableLink)
+        setStep("success")
+      } else {
+        // Create new casting call via API
+        let project = state.projects.find((p) => p.name === projectName)
+        if (!project) {
+          project = createProject(projectName)
+        }
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/casting-calls`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-user-id': 'current-user-id' 
+          },
+          body: JSON.stringify({
+            projectId: project.id,
+            title,
+            description,
+            projectName,
+            fields,
+            headerImageUrl: headerImageUrl || undefined,
+            talentPoolConsentEnabled,
+            talentPoolConsentText,
+          })
+        })
+        
+        const newDbCastingCall = await response.json()
+
+        // Also create in local mocked context
+        const castingCall = createCastingCall(project.id, title, description, projectName, fields, headerImageUrl || undefined, {
+          talentPoolConsentEnabled,
+          talentPoolConsentText,
+        })
+        
+        // Use the ID from the backend to construct the link
+        setCreatedLink(`${window.location.origin}/actor-submission/${newDbCastingCall.id}`)
+        setStep("success")
+      }
+    } catch (error) {
+      console.error("Failed to save casting call to backend:", error)
+      alert("Failed to save to database. Check console.")
     }
   }
 

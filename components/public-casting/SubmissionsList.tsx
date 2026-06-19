@@ -111,11 +111,22 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
 
   // Mark submissions as read when viewing
   useEffect(() => {
+    let unreadIds: string[] = [];
     state.projects.forEach((p) => {
+      p.submissions.forEach((s) => {
+        if (s.isNew) unreadIds.push(s.id);
+      });
       if (p.submissions.some((s) => s.isNew)) {
         markSubmissionsAsRead(p.id)
       }
-    })
+    });
+
+    // Fire off background request to actually mark them read in the backend
+    if (unreadIds.length > 0) {
+      unreadIds.forEach(id => {
+        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/submissions/${id}/read`, { method: 'POST' }).catch(e => console.error(e));
+      });
+    }
   }, [state.projects, markSubmissionsAsRead])
 
   // Filter and sort submissions
@@ -212,7 +223,19 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
     return result
   }, [allSubmissions, searchQuery, filterByForm, filterByGrade, sortBy, ageMin, ageMax, filterByGender, filterByLocation, filterByAvailability])
 
-  const handleUpdateSubmission = (submissionId: string, updates: Partial<CastingSubmission>) => {
+  const handleUpdateSubmission = async (submissionId: string, updates: Partial<CastingSubmission>) => {
+    // If marking as approved/shortlisted, alert backend to map it to the actor list
+    if (updates.status === "shortlisted" || updates.status === "reviewed") {
+      try {
+        await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/submissions/${submissionId}/approve`, {
+          method: 'POST'
+        });
+      } catch (e) {
+        console.error("Failed to approve submission on backend:", e);
+      }
+    }
+    
+    // Update local state
     updateSubmission(submissionId, updates)
   }
 

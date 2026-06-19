@@ -939,7 +939,7 @@ export default function CastingCallsList({
       <QRCodeModal
         isOpen={!!qrCodeCastingCall}
         onClose={() => setQrCodeCastingCall(null)}
-        url={qrCodeCastingCall?.shareableLink || ""}
+        url={qrCodeCastingCall ? `${window.location.origin}/actor-submission/${qrCodeCastingCall.id}` : ""}
         title={qrCodeCastingCall?.title || "Casting Call"}
       />
 

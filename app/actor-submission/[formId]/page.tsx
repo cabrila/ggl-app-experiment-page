@@ -1,294 +1,205 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
-import { useParams, useSearchParams } from "next/navigation"
-import { Camera, Upload, X, Plus, Check, AlertCircle, Video } from "lucide-react"
-import { submissionProcessor, type SubmissionData } from "@/utils/submissionProcessor"
-
-interface FormData {
-  name: string
-  age: string
-  gender: string
-  ethnicity: string
-  location: string
-  contactPhone: string
-  contactEmail: string
-  agent: string
-  playingAge: string
-  skills: string[]
-  availability: string[]
-  experience: string
-  notes: string
-}
-
-interface VideoSubmission {
-  id: string
-  platform: "youtube" | "vimeo"
-  url: string
-  title: string
-}
+import { useState, useEffect } from "react"
+import { useParams } from "next/navigation"
+import { Check, CheckCircle, ImagePlus, X, Trash2, AlertCircle } from "lucide-react"
+import { splitMultiValue, getVideoEmbed } from "@/utils/mediaEmbed"
+import { isProfilePictureField } from "@/utils/profilePicture"
+import ProfilePictureField from "@/components/ui/ProfilePictureField"
 
 export default function ActorSubmissionForm() {
   const params = useParams()
-  const searchParams = useSearchParams()
   const formId = params.formId as string
-  const characterId = searchParams.get("character")
-  const projectId = searchParams.get("project")
+  
+  const [formConfig, setFormConfig] = useState<any>(null)
+  const [configLoading, setConfigLoading] = useState(true)
+  const [configError, setConfigError] = useState<string | null>(null)
 
-  const [formData, setFormData] = useState<FormData>({
-    name: "",
-    age: "",
-    gender: "",
-    ethnicity: "",
-    location: "",
-    contactPhone: "",
-    contactEmail: "",
-    agent: "",
-    playingAge: "",
-    skills: [],
-    availability: [],
-    experience: "",
-    notes: "",
-  })
-
-  const [photos, setPhotos] = useState<File[]>([])
-  const [photoPreviews, setPhotoPreviews] = useState<string[]>([])
-  const [videos, setVideos] = useState<VideoSubmission[]>([])
-  const [newVideoUrl, setNewVideoUrl] = useState("")
-  const [newSkill, setNewSkill] = useState("")
-  const [newAvailability, setNewAvailability] = useState("")
+  // Dynamic form state
+  const [formData, setFormData] = useState<Record<string, string>>({})
+  const [urlRows, setUrlRows] = useState<Record<string, string[]>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
-  const [errors, setErrors] = useState<string[]>([])
-  const [processingStatus, setProcessingStatus] = useState<string>("")
+  const [errors, setErrors] = useState<Record<string, boolean>>({})
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [talentPoolConsent, setTalentPoolConsent] = useState(false)
 
-  const handleInputChange = (field: keyof FormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-    // Clear errors when user starts typing
-    if (errors.length > 0) {
-      setErrors([])
+  useEffect(() => {
+    async function loadConfig() {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/public/casting-call/${formId}`);
+        if (res.ok) {
+          const config = await res.json();
+          setFormConfig(config);
+          
+          // Initialize form data
+          const initialData: Record<string, string> = {}
+          config.fields?.forEach((field: any) => {
+            initialData[field.label] = ""
+          })
+          setFormData(initialData)
+        } else {
+          setConfigError("Casting call not found or is no longer active.")
+        }
+      } catch (e) {
+        setConfigError("Failed to connect to server.");
+        console.error("Failed to load casting call config", e);
+      } finally {
+        setConfigLoading(false);
+      }
+    }
+    loadConfig();
+  }, [formId]);
+
+  const handleInputChange = (label: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [label]: value }))
+    if (errors[label]) {
+      setErrors((prev) => ({ ...prev, [label]: false }))
     }
   }
 
-  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || [])
-    if (files.length === 0) return
-
-    // Validate file types and sizes
-    const validFiles = files.filter((file) => {
-      const isValidType = file.type.startsWith("image/")
-      const isValidSize = file.size <= 10 * 1024 * 1024 // 10MB
-      return isValidType && isValidSize
-    })
-
-    setPhotos((prev) => [...prev, ...validFiles])
-
-    // Create preview URLs
-    validFiles.forEach((file) => {
+  // Multi-image upload handlers
+  const handleImageFiles = (label: string, files: FileList | null) => {
+    if (!files || files.length === 0) return
+    Array.from(files).forEach((file) => {
       const reader = new FileReader()
       reader.onload = (e) => {
-        setPhotoPreviews((prev) => [...prev, e.target?.result as string])
+        const result = e.target?.result as string
+        setFormData((prev) => {
+          const existing = splitMultiValue(prev[label])
+          return { ...prev, [label]: [...existing, result].join("|||") }
+        })
       }
       reader.readAsDataURL(file)
     })
+    if (errors[label]) setErrors((prev) => ({ ...prev, [label]: false }))
   }
 
-  const handleRemovePhoto = (index: number) => {
-    setPhotos((prev) => prev.filter((_, i) => i !== index))
-    setPhotoPreviews((prev) => prev.filter((_, i) => i !== index))
+  const handleRemoveMultiValue = (label: string, indexToRemove: number) => {
+    setFormData((prev) => {
+      const existing = splitMultiValue(prev[label])
+      const updated = existing.filter((_, i) => i !== indexToRemove)
+      return { ...prev, [label]: updated.join("|||") }
+    })
   }
 
-  const extractVideoId = (url: string): { platform: "youtube" | "vimeo"; id: string } | null => {
-    // YouTube patterns
-    const youtubePatterns = [
-      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
-      /youtube\.com\/watch\?.*v=([^&\n?#]+)/,
-    ]
-
-    // Vimeo patterns
-    const vimeoPatterns = [/vimeo\.com\/(\d+)/, /player\.vimeo\.com\/video\/(\d+)/]
-
-    for (const pattern of youtubePatterns) {
-      const match = url.match(pattern)
-      if (match) {
-        return { platform: "youtube", id: match[1] }
+  // URL list handlers
+  const getUrlRows = (label: string) => urlRows[label] || []
+  const handleUrlChange = (label: string, index: number, value: string) => {
+    setUrlRows((prev) => {
+      const current = prev[label] || [""]
+      const updated = [...current]
+      updated[index] = value
+      if (index === updated.length - 1 && value.trim() !== "") {
+        updated.push("") // Add empty row
       }
-    }
+      return { ...prev, [label]: updated }
+    })
+    setFormData((prev) => {
+      const current = urlRows[label] || [""]
+      const updated = [...current]
+      updated[index] = value
+      const cleanUrls = updated.filter((u) => u.trim() !== "")
+      return { ...prev, [label]: cleanUrls.join("|||") }
+    })
+    if (errors[label]) setErrors((prev) => ({ ...prev, [label]: false }))
+  }
 
-    for (const pattern of vimeoPatterns) {
-      const match = url.match(pattern)
-      if (match) {
-        return { platform: "vimeo", id: match[1] }
+  const handleRemoveUrl = (label: string, index: number) => {
+    setUrlRows((prev) => {
+      const current = prev[label] || [""]
+      const updated = current.filter((_, i) => i !== index)
+      if (updated.length === 0) updated.push("")
+      return { ...prev, [label]: updated }
+    })
+    setFormData((prev) => {
+      const current = urlRows[label] || [""]
+      const updated = current.filter((_, i) => i !== index)
+      const cleanUrls = updated.filter((u) => u.trim() !== "")
+      return { ...prev, [label]: cleanUrls.join("|||") }
+    })
+  }
+
+  const validateForm = () => {
+    if (!formConfig) return false
+    const newErrors: Record<string, boolean> = {}
+    let isValid = true
+    formConfig.fields.forEach((field: any) => {
+      if (field.required) {
+        const val = formData[field.label]
+        if (!val || val.trim() === "") {
+          newErrors[field.label] = true
+          isValid = false
+        }
       }
-    }
-
-    return null
-  }
-
-  const handleAddVideo = () => {
-    if (!newVideoUrl.trim()) return
-
-    const videoInfo = extractVideoId(newVideoUrl)
-    if (!videoInfo) {
-      setErrors(["Please enter a valid YouTube or Vimeo URL"])
-      return
-    }
-
-    const newVideo: VideoSubmission = {
-      id: `video-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      platform: videoInfo.platform,
-      url: newVideoUrl,
-      title: `${videoInfo.platform.charAt(0).toUpperCase() + videoInfo.platform.slice(1)} Video`,
-    }
-
-    setVideos((prev) => [...prev, newVideo])
-    setNewVideoUrl("")
-  }
-
-  const handleRemoveVideo = (videoId: string) => {
-    setVideos((prev) => prev.filter((video) => video.id !== videoId))
-  }
-
-  const handleAddSkill = () => {
-    if (newSkill.trim() && !formData.skills.includes(newSkill.trim())) {
-      setFormData((prev) => ({
-        ...prev,
-        skills: [...prev.skills, newSkill.trim()],
-      }))
-      setNewSkill("")
-    }
-  }
-
-  const handleRemoveSkill = (skillToRemove: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      skills: prev.skills.filter((skill) => skill !== skillToRemove),
-    }))
-  }
-
-  const handleAddAvailability = () => {
-    if (newAvailability.trim() && !formData.availability.includes(newAvailability.trim())) {
-      setFormData((prev) => ({
-        ...prev,
-        availability: [...prev.availability, newAvailability.trim()],
-      }))
-      setNewAvailability("")
-    }
-  }
-
-  const handleRemoveAvailability = (availToRemove: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      availability: prev.availability.filter((avail) => avail !== availToRemove),
-    }))
-  }
-
-  const validateForm = (): string[] => {
-    const newErrors: string[] = []
-
-    if (!formData.name.trim()) {
-      newErrors.push("Name is required")
-    }
-
-    if (!formData.contactEmail.trim()) {
-      newErrors.push("Email is required")
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactEmail)) {
-      newErrors.push("Please enter a valid email address")
-    }
-
-    if (photos.length === 0) {
-      newErrors.push("At least one photo is required")
-    }
-
-    if (!characterId || !projectId) {
-      newErrors.push("Invalid form configuration - missing character or project information")
-    }
-
-    return newErrors
+    })
+    setErrors(newErrors)
+    return isValid
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setSubmitError(null)
 
-    const validationErrors = validateForm()
-    if (validationErrors.length > 0) {
-      setErrors(validationErrors)
-      return
-    }
+    if (!validateForm()) return
 
     setIsSubmitting(true)
-    setProcessingStatus("Submitting your information...")
 
     try {
-      // Create submission data
-      const submissionData: SubmissionData = {
-        formId,
-        characterId: characterId!,
-        projectId: projectId!,
-        submissionId: `submission_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        timestamp: Date.now(),
-        formData,
-        photos: photos.map((file, index) => ({
-          id: `photo_${index}_${Date.now()}`,
-          file,
-          preview: photoPreviews[index],
-          processed: false,
-        })),
-        videos: videos.map((video) => ({
-          id: video.id,
-          platform: video.platform,
-          url: video.url,
-          title: video.title,
-        })),
-      }
-
-      console.log("📤 ActorSubmissionForm: Submitting data:", submissionData)
-
-      // Process the submission
-      setProcessingStatus("Processing your photos and videos...")
-      submissionProcessor.addSubmission(submissionData)
-
-      // Wait a moment for processing to start
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      setProcessingStatus("Adding you to the casting list...")
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
+      // Pass the raw formData object directly as actorData.
+      // The backend/approval system will parse the custom field labels.
+      await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/public/submit-actor`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          castingCallId: formId,
+          actorData: formData,
+        })
+      });
+      console.log("✅ Submitted successfully to Firestore via backend-service");
       setSubmitted(true)
-      setProcessingStatus("")
     } catch (error) {
-      console.error("❌ ActorSubmissionForm: Submission failed:", error)
-      setErrors(["Failed to submit form. Please try again."])
-      setProcessingStatus("")
+      console.error("❌ Failed to submit to backend-service:", error);
+      setSubmitError("Failed to submit form. Please try again.")
     } finally {
       setIsSubmitting(false)
     }
   }
 
+  if (configLoading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (configError || !formConfig) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 text-center">
+        <div className="bg-slate-800 p-8 rounded-2xl max-w-md border border-slate-700">
+          <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
+          <h1 className="text-xl font-bold text-white mb-2">Form Unavailable</h1>
+          <p className="text-slate-400">{configError || "This casting call does not exist or has been closed."}</p>
+        </div>
+      </div>
+    )
+  }
+
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-blue-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Check className="w-8 h-8 text-green-600" />
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+        <div className="bg-slate-800 rounded-2xl border border-slate-700 p-8 max-w-md w-full text-center shadow-xl shadow-black/50">
+          <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="w-8 h-8 text-emerald-400" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Submission Successful!</h1>
-          <p className="text-gray-600 mb-6">
-            Thank you for your submission. Your information has been automatically added to the casting list and our
-            team will review it shortly.
+          <h1 className="text-2xl font-bold text-white mb-2 font-sans">Submission Received!</h1>
+          <p className="text-slate-400 font-sans mb-6">
+            Thank you for your submission. Your profile has been sent to the casting team for {formConfig.projectName}.
           </p>
-          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-4">
-            <p className="text-sm text-emerald-800">
-              <strong>Automatic Processing:</strong> Your photos and videos have been processed and you've been added to
-              the character's casting list.
-            </p>
-          </div>
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm text-blue-800">
-              <strong>What's next?</strong> Our casting team will review your submission and contact you if you're
-              selected for the next stage.
+          <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg p-4">
+            <p className="text-sm text-slate-300">
+              <strong>What's next?</strong> The team will review your materials and reach out directly if they'd like to schedule an audition.
             </p>
           </div>
         </div>
@@ -296,395 +207,202 @@ export default function ActorSubmissionForm() {
     )
   }
 
+  // Note: The public submission form uses a modern dark theme to match the Greenlight brand
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-blue-50 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-emerald-500 to-blue-600 p-8 text-white">
-            <h1 className="text-3xl font-bold mb-2">Actor Submission Form</h1>
-            <p className="text-emerald-100">Submit your information for casting consideration</p>
-            {processingStatus && (
-              <div className="mt-4 bg-white/20 rounded-lg p-3 flex items-center space-x-2">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span className="text-sm">{processingStatus}</span>
-              </div>
+    <div className="min-h-screen bg-slate-900 py-12 px-4 sm:px-6">
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-slate-800 rounded-3xl shadow-2xl shadow-black/50 overflow-hidden border border-slate-700">
+          
+          {/* Header Image */}
+          {formConfig.headerImageUrl && (
+            <div className="w-full h-48 sm:h-64 bg-slate-900 relative">
+              <img
+                src={formConfig.headerImageUrl}
+                alt="Casting call header"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-800 to-transparent" />
+            </div>
+          )}
+
+          {/* Form Header */}
+          <div className={`px-8 ${formConfig.headerImageUrl ? '-mt-12 relative z-10' : 'pt-10'} text-center mb-8`}>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-emerald-300 text-sm mb-4 font-sans font-medium shadow-lg backdrop-blur-md">
+              {formConfig.projectName}
+            </div>
+            <h1 className="text-3xl font-bold text-white mb-3 font-sans">
+              {formConfig.title}
+            </h1>
+            {formConfig.description && (
+              <p className="text-slate-300 font-sans max-w-lg mx-auto leading-relaxed">
+                {formConfig.description}
+              </p>
             )}
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="p-8 space-y-8">
-            {/* Error Display */}
-            {errors.length > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <div className="flex items-center space-x-2 mb-2">
-                  <AlertCircle className="w-5 h-5 text-red-600" />
-                  <span className="font-medium text-red-900">Please fix the following errors:</span>
-                </div>
-                <ul className="list-disc list-inside text-sm text-red-700 space-y-1">
-                  {errors.map((error, index) => (
-                    <li key={index}>{error}</li>
-                  ))}
-                </ul>
+          {/* Form Content */}
+          <form onSubmit={handleSubmit} className="px-8 pb-10 space-y-8">
+            
+            {submitError && (
+              <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+                <p className="text-rose-300 text-sm">{submitError}</p>
               </div>
             )}
 
-            {/* Basic Information */}
             <div className="space-y-6">
-              <h2 className="text-xl font-semibold text-gray-900 border-b border-gray-200 pb-2">Basic Information</h2>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Full Name <span className="text-red-500">*</span>
+              {formConfig.fields?.map((field: any) => (
+                <div key={field.id} className="bg-slate-900/50 p-5 rounded-2xl border border-slate-700/50">
+                  <label className="block text-sm font-medium text-slate-300 mb-2 font-sans">
+                    {field.label}
+                    {field.required && <span className="text-rose-400 ml-1">*</span>}
                   </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange("name", e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    placeholder="Enter your full name"
-                    required
-                  />
+                  
+                  {field.type === "textarea" ? (
+                    <textarea
+                      placeholder={field.placeholder}
+                      value={formData[field.label] || ""}
+                      onChange={(e) => handleInputChange(field.label, e.target.value)}
+                      rows={4}
+                      autoComplete="off"
+                      className={`w-full px-4 py-3 bg-slate-950 border rounded-xl text-white placeholder-slate-500 font-sans resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all ${
+                        errors[field.label] ? "border-rose-500/50 focus:ring-rose-500/50 focus:border-rose-500/50" : "border-slate-700"
+                      }`}
+                    />
+                  ) : field.type === "select" ? (
+                    <select
+                      value={formData[field.label] || ""}
+                      onChange={(e) => handleInputChange(field.label, e.target.value)}
+                      className={`w-full px-4 py-3 bg-slate-950 border rounded-xl text-white font-sans focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all appearance-none ${
+                        errors[field.label] ? "border-rose-500/50 focus:ring-rose-500/50 focus:border-rose-500/50" : "border-slate-700"
+                      }`}
+                    >
+                      <option value="" className="text-slate-500">{field.placeholder || "Select an option"}</option>
+                      {field.options?.map((opt: string) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  ) : field.type === "image" ? (
+                    isProfilePictureField(field) ? (
+                      <ProfilePictureField
+                        value={formData[field.label] || ""}
+                        onChange={(val) => handleInputChange(field.label, val)}
+                        accent="emerald"
+                        error={errors[field.label]}
+                        placeholder={field.placeholder || "Click or drag to upload a profile picture"}
+                      />
+                    ) : (
+                      <div className="space-y-3">
+                        {splitMultiValue(formData[field.label]).length > 0 && (
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            {splitMultiValue(formData[field.label]).map((img, idx) => (
+                              <div key={idx} className="relative group/img aspect-square rounded-xl overflow-hidden border border-slate-700">
+                                <img src={img || "/placeholder.svg"} alt="" className="w-full h-full object-cover" />
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveMultiValue(field.label, idx)}
+                                  className="absolute top-2 right-2 p-1.5 bg-black/60 hover:bg-rose-500 rounded-lg text-white opacity-0 group-hover/img:opacity-100 transition-all backdrop-blur-sm"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <label className={`w-full flex flex-col items-center justify-center gap-3 px-4 py-8 bg-slate-950 border border-dashed rounded-xl text-slate-400 cursor-pointer hover:bg-slate-900 transition-all font-sans text-sm ${errors[field.label] ? "border-rose-500/50" : "border-slate-700 hover:border-emerald-500/50"}`}>
+                          <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center">
+                            <ImagePlus className="w-6 h-6 text-slate-300" />
+                          </div>
+                          <span>{field.placeholder || "Click or drag images to upload"}</span>
+                          <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => handleImageFiles(field.label, e.target.files)} />
+                        </label>
+                      </div>
+                    )
+                  ) : field.type === "url" ? (
+                    <div className="space-y-3">
+                      {(() => {
+                        const urls = getUrlRows(field.label)
+                        const rows = urls.length > 0 ? urls : [""]
+                        return rows.map((url, idx) => {
+                          const embed = getVideoEmbed(url)
+                          return (
+                            <div key={idx} className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="url"
+                                  placeholder={field.placeholder || "Paste a link"}
+                                  value={url}
+                                  onChange={(e) => handleUrlChange(field.label, idx, e.target.value)}
+                                  className={`flex-1 px-4 py-3 bg-slate-950 border rounded-xl text-white placeholder-slate-500 font-sans focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all ${errors[field.label] ? "border-rose-500/50 focus:ring-rose-500/50" : "border-slate-700"}`}
+                                />
+                                {rows.length > 1 && (
+                                  <button type="button" onClick={() => handleRemoveUrl(field.label, idx)} className="p-3 bg-slate-900 hover:bg-rose-500/20 border border-slate-700 rounded-xl text-slate-400 hover:text-rose-400 transition-colors">
+                                    <Trash2 className="w-5 h-5" />
+                                  </button>
+                                )}
+                              </div>
+                              {embed && (
+                                <div className="aspect-video w-full rounded-xl overflow-hidden border border-slate-700 shadow-inner">
+                                  <iframe src={embed.embedUrl} className="w-full h-full" allowFullScreen />
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })
+                      })()}
+                    </div>
+                  ) : (
+                    <input
+                      type={field.type === "number" ? "number" : field.type === "email" ? "email" : field.type === "phone" ? "tel" : "text"}
+                      placeholder={field.placeholder}
+                      value={formData[field.label] || ""}
+                      onChange={(e) => handleInputChange(field.label, e.target.value)}
+                      autoComplete="off"
+                      className={`w-full px-4 py-3 bg-slate-950 border rounded-xl text-white placeholder-slate-500 font-sans focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all ${
+                        errors[field.label] ? "border-rose-500/50 focus:ring-rose-500/50 focus:border-rose-500/50" : "border-slate-700"
+                      }`}
+                    />
+                  )}
+                  {errors[field.label] && (
+                    <p className="mt-2 text-sm text-rose-400 flex items-center gap-1.5"><AlertCircle className="w-4 h-4" /> This field is required</p>
+                  )}
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Age</label>
-                  <input
-                    type="text"
-                    value={formData.age}
-                    onChange={(e) => handleInputChange("age", e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    placeholder="e.g. 25"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Playing Age</label>
-                  <input
-                    type="text"
-                    value={formData.playingAge}
-                    onChange={(e) => handleInputChange("playingAge", e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    placeholder="e.g. 20-30"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Gender</label>
-                  <input
-                    type="text"
-                    value={formData.gender}
-                    onChange={(e) => handleInputChange("gender", e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    placeholder="e.g. Male, Female, Non-binary"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Ethnicity</label>
-                  <input
-                    type="text"
-                    value={formData.ethnicity}
-                    onChange={(e) => handleInputChange("ethnicity", e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    placeholder="e.g. Caucasian, Hispanic, Asian"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-                  <input
-                    type="text"
-                    value={formData.location}
-                    onChange={(e) => handleInputChange("location", e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    placeholder="e.g. Los Angeles, CA"
-                  />
-                </div>
-              </div>
+              ))}
             </div>
 
-            {/* Contact Information */}
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold text-gray-900 border-b border-gray-200 pb-2">Contact Information</h2>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.contactEmail}
-                    onChange={(e) => handleInputChange("contactEmail", e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    placeholder="your.email@example.com"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-                  <input
-                    type="tel"
-                    value={formData.contactPhone}
-                    onChange={(e) => handleInputChange("contactPhone", e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    placeholder="(555) 123-4567"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Agent/Representative</label>
-                  <input
-                    type="text"
-                    value={formData.agent}
-                    onChange={(e) => handleInputChange("agent", e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    placeholder="e.g. CAA, WME, or independent agent name"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Photos */}
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold text-gray-900 border-b border-gray-200 pb-2">
-                Photos <span className="text-red-500">*</span>
-              </h2>
-
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-emerald-400 transition-colors">
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={handlePhotoUpload}
-                  className="hidden"
-                  id="photo-upload"
-                />
-                <label htmlFor="photo-upload" className="cursor-pointer">
-                  <Camera className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-lg font-medium text-gray-700 mb-2">Upload Your Photos</p>
-                  <p className="text-sm text-gray-500">
-                    Click to select headshots and other professional photos (PNG, JPG up to 10MB each)
-                  </p>
+            {formConfig.talentPoolConsentEnabled && (
+              <div className="bg-slate-900/50 p-5 rounded-2xl border border-slate-700/50">
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <div className="relative flex items-center pt-0.5">
+                    <input
+                      type="checkbox"
+                      checked={talentPoolConsent}
+                      onChange={(e) => setTalentPoolConsent(e.target.checked)}
+                      className="w-5 h-5 appearance-none border-2 border-slate-600 rounded bg-slate-950 checked:bg-emerald-500 checked:border-emerald-500 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:ring-offset-2 focus:ring-offset-slate-800"
+                    />
+                    <Check className={`absolute inset-0 m-auto w-3.5 h-3.5 text-white pointer-events-none transition-opacity ${talentPoolConsent ? 'opacity-100' : 'opacity-0'}`} />
+                  </div>
+                  <span className="text-sm text-slate-300 leading-relaxed font-sans group-hover:text-white transition-colors">
+                    {formConfig.talentPoolConsentText || "I consent to being added to the talent pool to be considered for future projects."}
+                  </span>
                 </label>
               </div>
+            )}
 
-              {photoPreviews.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {photoPreviews.map((preview, index) => (
-                    <div key={index} className="relative group">
-                      {preview ? (
-                        <img
-                          src={preview}
-                          alt={`Photo ${index + 1}`}
-                          className="w-full h-32 object-cover rounded-lg border border-gray-200"
-                        />
-                      ) : (
-                        <div className="w-full h-32 rounded-lg border border-gray-200 bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-400">
-                          No image
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => handleRemovePhoto(index)}
-                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-900/20 active:scale-[0.98]"
+            >
+              {isSubmitting ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Submitting Profile...</span>
                 </div>
+              ) : (
+                "Submit Casting Profile"
               )}
-            </div>
-
-            {/* Videos */}
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold text-gray-900 border-b border-gray-200 pb-2">
-                Video Content (Optional)
-              </h2>
-
-              <div className="flex space-x-2">
-                <input
-                  type="text"
-                  value={newVideoUrl}
-                  onChange={(e) => setNewVideoUrl(e.target.value)}
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  placeholder="Paste YouTube or Vimeo URL"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddVideo}
-                  className="px-6 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
-                >
-                  Add Video
-                </button>
-              </div>
-
-              {videos.length > 0 && (
-                <div className="space-y-4">
-                  {videos.map((video) => (
-                    <div
-                      key={video.id}
-                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <Video className="w-5 h-5 text-gray-500" />
-                        <div>
-                          <p className="font-medium text-gray-900">{video.title}</p>
-                          <p className="text-sm text-gray-500 capitalize">{video.platform} video</p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveVideo(video.id)}
-                        className="text-red-500 hover:text-red-700 transition-colors"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Skills */}
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold text-gray-900 border-b border-gray-200 pb-2">Skills</h2>
-
-              <div className="flex space-x-2">
-                <input
-                  type="text"
-                  value={newSkill}
-                  onChange={(e) => setNewSkill(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), handleAddSkill())}
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  placeholder="Add a skill (e.g. Piano, Martial Arts, Dancing)"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddSkill}
-                  className="px-6 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
-                >
-                  <Plus className="w-5 h-5" />
-                </button>
-              </div>
-
-              {formData.skills.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {formData.skills.map((skill, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center px-3 py-1 bg-emerald-100 text-emerald-800 text-sm rounded-full"
-                    >
-                      {skill}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveSkill(skill)}
-                        className="ml-2 text-emerald-600 hover:text-emerald-800"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Availability */}
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold text-gray-900 border-b border-gray-200 pb-2">Availability</h2>
-
-              <div className="flex space-x-2">
-                <input
-                  type="text"
-                  value={newAvailability}
-                  onChange={(e) => setNewAvailability(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), handleAddAvailability())}
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  placeholder="Add availability (e.g. Weekends, March 2024, Flexible)"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddAvailability}
-                  className="px-6 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
-                >
-                  <Plus className="w-5 h-5" />
-                </button>
-              </div>
-
-              {formData.availability.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {formData.availability.map((avail, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
-                    >
-                      {avail}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveAvailability(avail)}
-                        className="ml-2 text-blue-600 hover:text-blue-800"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Additional Information */}
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold text-gray-900 border-b border-gray-200 pb-2">
-                Additional Information
-              </h2>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Experience & Background</label>
-                <textarea
-                  value={formData.experience}
-                  onChange={(e) => handleInputChange("experience", e.target.value)}
-                  rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  placeholder="Tell us about your acting experience, training, notable roles, etc."
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Additional Notes</label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) => handleInputChange("notes", e.target.value)}
-                  rows={3}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  placeholder="Any additional information you'd like to share..."
-                />
-              </div>
-            </div>
-
-            {/* Submit Button */}
-            <div className="pt-6 border-t border-gray-200">
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full flex items-center justify-center space-x-2 px-8 py-4 bg-gradient-to-r from-emerald-500 to-blue-600 text-white font-semibold rounded-lg hover:from-emerald-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Processing Submission...</span>
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-5 h-5" />
-                    <span>Submit Application</span>
-                  </>
-                )}
-              </button>
-            </div>
+            </button>
           </form>
         </div>
       </div>

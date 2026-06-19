@@ -4,6 +4,7 @@ import { createContext, useContext, useState, ReactNode, useCallback, useEffect 
 import { CastingCall, CastingCallField, CastingSubmission, PublicCastingProject } from "@/types/public-casting"
 import { loadDemoData, saveDemoData, DEMO_STORAGE_KEYS } from "@/utils/demoPersistence"
 import { getProfilePictureFromData } from "@/utils/profilePicture"
+import { useFirebaseUser } from "@/hooks/useFirebaseUser"
 
 interface PublicCastingState {
   projects: PublicCastingProject[]
@@ -386,6 +387,7 @@ const createDemoData = (): PublicCastingProject[] => {
 }
 
 export function PublicCastingProvider({ children }: { children: ReactNode }) {
+  const user = useFirebaseUser()
   const [state, setState] = useState<PublicCastingState>(() => {
     const demo = createDemoData()
     const persisted = loadDemoData<{ projects: PublicCastingProject[]; newSubmissionsCount: number } | null>(
@@ -396,9 +398,106 @@ export function PublicCastingProvider({ children }: { children: ReactNode }) {
       projects: persisted?.projects ?? demo,
       currentProject: null,
       currentCastingCall: null,
-      newSubmissionsCount: persisted?.newSubmissionsCount ?? 16, // From demo data
+      newSubmissionsCount: persisted?.newSubmissionsCount ?? 16,
     }
   })
+
+  // Clear demo data when a real user signs in, and fetch from backend
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadDataFromBackend() {
+      try {
+        // Fetch all casting calls and submissions from our backend service
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL
+        const [callsRes, subsRes] = await Promise.all([
+          fetch(`${backendUrl}/api/casting-calls`),
+          fetch(`${backendUrl}/api/submissions`)
+        ]);
+
+        if (!callsRes.ok || !subsRes.ok) return;
+
+        const calls = await callsRes.json();
+        const submissions = await subsRes.json();
+
+        if (!mounted) return;
+
+        // Group into projects
+        const projectMap = new Map<string, PublicCastingProject>();
+
+        calls.forEach((call: any) => {
+          const pid = call.projectId;
+          if (!projectMap.has(pid)) {
+            projectMap.set(pid, {
+              id: pid,
+              name: call.projectName || 'Project',
+              castingCalls: [],
+              submissions: [],
+              createdAt: new Date(call.createdAt),
+            });
+          }
+          
+          const p = projectMap.get(pid)!;
+          p.castingCalls.push({
+            id: call.id,
+            title: call.title,
+            description: call.description,
+            projectName: call.projectName,
+            fields: call.fields,
+            createdAt: new Date(call.createdAt),
+            isActive: call.status === 'active',
+            shareableLink: `${window.location.origin}/actor-submission/${call.id}`,
+            headerImageUrl: call.headerImageUrl,
+            isCompleted: call.isCompleted,
+            talentPoolConsentEnabled: call.talentPoolConsentEnabled,
+            talentPoolConsentText: call.talentPoolConsentText,
+          });
+        });
+
+        // Attach submissions
+        let unreadCount = 0;
+        submissions.forEach((sub: any) => {
+          const p = projectMap.get(sub.projectId);
+          if (p) {
+            const mappedSub: CastingSubmission = {
+              id: sub.id,
+              castingCallId: sub.castingCallId,
+              castingCallTitle: p.castingCalls.find(cc => cc.id === sub.castingCallId)?.title || "Unknown",
+              data: sub.actorData,
+              submittedAt: new Date(sub.submittedAt),
+              isNew: sub.status === 'new',
+              name: sub.actorData.name || sub.actorData["Full Name"] || sub.actorData["Actor Name"] || "Unknown",
+              email: sub.actorData.email || sub.actorData["Email"] || "",
+              phone: sub.actorData.phone || sub.actorData["Phone"],
+              age: sub.actorData.age || sub.actorData["Age"],
+              playingAge: sub.actorData.playingAge || sub.actorData["Playing Age Range"],
+              headshot: getProfilePictureFromData(sub.actorData) || sub.actorData.headshot || sub.actorData["Headshot URL"],
+              notes: sub.actorData.notes || sub.actorData["Additional Notes"],
+            };
+            if (mappedSub.isNew) unreadCount++;
+            p.submissions.push(mappedSub);
+          }
+        });
+
+        setState(prev => ({
+          ...prev,
+          projects: Array.from(projectMap.values()),
+          newSubmissionsCount: unreadCount
+        }));
+
+      } catch (e) {
+        console.error("Failed to load public casting data from backend", e);
+      }
+    }
+
+    if (user) {
+      loadDataFromBackend();
+    }
+
+    return () => {
+      mounted = false;
+    };
+  }, [user]);
 
   // Persist projects/submissions so they survive navigation/remounts when no backend is signed in.
   useEffect(() => {

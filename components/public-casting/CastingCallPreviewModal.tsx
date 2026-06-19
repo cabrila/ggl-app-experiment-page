@@ -185,7 +185,13 @@ export default function CastingCallPreviewModal({ castingCall, project, onClose 
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => window.open(castingCall.shareableLink, "_blank")}
+              onClick={() => {
+                if (castingCall.id === "preview") {
+                  alert("Please save this casting call first to generate a public link.");
+                } else {
+                  window.open(`${window.location.origin}/actor-submission/${castingCall.id}`, "_blank");
+                }
+              }}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white/70 hover:text-white text-sm transition-all font-sans"
             >
               <ExternalLink className="w-4 h-4" />
@@ -303,9 +309,9 @@ export default function CastingCallPreviewModal({ castingCall, project, onClose 
                           errors[field.label] ? "border-red-500/50" : "border-white/10"
                         }`}
                       >
-                        <option value="" className="bg-[#0f1f17] text-white">{field.placeholder || "Select an option"}</option>
+                        <option value="" className="bg-[#1a4a2a] text-white/50">{field.placeholder || "Select an option"}</option>
                         {field.options?.map((opt) => (
-                          <option key={opt} value={opt} className="bg-[#0f1f17] text-white">{opt}</option>
+                          <option key={opt} value={opt} className="bg-[#1a4a2a] text-white">{opt}</option>
                         ))}
                       </select>
                     ) : field.type === "image" ? (

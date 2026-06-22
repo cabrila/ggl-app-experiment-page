@@ -6,6 +6,7 @@ import { useLocationScouting } from "./LocationScoutingContext"
 import { Location, LocationProject } from "@/types/location-scouting"
 import { useImportJob } from "@/hooks/useImportJob"
 import type { LocationOverviewResult } from "@/types/ai"
+import { aiLocationToLocation } from "@/lib/location-mapping"
 import { trackFileUpload, trackExtractClick, trackExtractComplete } from "@/lib/analytics"
 
 export default function LocationUploadView() {
@@ -18,9 +19,30 @@ export default function LocationUploadView() {
   const createdRef = useRef(false)
 
   // Use the AI service integration hook
-  const { status, message, result, error, run, reset } = useImportJob<LocationOverviewResult>("location-overview")
+  const { status, message, progress, result, error, run, reset } = useImportJob<LocationOverviewResult>("location-overview")
 
   const isProcessing = status === "uploading" || status === "running"
+
+  // Switch to an indeterminate pulse when the percent stops advancing. Large
+  // scripts chunk and emit real per-part progress (e.g. "4 of 8 parts done");
+  // small ones run as a single silent call that sits at 5% for 30–90s. Pulsing
+  // reassures the user without lying about completion, and resumes determinate
+  // the moment a real progress event lands. Mirrors SceneUploadView.
+  const [progressStale, setProgressStale] = useState(false)
+  const lastProgressRef = useRef<number | null>(null)
+  useEffect(() => {
+    if (status !== "running") {
+      setProgressStale(false)
+      lastProgressRef.current = progress
+      return
+    }
+    if (progress !== lastProgressRef.current) {
+      lastProgressRef.current = progress
+      setProgressStale(false)
+    }
+    const t = setTimeout(() => setProgressStale(true), 3000)
+    return () => clearTimeout(t)
+  }, [progress, status])
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -46,7 +68,10 @@ export default function LocationUploadView() {
       "application/pdf",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
     ]
-    return validTypes.includes(file.type)
+    if (validTypes.includes(file.type)) return true
+    // Some browsers (esp. Windows/Linux) report an empty string or
+    // "application/octet-stream" for .docx — fall back to the extension.
+    return /\.(pdf|docx)$/i.test(file.name)
   }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,15 +97,11 @@ export default function LocationUploadView() {
   useEffect(() => {
     if (status === "complete" && result && file && !createdRef.current) {
       createdRef.current = true
-      // Map AI service result to our Location type
-      const locations: Location[] = result.locations.map((loc, index) => ({
-        id: `${Date.now()}-${index}`,
-        name: loc.name,
-        type: loc.type === "INT/EXT" ? "INT" : (loc.type === "unknown" ? "INT" : loc.type) || "EXT",
-        timeOfDay: loc.time_of_day === "unknown" ? "DAY" : loc.time_of_day || "DAY",
-        description: loc.description || "",
-        scoutingNotes: loc.scouting_notes || "",
-      }))
+      // Map AI service result to our Location type (shared mapper preserves
+      // INT/EXT and the comma-separated time-of-day union).
+      const locations: Location[] = result.locations.map((loc, index) =>
+        aiLocationToLocation(loc, `${Date.now()}-${index}`),
+      )
 
       // Create new project with extracted locations
       const newProject: LocationProject = {
@@ -190,20 +211,49 @@ export default function LocationUploadView() {
 
           {isProcessing ? (
             /* Processing State */
-            <div className="flex flex-col items-center justify-center py-16 rounded-2xl border border-white/10 bg-white/[0.02]">
-              <Loader2 className="w-12 h-12 text-amber-400 animate-spin mb-4" />
-              <p className="text-white font-sans mb-2">
-                {status === "uploading" ? "Uploading file..." : "Analyzing script for locations..."}
-              </p>
-              <p className="text-white/50 text-sm mb-4 font-sans">
-                {message || "Extracting location details from your script"}
-              </p>
-              <div className="w-64 h-2 bg-white/10 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-amber-500 transition-all duration-500 animate-pulse"
-                  style={{ width: status === "uploading" ? "30%" : "70%" }}
-                />
-              </div>
+            <div className="flex flex-col items-center justify-center py-16 px-8 rounded-2xl border border-white/10 bg-white/[0.02]">
+              <Loader2 className="w-12 h-12 text-amber-400 animate-spin mb-6" />
+              {(() => {
+                // Real progress driven by the task's `progress.percent` (chunked
+                // extracts) or pulsed when we have no number yet / it's gone
+                // stale (single-call extracts). Backend sends the message
+                // verbatim — e.g. "4 of 8 parts done".
+                const hasNumeric = progress !== null
+                const pct = hasNumeric ? progress! : 0
+                const pulse = status === "uploading" || !hasNumeric || progressStale
+                const displayPct = Math.round(pct)
+
+                return (
+                  <div className="w-full max-w-md">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden relative"
+                        role="progressbar"
+                        aria-label="Location extraction progress"
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-valuenow={hasNumeric ? displayPct : undefined}
+                      >
+                        <div
+                          className={`h-full bg-amber-500 rounded-full transition-[width] duration-500 ease-out ${
+                            pulse ? "animate-pulse" : ""
+                          }`}
+                          style={{ width: `${Math.max(pct, 2)}%` }}
+                        />
+                      </div>
+                      <span className="text-white/70 text-sm font-sans tabular-nums w-10 text-right">
+                        {displayPct}%
+                      </span>
+                    </div>
+                    <p className="mt-3 text-white/60 text-sm text-center font-sans">
+                      {message ||
+                        (status === "uploading"
+                          ? "Uploading file..."
+                          : "Analyzing script for locations...")}
+                    </p>
+                  </div>
+                )
+              })()}
             </div>
           ) : file && status !== "failed" ? (
             /* File Selected State */

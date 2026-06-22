@@ -88,12 +88,15 @@ export interface SceneExtractResult {
   }[]
 }
 
-// location-overview result
+// location-overview result. Mirrors the skill's output.schema.json: `type` is
+// the INT/EXT enum (with "Not specified"), and `time_of_day` is a free string
+// — a comma-separated union of distinct times across scenes (e.g. "DAY, NIGHT")
+// or "Not specified".
 export interface LocationOverviewResult {
   locations: {
     name: string
-    type?: "INT" | "EXT" | "INT/EXT" | "unknown"
-    time_of_day?: "DAY" | "NIGHT" | "DAWN" | "DUSK" | "unknown"
+    type?: "INT" | "EXT" | "INT/EXT" | "Not specified"
+    time_of_day?: string
     description?: string
     scouting_notes?: string
   }[]

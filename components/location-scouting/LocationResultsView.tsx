@@ -12,14 +12,19 @@ import AddItemDropdown from "@/components/ui/AddItemDropdown"
 import DownloadDropdown from "@/components/ui/DownloadDropdown"
 import AddViaUploadModal, { FoundEntry } from "@/components/ui/AddViaUploadModal"
 import type { LocationOverviewResult } from "@/types/ai"
+import { aiLocationToLocation } from "@/lib/location-mapping"
 import { trackAddItem, trackExport, trackDelete } from "@/lib/analytics"
 import ShareModal from "@/components/modals/ShareModal"
 
 const TYPE_GROUPS: { value: Location["type"]; label: string }[] = [
   { value: "INT", label: "Interior" },
   { value: "EXT", label: "Exterior" },
+  { value: "INT/EXT", label: "Interior / Exterior" },
+  { value: "Not specified", label: "Not specified" },
 ]
-const TIME_OPTIONS: Location["timeOfDay"][] = ["DAY", "NIGHT", "DAWN", "DUSK"]
+// AI: Base options for the time filter. A location's timeOfDay can be a union
+// (e.g. "DAY, NIGHT"), so filtering uses substring matching, not equality.
+const TIME_OPTIONS = ["DAY", "NIGHT", "DAWN", "DUSK"]
 
 export default function LocationResultsView() {
   const {
@@ -32,7 +37,7 @@ export default function LocationResultsView() {
   } = useLocationScouting()
   const [searchQuery, setSearchQuery] = useState("")
   const [typeFilter, setTypeFilter] = useState<"all" | Location["type"]>("all")
-  const [timeFilter, setTimeFilter] = useState<"all" | Location["timeOfDay"]>("all")
+  const [timeFilter, setTimeFilter] = useState<"all" | string>("all")
   const [viewMode, setViewMode] = useState<ViewMode>("full")
   const [showShareModal, setShowShareModal] = useState(false)
   const [showUploadModal, setShowUploadModal] = useState(false)
@@ -83,7 +88,10 @@ export default function LocationResultsView() {
       location.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       location.description.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesType = typeFilter === "all" || location.type === typeFilter
-    const matchesTime = timeFilter === "all" || location.timeOfDay === timeFilter
+    // AI: substring match so a "DAY" filter still hits a "DAY, NIGHT" union.
+    const matchesTime =
+      timeFilter === "all" ||
+      location.timeOfDay.toUpperCase().includes(timeFilter.toUpperCase())
     return matchesSearch && matchesType && matchesTime
   })
 
@@ -104,18 +112,16 @@ export default function LocationResultsView() {
 
   // Map AI extraction result into selectable entries for the modal.
   const mapLocationResult = (result: LocationOverviewResult): FoundEntry<Location>[] =>
-    (result.locations || []).map((loc, index) => ({
-      item: {
-        id: `${Date.now()}-${index}`,
-        name: loc.name,
-        type: loc.type === "INT/EXT" ? "INT" : (loc.type === "unknown" ? "INT" : loc.type) || "EXT",
-        timeOfDay: loc.time_of_day === "unknown" ? "DAY" : loc.time_of_day || "DAY",
-        description: loc.description || "",
-        scoutingNotes: loc.scouting_notes || "",
-      },
-      label: loc.name || "Unnamed location",
-      sublabel: [loc.type, loc.time_of_day].filter((v) => v && v !== "unknown").join(" • "),
-    }))
+    (result.locations || []).map((loc, index) => {
+      const item = aiLocationToLocation(loc, `${Date.now()}-${index}`)
+      return {
+        item,
+        label: item.name || "Unnamed location",
+        sublabel: [item.type, item.timeOfDay]
+          .filter((v) => v && v !== "Not specified")
+          .join(" • "),
+      }
+    })
 
   const handleAddUploaded = (items: Location[]) => {
     if (items.length === 0) return

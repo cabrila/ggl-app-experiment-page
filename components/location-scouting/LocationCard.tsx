@@ -65,32 +65,29 @@ export default function LocationCard({
             </label>
             <select
               value={editData.type}
-              onChange={(e) => setEditData({ ...editData, type: e.target.value as "INT" | "EXT" })}
+              onChange={(e) => setEditData({ ...editData, type: e.target.value as Location["type"] })}
               className="w-full px-4 py-3 bg-[#0f1f17] rounded-lg text-white font-sans border border-white/10 focus:border-amber-500/50 focus:outline-none"
             >
               <option value="INT" className="bg-[#0f1f17] text-white">INT.</option>
               <option value="EXT" className="bg-[#0f1f17] text-white">EXT.</option>
+              <option value="INT/EXT" className="bg-[#0f1f17] text-white">INT/EXT.</option>
+              <option value="Not specified" className="bg-[#0f1f17] text-white">Not specified</option>
             </select>
           </div>
           <div>
             <label className="block text-xs font-semibold text-amber-400 uppercase tracking-wider mb-2">
               Time of Day
             </label>
-            <select
+            {/* AI: free text — a merged location can span multiple times
+                (e.g. "DAY, NIGHT"), which a fixed dropdown can't represent. */}
+            <input
+              type="text"
+              autoComplete="off"
               value={editData.timeOfDay}
-              onChange={(e) =>
-                setEditData({
-                  ...editData,
-                  timeOfDay: e.target.value as "DAY" | "NIGHT" | "DAWN" | "DUSK",
-                })
-              }
+              onChange={(e) => setEditData({ ...editData, timeOfDay: e.target.value })}
+              placeholder="e.g. DAY, NIGHT"
               className="w-full px-4 py-3 bg-[#0f1f17] rounded-lg text-white font-sans border border-white/10 focus:border-amber-500/50 focus:outline-none"
-            >
-              <option value="DAY" className="bg-[#0f1f17] text-white">DAY</option>
-              <option value="NIGHT" className="bg-[#0f1f17] text-white">NIGHT</option>
-              <option value="DAWN" className="bg-[#0f1f17] text-white">DAWN</option>
-              <option value="DUSK" className="bg-[#0f1f17] text-white">DUSK</option>
-            </select>
+            />
           </div>
         </div>
 
@@ -220,10 +217,12 @@ export default function LocationCard({
             </h3>
           )}
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-xs text-white/60 font-sans">{location.type}.</span>
+            <span className="text-xs text-white/60 font-sans">
+              {location.type === "Not specified" ? location.type : `${location.type}.`}
+            </span>
             <span className="text-xs text-white/40">•</span>
             <span className={`text-xs font-sans ${
-              location.timeOfDay === "NIGHT" ? "text-indigo-400" : "text-amber-400"
+              location.timeOfDay.toUpperCase().includes("NIGHT") ? "text-indigo-400" : "text-amber-400"
             }`}>
               {location.timeOfDay}
             </span>

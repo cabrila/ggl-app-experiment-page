@@ -163,8 +163,8 @@ export default function PropUploadView() {
         </button>
       </header>
 
-      <div className="flex-1 flex flex-col items-center justify-center p-6">
-        <div className="w-full max-w-2xl">
+      <div className="flex-1 flex flex-col items-center overflow-y-auto p-6">
+        <div className="w-full max-w-2xl my-auto">
           <h2 className="text-3xl font-bold text-white text-center mb-3 font-sans">
             Extract Props from Scripts
           </h2>

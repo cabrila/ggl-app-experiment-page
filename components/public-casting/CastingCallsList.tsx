@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Plus, Megaphone, Calendar, Users, Trash2, Eye, FileEdit, FolderEdit, QrCode, Search, SlidersHorizontal, ChevronDown, Filter, FolderPlus, ChevronRight, ImageIcon, X, Check } from "lucide-react"
 import { usePublicCasting } from "./PublicCastingContext"
 import { CastingCall, PublicCastingProject } from "@/types/public-casting"
@@ -31,7 +31,12 @@ export default function CastingCallsList({
   onViewSubmissions,
   onEditCastingCall,
 }: CastingCallsListProps) {
-  const { state, deleteProject, updateProject, updateCastingCall, getNewSubmissionsCount, getTotalSubmissions } = usePublicCasting()
+  const { state, deleteProject, updateProject, updateCastingCall, getNewSubmissionsCount, getTotalSubmissions, refreshFromBackend } = usePublicCasting()
+  // AI: Refresh from the backend whenever the list opens so casting calls made
+  // earlier in the session (or in another tab) are reflected without a reload.
+  useEffect(() => {
+    void refreshFromBackend()
+  }, [refreshFromBackend])
   const [hoveredProjectId, setHoveredProjectId] = useState<string | null>(null)
   const [previewCastingCall, setPreviewCastingCall] = useState<CastingCall | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<PublicCastingProject | null>(null)

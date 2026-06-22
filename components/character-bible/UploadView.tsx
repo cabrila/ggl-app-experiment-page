@@ -145,8 +145,8 @@ export default function UploadView() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-10">
-        <div className="w-full max-w-2xl">
+      <div className="flex-1 flex flex-col items-center overflow-y-auto p-6 md:p-10">
+        <div className="w-full max-w-2xl my-auto">
           {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-3 font-sans">

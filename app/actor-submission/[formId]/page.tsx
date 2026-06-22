@@ -148,7 +148,7 @@ export default function ActorSubmissionForm() {
     try {
       // Pass the raw formData object directly as actorData.
       // The backend/approval system will parse the custom field labels.
-      await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/public/submit-actor`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/public/submit-actor`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -156,11 +156,23 @@ export default function ActorSubmissionForm() {
           actorData: formData,
         })
       });
+      // Only treat it as submitted if the backend actually accepted and stored
+      // it. Previously we ignored the response, so a 404/400 (e.g. closed or
+      // unknown casting call) still showed "Submission Received!" while nothing
+      // was saved.
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.message || `Submission failed (HTTP ${res.status})`);
+      }
       console.log("✅ Submitted successfully to Firestore via backend-service");
       setSubmitted(true)
     } catch (error) {
       console.error("❌ Failed to submit to backend-service:", error);
-      setSubmitError("Failed to submit form. Please try again.")
+      setSubmitError(
+        error instanceof Error && error.message
+          ? error.message
+          : "Failed to submit form. Please try again."
+      )
     } finally {
       setIsSubmitting(false)
     }

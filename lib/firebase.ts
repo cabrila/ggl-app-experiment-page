@@ -69,5 +69,19 @@ export function waitForAuth(): Promise<void> {
   return authReadyPromise
 }
 
+/**
+ * Build the Authorization header for backend calls that require a signed-in
+ * user (the FirebaseAuthGuard validates the Bearer token). Waits for auth to
+ * settle, then returns a Bearer header — or {} when no user is signed in, so
+ * the backend can reject with 401 rather than the request silently omitting it.
+ */
+export async function authHeaders(): Promise<Record<string, string>> {
+  await waitForAuth()
+  const user = auth.currentUser
+  if (!user) return {}
+  const token = await user.getIdToken()
+  return { Authorization: `Bearer ${token}` }
+}
+
 export { auth, db }
 export default app

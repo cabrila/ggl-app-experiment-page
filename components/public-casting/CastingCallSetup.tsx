@@ -5,6 +5,7 @@ import { ArrowLeft, Plus, Trash2, GripVertical, Copy, Check, ExternalLink, Eye, 
 import { usePublicCasting } from "./PublicCastingContext"
 import { CastingCallField, CastingCall, PublicCastingProject } from "@/types/public-casting"
 import CastingCallPreviewModal from "./CastingCallPreviewModal"
+import { authHeaders } from "@/lib/firebase"
 
 interface CastingCallSetupProps {
   onBack: () => void
@@ -183,7 +184,7 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
         // Update existing casting call via API
         await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/casting-calls/${editingCastingCall.id}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
           body: JSON.stringify({
             title,
             description,
@@ -218,10 +219,7 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
 
         const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/casting-calls`, {
           method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'x-user-id': 'current-user-id' 
-          },
+          headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
           body: JSON.stringify({
             projectId: project.id,
             title,
@@ -234,16 +232,27 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
           })
         })
         
+        if (!response.ok) {
+          throw new Error(`Backend rejected casting call (HTTP ${response.status})`)
+        }
         const newDbCastingCall = await response.json()
 
-        // Also create in local mocked context
-        const castingCall = createCastingCall(project.id, title, description, projectName, fields, headerImageUrl || undefined, {
-          talentPoolConsentEnabled,
-          talentPoolConsentText,
-        })
-        
+        // Also create in local context — reuse the backend id so the local
+        // entry, its shareable link, and the public form all reference the
+        // same casting call.
+        const castingCall = createCastingCall(
+          project.id,
+          title,
+          description,
+          projectName,
+          fields,
+          headerImageUrl || undefined,
+          { talentPoolConsentEnabled, talentPoolConsentText },
+          newDbCastingCall.id,
+        )
+
         // Use the ID from the backend to construct the link
-        setCreatedLink(`${window.location.origin}/actor-submission/${newDbCastingCall.id}`)
+        setCreatedLink(`${window.location.origin}/actor-submission/${castingCall.id}`)
         setStep("success")
       }
     } catch (error) {

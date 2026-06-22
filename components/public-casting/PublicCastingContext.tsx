@@ -5,6 +5,7 @@ import { CastingCall, CastingCallField, CastingSubmission, PublicCastingProject 
 import { loadDemoData, saveDemoData, DEMO_STORAGE_KEYS } from "@/utils/demoPersistence"
 import { getProfilePictureFromData } from "@/utils/profilePicture"
 import { useFirebaseUser } from "@/hooks/useFirebaseUser"
+import { authHeaders } from "@/lib/firebase"
 
 interface PublicCastingState {
   projects: PublicCastingProject[]
@@ -19,7 +20,7 @@ interface PublicCastingContextType {
   selectProject: (id: string) => void
   updateProject: (id: string, updates: Partial<PublicCastingProject>) => void
   deleteProject: (id: string) => void
-  createCastingCall: (projectId: string, title: string, description: string, projectName: string, fields: CastingCallField[], headerImageUrl?: string, consent?: { talentPoolConsentEnabled?: boolean; talentPoolConsentText?: string }) => CastingCall
+  createCastingCall: (projectId: string, title: string, description: string, projectName: string, fields: CastingCallField[], headerImageUrl?: string, consent?: { talentPoolConsentEnabled?: boolean; talentPoolConsentText?: string }, id?: string) => CastingCall
   updateCastingCall: (projectId: string, castingCallId: string, updates: Partial<CastingCall>) => void
   deleteCastingCall: (projectId: string, castingCallId: string) => void
   selectCastingCall: (id: string) => void
@@ -418,9 +419,10 @@ export function PublicCastingProvider({ children }: { children: ReactNode }) {
 
       try {
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL
+        const headers = await authHeaders()
         const [callsRes, subsRes] = await Promise.all([
-          fetch(`${backendUrl}/api/casting-calls`),
-          fetch(`${backendUrl}/api/submissions`)
+          fetch(`${backendUrl}/api/casting-calls`, { headers }),
+          fetch(`${backendUrl}/api/submissions`, { headers })
         ]);
 
         if (!callsRes.ok || !subsRes.ok) return;
@@ -556,16 +558,21 @@ export function PublicCastingProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const createCastingCall = useCallback(
-    (projectId: string, title: string, description: string, projectName: string, fields: CastingCallField[], headerImageUrl?: string, consent?: { talentPoolConsentEnabled?: boolean; talentPoolConsentText?: string }): CastingCall => {
+    (projectId: string, title: string, description: string, projectName: string, fields: CastingCallField[], headerImageUrl?: string, consent?: { talentPoolConsentEnabled?: boolean; talentPoolConsentText?: string }, id?: string): CastingCall => {
+      // AI: Use the backend-assigned id when supplied so the local entry, its
+      // shareable link, and the persisted casting call all agree. Without this
+      // the local `cc-<timestamp>` id diverged from the backend's auto-id, so
+      // the public form (which hits the backend by id) 404'd and showed "closed".
+      const resolvedId = id ?? `cc-${Date.now()}`
       const newCastingCall: CastingCall = {
-        id: `cc-${Date.now()}`,
+        id: resolvedId,
         title,
         description,
         projectName,
         fields,
         createdAt: new Date(),
         isActive: true,
-        shareableLink: `https://gogreenlight.ai/cast/${Math.random().toString(36).substring(2, 8)}`,
+        shareableLink: `${window.location.origin}/actor-submission/${resolvedId}`,
         headerImageUrl,
         talentPoolConsentEnabled: consent?.talentPoolConsentEnabled,
         talentPoolConsentText: consent?.talentPoolConsentText,

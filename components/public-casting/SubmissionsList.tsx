@@ -10,6 +10,7 @@ import { exportSubmissionsAsJSON, exportSubmissionsAsPDF, exportSubmissionsAsExc
 import { useActorListSafe } from "@/components/actor-list/ActorListContext"
 import { Actor, ActorGender } from "@/types/actor-list"
 import { getExtraSubmissionFields } from "@/utils/submissionFields"
+import { authHeaders } from "@/lib/firebase"
 import { getVideoEmbed, isImageValue, splitMultiValue } from "@/utils/mediaEmbed"
 import ViewModeToggle, { ViewMode } from "@/components/ui/ViewModeToggle"
 import DownloadDropdown from "@/components/ui/DownloadDropdown"
@@ -123,8 +124,10 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
 
     // Fire off background request to actually mark them read in the backend
     if (unreadIds.length > 0) {
-      unreadIds.forEach(id => {
-        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/submissions/${id}/read`, { method: 'POST' }).catch(e => console.error(e));
+      authHeaders().then(headers => {
+        unreadIds.forEach(id => {
+          fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/submissions/${id}/read`, { method: 'POST', headers }).catch(e => console.error(e));
+        });
       });
     }
   }, [state.projects, markSubmissionsAsRead])
@@ -228,7 +231,8 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
     if (updates.status === "shortlisted" || updates.status === "reviewed") {
       try {
         await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/submissions/${submissionId}/approve`, {
-          method: 'POST'
+          method: 'POST',
+          headers: await authHeaders(),
         });
       } catch (e) {
         console.error("Failed to approve submission on backend:", e);

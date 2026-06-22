@@ -77,7 +77,13 @@ type SortOption = "newest" | "oldest" | "alphabetical" | "form" | "grade-high" |
 type GradeFilter = "all" | "graded" | "ungraded" | "high" | "medium" | "low"
 
 export default function SubmissionsList({ onBack, initialFormFilter }: SubmissionsListProps) {
-  const { state, markSubmissionsAsRead, updateSubmission, deleteSubmission } = usePublicCasting()
+  const { state, markSubmissionsAsRead, updateSubmission, deleteSubmission, refreshFromBackend } = usePublicCasting()
+  // AI: Pull the latest submissions whenever this view opens — the initial
+  // context fetch runs once per session, so a submission made in the public
+  // form afterwards would otherwise not appear until a hard reload.
+  useEffect(() => {
+    void refreshFromBackend()
+  }, [refreshFromBackend])
   const actorCtx = useActorListSafe()
   const actorProjects = actorCtx?.projects ?? []
   const createActorProject = actorCtx?.createProject

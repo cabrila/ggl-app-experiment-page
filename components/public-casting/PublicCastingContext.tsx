@@ -31,6 +31,7 @@ interface PublicCastingContextType {
   getSubmissionsForProject: (projectId: string) => CastingSubmission[]
   getTotalSubmissions: () => number
   getNewSubmissionsCount: () => number
+  refreshFromBackend: () => Promise<void>
 }
 
 const PublicCastingContext = createContext<PublicCastingContextType | null>(null)
@@ -404,34 +405,33 @@ export function PublicCastingProvider({ children }: { children: ReactNode }) {
     }
   })
 
-  // AI: Clear demo data when a real user signs in, and fetch from backend (runs once per user)
-  useEffect(() => {
-    let mounted = true;
+  // AI: Fetch the signed-in user's casting calls + submissions from the backend
+  // and group them into projects. Exposed via context as refreshFromBackend so
+  // views can pull fresh data on demand — without this the dashboard only
+  // fetched once per session, so a submission made in the public form (or a
+  // casting call made in another tab) never appeared until a hard reload.
+  const refreshFromBackend = useCallback(async () => {
+    if (!user) return
 
-    async function loadDataFromBackend() {
-      if (hasFetched.current) return
-      hasFetched.current = true
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL
+      const headers = await authHeaders()
+      const [callsRes, subsRes] = await Promise.all([
+        fetch(`${backendUrl}/api/casting-calls`, { headers }),
+        fetch(`${backendUrl}/api/submissions`, { headers })
+      ]);
 
-      // AI: Clear demo data immediately — never show fake data to signed-in users
-      if (mounted) {
-        setState(prev => ({ ...prev, projects: [], newSubmissionsCount: 0 }))
+      if (!callsRes.ok || !subsRes.ok) {
+        // 401 here usually means the request went out without a valid token.
+        // Log it rather than silently rendering an empty dashboard.
+        console.error('Failed to load casting data:', callsRes.status, subsRes.status);
+        return;
       }
 
-      try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL
-        const headers = await authHeaders()
-        const [callsRes, subsRes] = await Promise.all([
-          fetch(`${backendUrl}/api/casting-calls`, { headers }),
-          fetch(`${backendUrl}/api/submissions`, { headers })
-        ]);
+      const calls = await callsRes.json();
+      const submissions = await subsRes.json();
 
-        if (!callsRes.ok || !subsRes.ok) return;
-
-        const calls = await callsRes.json();
-        const submissions = await subsRes.json();
-
-        if (!mounted) return;
-
+      {
         // Group into projects
         const projectMap = new Map<string, PublicCastingProject>();
 
@@ -494,20 +494,21 @@ export function PublicCastingProvider({ children }: { children: ReactNode }) {
           projects: Array.from(projectMap.values()),
           newSubmissionsCount: unreadCount
         }));
-
-      } catch (e) {
-        console.error("Failed to load public casting data from backend", e);
       }
+    } catch (e) {
+      console.error("Failed to load public casting data from backend", e);
     }
+  }, [user])
 
-    if (user) {
-      loadDataFromBackend();
-    }
-
-    return () => {
-      mounted = false;
-    };
-  }, [user]);
+  // AI: Initial load once per signed-in user; also clears demo data so a
+  // signed-in user never sees mock projects. Later refreshes go through
+  // refreshFromBackend (e.g. when a view mounts after a new submission).
+  useEffect(() => {
+    if (!user || hasFetched.current) return
+    hasFetched.current = true
+    setState(prev => ({ ...prev, projects: [], newSubmissionsCount: 0 }))
+    void refreshFromBackend()
+  }, [user, refreshFromBackend])
 
   // Persist projects/submissions so they survive navigation/remounts when no backend is signed in.
   useEffect(() => {
@@ -728,6 +729,7 @@ export function PublicCastingProvider({ children }: { children: ReactNode }) {
         getSubmissionsForProject,
         getTotalSubmissions,
         getNewSubmissionsCount,
+        refreshFromBackend,
       }}
     >
       {children}

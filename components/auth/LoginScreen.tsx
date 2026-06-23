@@ -7,6 +7,13 @@ import { sendMagicLink } from "@/lib/auth"
 // Single source of truth: which screen are we showing
 type Screen = "enter-credential" | "success"
 
+// AI: The internal tools are limited to @gogreenlight.ai accounts on the
+// Preview (staging) environment. NEXT_PUBLIC_VERCEL_ENV is auto-exposed by
+// Vercel ("production" | "preview" | "development"); surface the restriction
+// on Preview only so Production never advertises it.
+const RESTRICTED_DOMAIN = "gogreenlight.ai"
+const RESTRICT_TO_DOMAIN = process.env.NEXT_PUBLIC_VERCEL_ENV === "preview"
+
 interface LoginScreenProps {
   onDemoAccess?: () => void
   onSignedIn?: () => void
@@ -32,6 +39,14 @@ export default function LoginScreen({ onDemoAccess }: LoginScreenProps) {
 
     if (!isValidEmail(email)) {
       setErrorMessage("Please enter a valid email address")
+      return
+    }
+
+    // AI: Preview-only gate — make the @gogreenlight.ai restriction explicit
+    // here instead of letting it fall through to the generic "Failed to send"
+    // error. Production is unaffected (RESTRICT_TO_DOMAIN is false there).
+    if (RESTRICT_TO_DOMAIN && !email.trim().toLowerCase().endsWith(`@${RESTRICTED_DOMAIN}`)) {
+      setErrorMessage(`Access is limited to @${RESTRICTED_DOMAIN} accounts. Please sign in with your GoGreenlight email.`)
       return
     }
 

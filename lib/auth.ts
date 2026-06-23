@@ -43,8 +43,16 @@ export async function sendMagicLink(email: string): Promise<void> {
     handleCodeInApp: true,
   }
   
-  if (process.env.NEXT_PUBLIC_RESTRICT_AUTH_DOMAIN && !email.endsWith(`@${process.env.NEXT_PUBLIC_RESTRICT_AUTH_DOMAIN}`)) {
-    throw new Error(`Access restricted to @${process.env.NEXT_PUBLIC_RESTRICT_AUTH_DOMAIN} accounts.`)
+  // AI: Restrict sign-in to @gogreenlight.ai on the Preview (internal) env.
+  // Enforced in code via NEXT_PUBLIC_VERCEL_ENV (auto-set by Vercel) so no
+  // Vercel env var is required; an explicit NEXT_PUBLIC_RESTRICT_AUTH_DOMAIN
+  // still overrides if set. Production stays open unless that var is set there.
+  const restrictDomain =
+    process.env.NEXT_PUBLIC_RESTRICT_AUTH_DOMAIN ||
+    (process.env.NEXT_PUBLIC_VERCEL_ENV === "preview" ? "gogreenlight.ai" : "")
+
+  if (restrictDomain && !email.toLowerCase().endsWith(`@${restrictDomain.toLowerCase()}`)) {
+    throw new Error(`Access restricted to @${restrictDomain} accounts.`)
   }
 
   try {

@@ -38,9 +38,28 @@ types/              # DTOs/models incl. ai.ts (skill result shapes) and per-tool
 
 The frontend talks to the NestJS backend (`../backend-service`) over REST. AI extraction goes through `POST /api/import/:taskType` + polling `GET /api/import/:taskType/:taskId`; see [`hooks/useImportJob.ts`](hooks/useImportJob.ts).
 
+**Auth on backend calls:** the backend's internal endpoints (AI import, and all casting-call / submission management) require a Firebase ID token. Attach it with the `authHeaders()` helper in [`lib/firebase.ts`](lib/firebase.ts) (`{ Authorization: 'Bearer <idToken>' }`), which `useImportJob` and the Public Casting components use. A call that omits it gets a 401 — which surfaces as an empty dashboard if not handled, so always include `authHeaders()` on protected requests.
+
+### Public Casting flow
+
+- **Create/manage** (signed-in): [`components/public-casting/`](components/public-casting/). On create, the backend assigns the casting call's id; the frontend uses **that** id for the shareable link and local state — a client-minted id would 404 the public form. Casting calls and submissions are owner-scoped server-side, so the dashboard only shows the signed-in user's data. The dashboard refetches via `refreshFromBackend()` when the list/submissions views open, so newly-made submissions appear without a hard reload.
+- **Public form** (anonymous): [`app/actor-submission/[formId]/page.tsx`](app/actor-submission/[formId]/page.tsx) loads `GET /api/public/casting-call/:id` and posts to `POST /api/public/submit-actor` — no auth. It only shows "Submission Received" when the backend actually accepts the submission (checks `res.ok`).
+
+## Access & environments
+
+Two independent gates sit in front of the app:
+
+1. **Vercel Deployment Protection** (Preview only) — preview deployments (`tools-dev.ggl.cx`, the `dev` branch) are behind Vercel's auth wall, so only Vercel team members or approved access requests can load them. Production (`tools.gogreenlight.ai`) is exempt (production custom domain). Configured in the Vercel project → Settings → Deployment Protection.
+2. **Firebase magic-link login** — passwordless email-link sign-in ([`lib/auth.ts`](lib/auth.ts)). On **Preview**, access is limited to `@gogreenlight.ai`, enforced **in code** (no Vercel config): the login page shows the restriction up front ([`components/auth/LoginScreen.tsx`](components/auth/LoginScreen.tsx)) and `sendMagicLink` rejects other domains — both gated on `NEXT_PUBLIC_VERCEL_ENV === "preview"` (auto-set by Vercel). Production is unrestricted. An explicit `NEXT_PUBLIC_RESTRICT_AUTH_DOMAIN` still overrides in any environment if you ever want to force it.
+
+Each environment authenticates against its **own Firebase project** (separate users + Firestore) — see the [backend README](../backend-service/README.md) branch→environment table for the project ids. Two gotchas:
+
+- The frontend's `NEXT_PUBLIC_FIREBASE_*` project must match the backend's `FIREBASE_PROJECT_ID` for that environment, or authenticated backend calls 401.
+- The deployment's domain must be in that Firebase project's **Authorized domains**, or magic-link sending fails with `auth/unauthorized-continue-uri`.
+
 ## Environment variables
 
-Set these in `.env.local` (locally) and in Vercel project settings. See `FIREBASE_SETUP.md` for obtaining the Firebase values.
+Set these in `.env.local` (locally) and in Vercel project settings (per environment). See `FIREBASE_SETUP.md` for obtaining the Firebase values.
 
 ```env
 # Backend
@@ -55,8 +74,10 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
 NEXT_PUBLIC_FIREBASE_APP_ID=
 
 # Optional
-NEXT_PUBLIC_RESTRICT_AUTH_DOMAIN=               # restrict sign-in to a domain
+NEXT_PUBLIC_RESTRICT_AUTH_DOMAIN=               # override: force a sign-in domain in ANY env (not needed — Preview is restricted in code)
 NEXT_PUBLIC_GA_MEASUREMENT_ID=                  # Google Analytics
+# NEXT_PUBLIC_VERCEL_ENV is auto-set by Vercel (production|preview|development);
+# the login page + sendMagicLink use it to restrict sign-in to @gogreenlight.ai on Preview only.
 ```
 
 ## Development
@@ -73,4 +94,9 @@ Run the backend (`../backend-service`) alongside it and point `NEXT_PUBLIC_BACKE
 
 ## Deployment
 
-Deployed on **Vercel**. Pushes to this repository deploy automatically.
+Deployed on **Vercel** (project `app-experiment-page`, Greenlight team). Pushes deploy automatically:
+
+- `main` → **Production** → `tools.gogreenlight.ai`
+- `dev` branch → **Preview** → `tools-dev.ggl.cx`
+
+`NEXT_PUBLIC_*` vars (including the Vercel-provided `NEXT_PUBLIC_VERCEL_ENV`) are inlined at build time, so the Preview `@gogreenlight.ai` restriction takes effect on the Preview build automatically. See **Access & environments** above for the Deployment Protection and per-environment Firebase notes.

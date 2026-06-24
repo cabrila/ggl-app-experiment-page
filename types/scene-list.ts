@@ -1,3 +1,5 @@
+import type { ProjectScript } from "./script"
+
 export interface Scene {
   id: string
   sceneNumber: number
@@ -16,4 +18,6 @@ export interface SceneProject {
   updatedAt: Date
   thumbnailUrl?: string
   isDemo?: boolean
+  /** The original script this list was extracted from (if uploaded). */
+  script?: ProjectScript
 }

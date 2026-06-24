@@ -1,3 +1,5 @@
+import type { ProjectScript } from "./script"
+
 export type PropCategory =
   | "weapon"
   | "container"
@@ -37,4 +39,6 @@ export interface PropProject {
   updatedAt: Date
   thumbnailUrl?: string
   isDemo?: boolean
+  /** The original script this list was extracted from (if uploaded). */
+  script?: ProjectScript
 }

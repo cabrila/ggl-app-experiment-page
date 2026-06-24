@@ -458,7 +458,7 @@ export function PropListProvider({ children }: { children: ReactNode }) {
     if (user) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { id, isDemo, ...projectData } = project
+        const { id, isDemo, script, ...projectData } = project
         const newId = await addPropProject(user.uid, projectData)
         setCurrentProject({ ...project, id: newId, isDemo: false })
       } catch (error) {
@@ -476,7 +476,7 @@ export function PropListProvider({ children }: { children: ReactNode }) {
     if (user && !existingProject.isDemo) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { id, isDemo, ...projectData } = project
+        const { id, isDemo, script, ...projectData } = project
         await updatePropProjectInFirestore(user.uid, project.id, projectData)
       } catch (error) {
         console.error("[v0] Error updating prop project:", error)

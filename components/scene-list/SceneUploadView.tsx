@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from "react"
 import { Upload, ArrowLeft, FileText, Loader2, X, AlertCircle, RefreshCw, PenLine, Download } from "lucide-react"
 import { useSceneList } from "./SceneListContext"
 import { Scene, SceneProject } from "@/types/scene-list"
+import type { ProjectScript } from "@/types/script"
+import { fileToProjectScript } from "@/lib/scriptFile"
 import { useImportJob } from "@/hooks/useImportJob"
 import type { SceneExtractResult } from "@/types/ai"
 import { trackFileUpload, trackExtractClick, trackExtractComplete } from "@/lib/analytics"
@@ -16,6 +18,9 @@ export default function SceneUploadView() {
   // Guard so a completed extraction creates its project exactly ONCE (the
   // completion effect re-fires as addProject's identity changes on re-render).
   const createdRef = useRef(false)
+  // The uploaded file captured as a downloadable/previewable script, attached
+  // to the project once extraction completes.
+  const scriptRef = useRef<ProjectScript | null>(null)
 
   // Same upstream AI service as Character Bible — see `useImportJob` and
   // `app/api/import/[taskType]/route.ts`. No direct Gemini call.
@@ -86,6 +91,13 @@ export default function SceneUploadView() {
     const ext = file.name.split(".").pop()?.toLowerCase() || "unknown"
     trackExtractClick("scene-list", ext)
     const sourceTitle = file.name.replace(/\.(pdf|docx)$/i, "")
+    // Capture the uploaded file so it can be re-downloaded/previewed later.
+    try {
+      scriptRef.current = await fileToProjectScript(file)
+    } catch (err) {
+      console.error("[v0] Failed to capture uploaded script:", err)
+      scriptRef.current = null
+    }
     await run(file, sourceTitle)
   }
 
@@ -121,6 +133,7 @@ export default function SceneUploadView() {
       scenes,
       createdAt: new Date(),
       updatedAt: new Date(),
+      script: scriptRef.current ?? undefined,
     }
     addProject(newProject)
     setCurrentProject(newProject)
@@ -131,6 +144,7 @@ export default function SceneUploadView() {
   const handleRetry = () => {
     reset()
     createdRef.current = false
+    scriptRef.current = null
     setFile(null)
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
@@ -139,6 +153,7 @@ export default function SceneUploadView() {
     setFile(null)
     reset()
     createdRef.current = false
+    scriptRef.current = null
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
 

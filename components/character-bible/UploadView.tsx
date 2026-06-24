@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from "react"
 import { Upload, ArrowLeft, Loader2, FileText, X, AlertCircle, RefreshCw, PenLine, Download } from "lucide-react"
 import { useCharacterBible } from "./CharacterBibleContext"
 import { Character, CharacterBible } from "@/types/character-bible"
+import type { ProjectScript } from "@/types/script"
+import { fileToProjectScript } from "@/lib/scriptFile"
 import { useImportJob } from "@/hooks/useImportJob"
 import type { CharacterExtractResult } from "@/types/ai"
 import { trackFileUpload, trackExtractClick, trackExtractComplete } from "@/lib/analytics"
@@ -16,6 +18,9 @@ export default function UploadView() {
   // Guard so a completed extraction creates its bible exactly ONCE (the
   // completion effect re-fires as addBible's identity changes on re-render).
   const createdRef = useRef(false)
+  // The uploaded file captured as a downloadable/previewable script, attached
+  // to the bible once extraction completes.
+  const scriptRef = useRef<ProjectScript | null>(null)
 
   // Use the AI service integration hook
   const { status, message, result, error, run, reset } = useImportJob<CharacterExtractResult>("character-extract")
@@ -68,6 +73,13 @@ export default function UploadView() {
     trackExtractClick("character-bible", fileExt)
     
     const sourceTitle = file.name.replace(/\.(pdf|docx)$/i, "")
+    // Capture the uploaded file so it can be re-downloaded/previewed later.
+    try {
+      scriptRef.current = await fileToProjectScript(file)
+    } catch (err) {
+      console.error("[v0] Failed to capture uploaded script:", err)
+      scriptRef.current = null
+    }
     await run(file, sourceTitle)
   }
 
@@ -100,6 +112,7 @@ export default function UploadView() {
         characters,
         createdAt: new Date(),
         updatedAt: new Date(),
+        script: scriptRef.current ?? undefined,
       }
 
       addBible(newBible)
@@ -112,6 +125,7 @@ export default function UploadView() {
   const handleRetry = () => {
     reset()
     createdRef.current = false
+    scriptRef.current = null
     setFile(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ""

@@ -1,3 +1,5 @@
+import type { ProjectScript } from "./script"
+
 // A single scene appearance for a character (camelCase normalised at the call site)
 export interface CharacterSceneAppearance {
   sceneHeading: string  // verbatim slugline, e.g. "INT. CABIN - NIGHT (1946)"
@@ -35,6 +37,8 @@ export interface CharacterBible {
   updatedAt: Date
   thumbnailUrl?: string
   isDemo?: boolean
+  /** The original script this bible was extracted from (if uploaded). */
+  script?: ProjectScript
 }
 
 export type CharacterBibleView = "list" | "upload" | "results"

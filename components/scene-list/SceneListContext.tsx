@@ -338,7 +338,7 @@ export function SceneListProvider({ children }: { children: ReactNode }) {
     if (user) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { id, isDemo, ...projectData } = project
+        const { id, isDemo, script, ...projectData } = project
         const newId = await addSceneProject(user.uid, projectData)
         setCurrentProject({ ...project, id: newId, isDemo: false })
       } catch (error) {
@@ -356,7 +356,7 @@ export function SceneListProvider({ children }: { children: ReactNode }) {
     if (user && !existing.isDemo) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { id, isDemo, ...projectData } = project
+        const { id, isDemo, script, ...projectData } = project
         await updateSceneProjectInFirestore(user.uid, project.id, projectData)
       } catch (error) {
         console.error("[v0] Error updating scene project:", error)

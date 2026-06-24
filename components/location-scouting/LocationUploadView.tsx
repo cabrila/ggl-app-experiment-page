@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from "react"
 import { Upload, ArrowLeft, FileText, Loader2, X, AlertCircle, RefreshCw, PenLine, Download } from "lucide-react"
 import { useLocationScouting } from "./LocationScoutingContext"
 import { Location, LocationProject } from "@/types/location-scouting"
+import type { ProjectScript } from "@/types/script"
+import { fileToProjectScript } from "@/lib/scriptFile"
 import { useImportJob } from "@/hooks/useImportJob"
 import type { LocationOverviewResult } from "@/types/ai"
 import { aiLocationToLocation } from "@/lib/location-mapping"
@@ -17,6 +19,9 @@ export default function LocationUploadView() {
   // Guard so a completed extraction creates its project exactly ONCE (the
   // completion effect re-fires as addProject's identity changes on re-render).
   const createdRef = useRef(false)
+  // The uploaded file captured as a downloadable/previewable script, attached
+  // to the project once extraction completes.
+  const scriptRef = useRef<ProjectScript | null>(null)
 
   // Use the AI service integration hook
   const { status, message, progress, result, error, run, reset } = useImportJob<LocationOverviewResult>("location-overview")
@@ -90,6 +95,13 @@ export default function LocationUploadView() {
     trackExtractClick("location-overview", fileExt)
     
     const sourceTitle = file.name.replace(/\.(pdf|docx)$/i, "")
+    // Capture the uploaded file so it can be re-downloaded/previewed later.
+    try {
+      scriptRef.current = await fileToProjectScript(file)
+    } catch (err) {
+      console.error("[v0] Failed to capture uploaded script:", err)
+      scriptRef.current = null
+    }
     await run(file, sourceTitle)
   }
 
@@ -110,6 +122,7 @@ export default function LocationUploadView() {
         locations,
         createdAt: new Date(),
         updatedAt: new Date(),
+        script: scriptRef.current ?? undefined,
       }
 
       addProject(newProject)
@@ -122,6 +135,7 @@ export default function LocationUploadView() {
   const handleRetry = () => {
     reset()
     createdRef.current = false
+    scriptRef.current = null
     setFile(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
@@ -132,6 +146,7 @@ export default function LocationUploadView() {
     setFile(null)
     reset()
     createdRef.current = false
+    scriptRef.current = null
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }

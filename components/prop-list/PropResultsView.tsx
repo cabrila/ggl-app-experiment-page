@@ -10,6 +10,7 @@ import ListToolbar, { SortOption } from "@/components/ui/ListToolbar"
 import ViewModeToggle, { ViewMode } from "@/components/ui/ViewModeToggle"
 import AddItemDropdown from "@/components/ui/AddItemDropdown"
 import DownloadDropdown from "@/components/ui/DownloadDropdown"
+import ScriptButton from "@/components/ui/ScriptButton"
 import AddViaUploadModal, { FoundEntry } from "@/components/ui/AddViaUploadModal"
 import type { PropExtractResult } from "@/types/ai"
 import { trackAddItem, trackExport, trackDelete } from "@/lib/analytics"
@@ -242,6 +243,7 @@ export default function PropResultsView() {
               onDownloadExcel={handleExportExcel}
               onDownloadPDF={handleExportPDF}
             />
+            <ScriptButton script={currentProject?.script} />
             <button
               onClick={() => setShowShareModal(true)}
               className="flex items-center gap-2 px-3 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-lg text-white font-sans text-sm transition-colors"

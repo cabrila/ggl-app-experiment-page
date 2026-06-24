@@ -10,6 +10,7 @@ import ListToolbar, { SortOption } from "@/components/ui/ListToolbar"
 import ViewModeToggle, { ViewMode } from "@/components/ui/ViewModeToggle"
 import AddItemDropdown from "@/components/ui/AddItemDropdown"
 import DownloadDropdown from "@/components/ui/DownloadDropdown"
+import ScriptButton from "@/components/ui/ScriptButton"
 import AddViaUploadModal, { FoundEntry } from "@/components/ui/AddViaUploadModal"
 import type { CharacterExtractResult } from "@/types/ai"
 import { trackAddItem, trackExport, trackDelete } from "@/lib/analytics"
@@ -256,6 +257,11 @@ export default function ResultsView() {
               onDownloadExcel={handleExportExcel}
               onDownloadPDF={handleExportPDF}
               triggerClassName="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white transition-colors"
+              labelClassName="text-sm font-sans hidden sm:inline"
+            />
+            <ScriptButton
+              script={currentBible.script}
+              className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white transition-colors"
               labelClassName="text-sm font-sans hidden sm:inline"
             />
             <button

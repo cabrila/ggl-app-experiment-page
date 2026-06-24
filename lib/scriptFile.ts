@@ -1,0 +1,42 @@
+import type { ProjectScript } from "@/types/script"
+
+// Reads an uploaded File into a ProjectScript (base64 data URL + metadata) so
+// it can be stored on a project and later re-downloaded / previewed.
+export function fileToProjectScript(file: File): Promise<ProjectScript> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      resolve({
+        name: file.name,
+        // Browsers sometimes report an empty type for .docx — fall back to the
+        // extension so the viewer/download still behave correctly.
+        type: file.type || guessTypeFromName(file.name),
+        dataUrl: typeof reader.result === "string" ? reader.result : "",
+      })
+    }
+    reader.onerror = () => reject(reader.error ?? new Error("Failed to read file"))
+    reader.readAsDataURL(file)
+  })
+}
+
+function guessTypeFromName(name: string): string {
+  if (/\.pdf$/i.test(name)) return "application/pdf"
+  if (/\.docx$/i.test(name))
+    return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  return "application/octet-stream"
+}
+
+// Whether a stored script is a PDF (and therefore previewable in-browser).
+export function isPdfScript(script: ProjectScript): boolean {
+  return script.type === "application/pdf" || /\.pdf$/i.test(script.name)
+}
+
+// Triggers a browser download of the stored script.
+export function downloadScript(script: ProjectScript): void {
+  const link = document.createElement("a")
+  link.href = script.dataUrl
+  link.download = script.name || "script"
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}

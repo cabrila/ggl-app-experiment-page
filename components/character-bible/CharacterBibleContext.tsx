@@ -249,7 +249,7 @@ export function CharacterBibleProvider({ children }: { children: ReactNode }) {
     if (user) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { id, isDemo, ...bibleData } = bible
+        const { id, isDemo, script, ...bibleData } = bible
         const newId = await addCharacterBible(user.uid, bibleData)
         // Firestore subscription will update the state
         // Set the new bible as current with the Firestore ID
@@ -275,7 +275,11 @@ export function CharacterBibleProvider({ children }: { children: ReactNode }) {
 
     if (user && !bible.isDemo) {
       try {
-        await updateCharacterBibleInFirestore(user.uid, id, updates)
+        // Keep the uploaded script out of Firestore writes (it can exceed the
+        // 1MB doc limit); it lives in memory / demo storage only.
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { script, ...updatesData } = updates
+        await updateCharacterBibleInFirestore(user.uid, id, updatesData)
         // Firestore subscription will update the state
       } catch (error) {
         console.error("[v0] Error updating character bible:", error)

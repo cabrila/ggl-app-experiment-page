@@ -286,7 +286,7 @@ export function LocationScoutingProvider({ children }: { children: ReactNode }) 
     if (user) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { id, isDemo, ...projectData } = project
+        const { id, isDemo, script, ...projectData } = project
         const newId = await addLocationProject(user.uid, projectData)
         // Firestore subscription will update the state
         setCurrentProject({ ...project, id: newId, isDemo: false })
@@ -306,7 +306,7 @@ export function LocationScoutingProvider({ children }: { children: ReactNode }) 
     if (user && !existingProject.isDemo) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { id, isDemo, ...projectData } = project
+        const { id, isDemo, script, ...projectData } = project
         await updateLocationProjectInFirestore(user.uid, project.id, projectData)
         // Firestore subscription will update the state
       } catch (error) {

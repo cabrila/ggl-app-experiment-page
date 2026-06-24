@@ -14,7 +14,7 @@ const ACCENT_TEXT: Record<Accent, string> = {
 interface CardMoreProps {
   /** Opens the full detail modal. When omitted, renders a static [...] hint. */
   onClick?: () => void
-  /** Short label after the [...] marker, e.g. "View all 6 scenes". */
+  /** Deprecated: no longer rendered. Kept for backwards-compatible call sites. */
   label?: string
   accent?: Accent
   className?: string
@@ -28,7 +28,6 @@ interface CardMoreProps {
  */
 export default function CardMore({
   onClick,
-  label = "View full details",
   accent = "neutral",
   className = "",
 }: CardMoreProps) {
@@ -44,11 +43,11 @@ export default function CardMore({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-1.5 text-sm font-sans transition-colors ${ACCENT_TEXT[accent]} ${className}`}
+      className={`inline-flex items-center font-mono text-sm leading-none transition-colors ${ACCENT_TEXT[accent]} ${className}`}
       title="Open full details"
+      aria-label="Open full details"
     >
-      <span className="font-mono leading-none">[...]</span>
-      <span>{label}</span>
+      [...]
     </button>
   )
 }

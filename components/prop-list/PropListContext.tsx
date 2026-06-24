@@ -12,6 +12,7 @@ import {
 } from "@/lib/firestore"
 import { loadDemoData, saveDemoData, DEMO_STORAGE_KEYS } from "@/utils/demoPersistence"
 import { ensureDemoScript } from "@/lib/scriptFile"
+import type { PendingExtraction } from "@/types/pending-extraction"
 
 type ViewState = "projects" | "upload" | "results"
 
@@ -28,6 +29,9 @@ interface PropListContextType {
   addProp: (projectId: string, prop: Prop | Prop[]) => void
   updateProp: (projectId: string, prop: Prop) => void
   deleteProp: (projectId: string, propId: string) => void
+  /** A "Ready to Extract" entry chosen on the list, to pre-load in the upload view. */
+  pendingScript: PendingExtraction | null
+  setPendingScript: (pending: PendingExtraction | null) => void
 }
 
 const PropListContext = createContext<PropListContextType | null>(null)
@@ -404,6 +408,7 @@ export function PropListProvider({ children }: { children: ReactNode }) {
   )
   const [currentProject, setCurrentProject] = useState<PropProject | null>(null)
   const [view, setView] = useState<ViewState>("projects")
+  const [pendingScript, setPendingScript] = useState<PendingExtraction | null>(null)
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   // Latest currentProject for the Firestore subscription callback (set up with
@@ -578,6 +583,8 @@ export function PropListProvider({ children }: { children: ReactNode }) {
         addProp,
         updateProp,
         deleteProp,
+        pendingScript,
+        setPendingScript,
       }}
     >
       {children}

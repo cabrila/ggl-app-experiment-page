@@ -11,6 +11,7 @@ import {
   deleteCharacterBible as deleteCharacterBibleFromFirestore,
 } from "@/lib/firestore"
 import { ensureDemoScript } from "@/lib/scriptFile"
+import type { PendingExtraction } from "@/types/pending-extraction"
 
 interface CharacterBibleContextType {
   bibles: CharacterBible[]
@@ -25,6 +26,9 @@ interface CharacterBibleContextType {
   addCharacter: (bibleId: string, character: Character | Character[]) => void
   updateCharacter: (bibleId: string, characterId: string, updates: Partial<Character>) => void
   deleteCharacter: (bibleId: string, characterId: string) => void
+  /** A "Ready to Extract" entry chosen on the list, to pre-load in the upload view. */
+  pendingScript: PendingExtraction | null
+  setPendingScript: (pending: PendingExtraction | null) => void
 }
 
 const CharacterBibleContext = createContext<CharacterBibleContextType | undefined>(undefined)
@@ -203,6 +207,7 @@ export function CharacterBibleProvider({ children }: { children: ReactNode }) {
     currentBibleRef.current = currentBible
   }, [currentBible])
   const [view, setView] = useState<CharacterBibleView>("list")
+  const [pendingScript, setPendingScript] = useState<PendingExtraction | null>(null)
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -440,6 +445,8 @@ export function CharacterBibleProvider({ children }: { children: ReactNode }) {
         addCharacter,
         updateCharacter,
         deleteCharacter,
+        pendingScript,
+        setPendingScript,
       }}
     >
       {children}

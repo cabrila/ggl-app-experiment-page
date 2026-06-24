@@ -9,9 +9,16 @@ import EditProjectWithThumbnailModal from "@/components/ui/EditProjectWithThumbn
 import { trackListCreated, trackDelete } from "@/lib/analytics"
 import { Badge } from "@/components/ui/badge"
 import ShareModal from "@/components/modals/ShareModal"
+import ReadyToExtractCard from "@/components/handoff/ReadyToExtractCard"
+import { usePendingExtractions } from "@/components/handoff/PendingExtractionsContext"
+import { SECTION_LABELS } from "@/types/pending-extraction"
+
+const SECTION_ID = "location-overview" as const
 
 export default function LocationProjectsList() {
-  const { projects, setView, setCurrentProject, deleteProject, updateProject } = useLocationScouting()
+  const { projects, setView, setCurrentProject, deleteProject, updateProject, setPendingScript } = useLocationScouting()
+  const { getForSection, remove: removePending } = usePendingExtractions()
+  const pending = getForSection(SECTION_ID)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<LocationProject | null>(null)
   const [editTarget, setEditTarget] = useState<LocationProject | null>(null)
@@ -154,6 +161,22 @@ export default function LocationProjectsList() {
               </div>
             </button>
           </div>
+        ))}
+
+        {/* Ready to Extract handoff cards */}
+        {pending.map((entry) => (
+          <ReadyToExtractCard
+            key={entry.id}
+            name={entry.name}
+            scriptName={entry.script.name}
+            sourceLabel={`From ${SECTION_LABELS[entry.sourceSection]}`}
+            icon={MapPin}
+            onStart={() => {
+              setPendingScript(entry)
+              setView("upload")
+            }}
+            onDismiss={() => removePending(SECTION_ID, entry.id)}
+          />
         ))}
 
         {/* New Location List Card */}

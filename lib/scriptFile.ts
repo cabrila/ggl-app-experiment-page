@@ -48,6 +48,15 @@ function guessTypeFromName(name: string): string {
   return "application/octet-stream"
 }
 
+// Reconstructs a File from a stored script so it can be fed back into the AI
+// extraction pipeline (which expects a File). Works for both base64 data URLs
+// (real uploads) and same-origin paths (the demo script).
+export async function projectScriptToFile(script: ProjectScript): Promise<File> {
+  const res = await fetch(script.dataUrl)
+  const blob = await res.blob()
+  return new File([blob], script.name, { type: script.type || blob.type })
+}
+
 // Whether a stored script is a PDF (and therefore previewable in-browser).
 export function isPdfScript(script: ProjectScript): boolean {
   return script.type === "application/pdf" || /\.pdf$/i.test(script.name)

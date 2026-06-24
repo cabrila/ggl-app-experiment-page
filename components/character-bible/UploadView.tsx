@@ -5,13 +5,17 @@ import { Upload, ArrowLeft, Loader2, FileText, X, AlertCircle, RefreshCw, PenLin
 import { useCharacterBible } from "./CharacterBibleContext"
 import { Character, CharacterBible } from "@/types/character-bible"
 import type { ProjectScript } from "@/types/script"
-import { fileToProjectScript } from "@/lib/scriptFile"
+import { fileToProjectScript, projectScriptToFile } from "@/lib/scriptFile"
 import { useImportJob } from "@/hooks/useImportJob"
 import type { CharacterExtractResult } from "@/types/ai"
 import { trackFileUpload, trackExtractClick, trackExtractComplete } from "@/lib/analytics"
+import { usePendingExtractions } from "@/components/handoff/PendingExtractionsContext"
+
+const SECTION_ID = "character-bible" as const
 
 export default function UploadView() {
-  const { setView, setCurrentBible, addBible } = useCharacterBible()
+  const { setView, setCurrentBible, addBible, pendingScript, setPendingScript } = useCharacterBible()
+  const { addForOtherSections, remove: removePending } = usePendingExtractions()
   const [isDragging, setIsDragging] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -21,11 +25,38 @@ export default function UploadView() {
   // The uploaded file captured as a downloadable/previewable script, attached
   // to the bible once extraction completes.
   const scriptRef = useRef<ProjectScript | null>(null)
+  // When this upload was initiated from a "Ready to Extract" entry, its id is
+  // stored here so we can suppress re-fan-out and remove it on success.
+  const activePendingIdRef = useRef<string | null>(null)
 
   // Use the AI service integration hook
   const { status, message, result, error, run, reset } = useImportJob<CharacterExtractResult>("character-extract")
 
   const isProcessing = status === "uploading" || status === "running"
+
+  // Consume a "Ready to Extract" handoff: pre-load the stored script so the
+  // user just presses Extract.
+  useEffect(() => {
+    if (!pendingScript || file) return
+    const entry = pendingScript
+    let cancelled = false
+    ;(async () => {
+      try {
+        const reconstructed = await projectScriptToFile(entry.script)
+        if (cancelled) return
+        scriptRef.current = entry.script
+        activePendingIdRef.current = entry.id
+        setFile(reconstructed)
+      } catch (err) {
+        console.error("[v0] Failed to load pending script:", err)
+      } finally {
+        if (!cancelled) setPendingScript(null)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [pendingScript, file, setPendingScript])
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -80,6 +111,10 @@ export default function UploadView() {
       console.error("[v0] Failed to capture uploaded script:", err)
       scriptRef.current = null
     }
+    // Fan out to the other sections for a fresh upload only.
+    if (!activePendingIdRef.current && scriptRef.current) {
+      addForOtherSections(SECTION_ID, sourceTitle, scriptRef.current)
+    }
     await run(file, sourceTitle)
   }
 
@@ -118,9 +153,13 @@ export default function UploadView() {
       addBible(newBible)
       setCurrentBible(newBible)
       trackExtractComplete("character-bible", characters.length)
+      if (activePendingIdRef.current) {
+        removePending(SECTION_ID, activePendingIdRef.current)
+        activePendingIdRef.current = null
+      }
       setView("results")
     }
-  }, [status, result, file, addBible, setCurrentBible, setView])
+  }, [status, result, file, addBible, setCurrentBible, setView, removePending])
 
   const handleRetry = () => {
     reset()

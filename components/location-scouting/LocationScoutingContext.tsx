@@ -12,6 +12,7 @@ import {
 } from "@/lib/firestore"
 import { loadDemoData, saveDemoData, DEMO_STORAGE_KEYS } from "@/utils/demoPersistence"
 import { ensureDemoScript } from "@/lib/scriptFile"
+import type { PendingExtraction } from "@/types/pending-extraction"
 
 type ViewState = "projects" | "upload" | "results"
 
@@ -28,6 +29,9 @@ interface LocationScoutingContextType {
   addLocation: (projectId: string, location: Location | Location[]) => void
   updateLocation: (projectId: string, location: Location) => void
   deleteLocation: (projectId: string, locationId: string) => void
+  /** A "Ready to Extract" entry chosen on the list, to pre-load in the upload view. */
+  pendingScript: PendingExtraction | null
+  setPendingScript: (pending: PendingExtraction | null) => void
 }
 
 const LocationScoutingContext = createContext<LocationScoutingContextType | null>(null)
@@ -230,6 +234,7 @@ export function LocationScoutingProvider({ children }: { children: ReactNode }) 
     currentProjectRef.current = currentProject
   }, [currentProject])
   const [view, setView] = useState<ViewState>("projects")
+  const [pendingScript, setPendingScript] = useState<PendingExtraction | null>(null)
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -437,6 +442,8 @@ export function LocationScoutingProvider({ children }: { children: ReactNode }) 
         addLocation,
         updateLocation,
         deleteLocation,
+        pendingScript,
+        setPendingScript,
       }}
     >
       {children}

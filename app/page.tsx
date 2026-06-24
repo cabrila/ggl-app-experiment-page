@@ -18,6 +18,7 @@ import { LocationScoutingProvider } from "@/components/location-scouting/Locatio
 import { PropListProvider } from "@/components/prop-list/PropListContext"
 import { SceneListProvider } from "@/components/scene-list/SceneListContext"
 import { PublicCastingProvider } from "@/components/public-casting/PublicCastingContext"
+import { PendingExtractionsProvider } from "@/components/handoff/PendingExtractionsContext"
 
 export default function App() {
   const [view, setView] = useState<"login" | "splash" | "character-bible" | "location-overview" | "actor-database" | "public-casting" | "prop-list" | "scene-list">("login")
@@ -148,21 +149,23 @@ export default function App() {
   // a feature shows already-loaded data instead of a demo-then-real flicker.
   return (
     <div className="h-screen">
-      <CastingProvider>
-        <ActorListProvider>
-          <CharacterBibleProvider>
-            <LocationScoutingProvider>
-              <PropListProvider>
-                <SceneListProvider>
-                  <PublicCastingProvider>
-                    {renderScreen()}
-                  </PublicCastingProvider>
-                </SceneListProvider>
-              </PropListProvider>
-            </LocationScoutingProvider>
-          </CharacterBibleProvider>
-        </ActorListProvider>
-      </CastingProvider>
+      <PendingExtractionsProvider>
+        <CastingProvider>
+          <ActorListProvider>
+            <CharacterBibleProvider>
+              <LocationScoutingProvider>
+                <PropListProvider>
+                  <SceneListProvider>
+                    <PublicCastingProvider>
+                      {renderScreen()}
+                    </PublicCastingProvider>
+                  </SceneListProvider>
+                </PropListProvider>
+              </LocationScoutingProvider>
+            </CharacterBibleProvider>
+          </ActorListProvider>
+        </CastingProvider>
+      </PendingExtractionsProvider>
 
       {errorToast}
     </div>

@@ -5,10 +5,13 @@ import { Upload, ArrowLeft, FileText, Loader2, X, AlertCircle, RefreshCw, PenLin
 import { usePropList } from "./PropListContext"
 import { Prop, PropCategory, PropProject } from "@/types/prop-list"
 import type { ProjectScript } from "@/types/script"
-import { fileToProjectScript } from "@/lib/scriptFile"
+import { fileToProjectScript, projectScriptToFile } from "@/lib/scriptFile"
 import { useImportJob } from "@/hooks/useImportJob"
 import type { PropExtractResult } from "@/types/ai"
 import { trackFileUpload, trackExtractClick, trackExtractComplete } from "@/lib/analytics"
+import { usePendingExtractions } from "@/components/handoff/PendingExtractionsContext"
+
+const SECTION_ID = "prop-list" as const
 
 const VALID_CATEGORIES: PropCategory[] = [
   "weapon",
@@ -32,7 +35,8 @@ function normalizeCategory(c?: string): PropCategory {
 }
 
 export default function PropUploadView() {
-  const { setView, addProject, setCurrentProject } = usePropList()
+  const { setView, addProject, setCurrentProject, pendingScript, setPendingScript } = usePropList()
+  const { addForOtherSections, remove: removePending } = usePendingExtractions()
   const [isDragging, setIsDragging] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -42,6 +46,9 @@ export default function PropUploadView() {
   // The uploaded file captured as a downloadable/previewable script, attached
   // to the project once extraction completes.
   const scriptRef = useRef<ProjectScript | null>(null)
+  // When this upload was initiated from a "Ready to Extract" entry, its id is
+  // stored here so we can suppress re-fan-out and remove it on success.
+  const activePendingIdRef = useRef<string | null>(null)
 
   // Same upstream AI service as Character Bible — see `useImportJob` and
   // `app/api/import/[taskType]/route.ts`. No direct Gemini call.
@@ -49,6 +56,30 @@ export default function PropUploadView() {
     useImportJob<PropExtractResult>("prop-extract")
 
   const isProcessing = status === "uploading" || status === "running"
+
+  // Consume a "Ready to Extract" handoff: pre-load the stored script so the
+  // user just presses Extract.
+  useEffect(() => {
+    if (!pendingScript || file) return
+    const entry = pendingScript
+    let cancelled = false
+    ;(async () => {
+      try {
+        const reconstructed = await projectScriptToFile(entry.script)
+        if (cancelled) return
+        scriptRef.current = entry.script
+        activePendingIdRef.current = entry.id
+        setFile(reconstructed)
+      } catch (err) {
+        console.error("[v0] Failed to load pending script:", err)
+      } finally {
+        if (!cancelled) setPendingScript(null)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [pendingScript, file, setPendingScript])
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -97,6 +128,10 @@ export default function PropUploadView() {
       console.error("[v0] Failed to capture uploaded script:", err)
       scriptRef.current = null
     }
+    // Fan out to the other sections for a fresh upload only.
+    if (!activePendingIdRef.current && scriptRef.current) {
+      addForOtherSections(SECTION_ID, sourceTitle, scriptRef.current)
+    }
     await run(file, sourceTitle)
   }
 
@@ -134,13 +169,18 @@ export default function PropUploadView() {
     addProject(newProject)
     setCurrentProject(newProject)
     trackExtractComplete("prop-list", props.length)
+    if (activePendingIdRef.current) {
+      removePending(SECTION_ID, activePendingIdRef.current)
+      activePendingIdRef.current = null
+    }
     setView("results")
-  }, [status, result, file, addProject, setCurrentProject, setView])
+  }, [status, result, file, addProject, setCurrentProject, setView, removePending])
 
   const handleRetry = () => {
     reset()
     createdRef.current = false
     scriptRef.current = null
+    activePendingIdRef.current = null
     setFile(null)
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
@@ -150,6 +190,7 @@ export default function PropUploadView() {
     reset()
     createdRef.current = false
     scriptRef.current = null
+    activePendingIdRef.current = null
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
 

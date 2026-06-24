@@ -12,6 +12,8 @@ interface ReadyToExtractCardProps {
   sourceLabel: string
   /** Section icon (matches the page's project icon). */
   icon: LucideIcon
+  /** Optional min-height override to match the page's "New X" tile. */
+  minHeightClass?: string
   onStart: () => void
   onDismiss: () => void
 }
@@ -21,12 +23,13 @@ export default function ReadyToExtractCard({
   scriptName,
   sourceLabel,
   icon: Icon,
+  minHeightClass = "min-h-[200px]",
   onStart,
   onDismiss,
 }: ReadyToExtractCardProps) {
   return (
     <div
-      className="group relative flex flex-col rounded-xl border-2 border-dashed border-emerald-500/60 bg-emerald-500/[0.07] ring-2 ring-emerald-500/20 hover:ring-emerald-500/40 hover:border-emerald-400 transition-all min-h-[200px] overflow-hidden"
+      className={`group relative flex flex-col rounded-xl border-2 border-dashed border-emerald-500/60 bg-emerald-500/[0.07] ring-2 ring-emerald-500/20 hover:ring-emerald-500/40 hover:border-emerald-400 transition-all ${minHeightClass} overflow-hidden`}
     >
       {/* Soft glow accent */}
       <div className="pointer-events-none absolute -top-10 -right-10 w-32 h-32 rounded-full bg-emerald-500/20 blur-2xl" aria-hidden="true" />

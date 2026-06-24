@@ -165,6 +165,7 @@ export default function UploadView() {
     reset()
     createdRef.current = false
     scriptRef.current = null
+    activePendingIdRef.current = null
     setFile(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
@@ -282,6 +283,7 @@ export default function UploadView() {
                         e.stopPropagation()
                         setFile(null)
                         reset()
+                        activePendingIdRef.current = null
                       }}
                       className="absolute top-3 right-3 p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
                     >

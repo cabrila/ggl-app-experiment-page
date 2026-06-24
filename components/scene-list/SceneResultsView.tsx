@@ -1,13 +1,24 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { ArrowLeft, Plus, Trash2, Share2, Pencil, X } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Share2, Pencil, X, ChevronDown } from "lucide-react"
 import { useSceneList } from "./SceneListContext"
 import SceneCard from "./SceneCard"
 import { Scene } from "@/types/scene-list"
 import { exportScenesAsJSON, exportScenesAsPDF, exportScenesAsExcel } from "@/lib/scene-export"
-import SearchBar from "@/components/ui/SearchBar"
+import ListToolbar, { SortOption } from "@/components/ui/ListToolbar"
 import ViewModeToggle, { ViewMode } from "@/components/ui/ViewModeToggle"
+
+type SceneSortOption = "number-asc" | "number-desc" | "name-asc" | "name-desc"
+
+const sceneSortOptions: SortOption[] = [
+  { value: "number-asc", label: "Scene # (Low-High)" },
+  { value: "number-desc", label: "Scene # (High-Low)" },
+  { value: "name-asc", label: "A-Z by Heading" },
+  { value: "name-desc", label: "Z-A by Heading" },
+]
+
+const SCENE_TIME_OPTIONS = ["DAY", "NIGHT", "DAWN", "DUSK"]
 import AddItemDropdown from "@/components/ui/AddItemDropdown"
 import DownloadDropdown from "@/components/ui/DownloadDropdown"
 import AddViaUploadModal, { FoundEntry } from "@/components/ui/AddViaUploadModal"
@@ -18,6 +29,8 @@ import ShareModal from "@/components/modals/ShareModal"
 export default function SceneResultsView() {
   const { currentProject, setView, updateScene, deleteScene, addScene, deleteProject } = useSceneList()
   const [searchQuery, setSearchQuery] = useState("")
+  const [sortBy, setSortBy] = useState<SceneSortOption>("number-asc")
+  const [timeFilter, setTimeFilter] = useState<"all" | string>("all")
   const [viewMode, setViewMode] = useState<ViewMode>("full")
   const [showShareModal, setShowShareModal] = useState(false)
   const [showUploadModal, setShowUploadModal] = useState(false)
@@ -61,14 +74,32 @@ export default function SceneResultsView() {
     )
   }
 
-  const filtered = currentProject.scenes.filter(
-    (s) =>
+  const filterCount = timeFilter !== "all" ? 1 : 0
+
+  const filtered = currentProject.scenes.filter((s) => {
+    const matchesSearch =
       s.sceneHeading.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.rawText.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+    const matchesTime =
+      timeFilter === "all" || (s.timeOfDay || "").toUpperCase().includes(timeFilter.toUpperCase())
+    return matchesSearch && matchesTime
+  })
 
-  const sorted = [...filtered].sort((a, b) => a.sceneNumber - b.sceneNumber)
+  const sorted = [...filtered].sort((a, b) => {
+    switch (sortBy) {
+      case "number-asc":
+        return a.sceneNumber - b.sceneNumber
+      case "number-desc":
+        return b.sceneNumber - a.sceneNumber
+      case "name-asc":
+        return a.sceneHeading.localeCompare(b.sceneHeading)
+      case "name-desc":
+        return b.sceneHeading.localeCompare(a.sceneHeading)
+      default:
+        return 0
+    }
+  })
 
   const handleAdd = () => {
     const id = crypto.randomUUID()
@@ -204,9 +235,36 @@ export default function SceneResultsView() {
           </div>
         </div>
 
-        <div className="mt-4">
-          <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Search scenes..." />
-        </div>
+        <ListToolbar
+          className="mt-4"
+          accent="teal"
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search scenes..."
+          sortOptions={sceneSortOptions}
+          sortValue={sortBy}
+          onSortChange={(v) => setSortBy(v as SceneSortOption)}
+          filterCount={filterCount}
+          onClearFilters={() => setTimeFilter("all")}
+        >
+          {/* Time of Day */}
+          <div>
+            <label className="block text-xs text-white/50 mb-1.5 font-sans">Time of Day</label>
+            <div className="relative">
+              <select
+                value={timeFilter}
+                onChange={(e) => setTimeFilter(e.target.value)}
+                className="appearance-none w-full pl-3 pr-9 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white focus:border-teal-500/50 focus:outline-none font-sans text-sm cursor-pointer"
+              >
+                <option value="all" className="bg-[#0f1f17] text-white">Any time</option>
+                {SCENE_TIME_OPTIONS.map((t) => (
+                  <option key={t} value={t} className="bg-[#0f1f17] text-white">{t}</option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+            </div>
+          </div>
+        </ListToolbar>
       </header>
 
       <div className="flex-1 overflow-y-auto p-6">

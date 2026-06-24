@@ -1,12 +1,12 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { ArrowLeft, Plus, Trash2, Share2, User, Pencil, X } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Share2, User, Pencil, X, ChevronDown } from "lucide-react"
 import { useCharacterBible } from "./CharacterBibleContext"
 import CharacterCard from "./CharacterCard"
 import { Character } from "@/types/character-bible"
 import { exportCharactersAsJSON, exportCharactersAsPDF, exportCharactersAsExcel } from "@/lib/character-export"
-import SearchBar from "@/components/ui/SearchBar"
+import ListToolbar, { SortOption } from "@/components/ui/ListToolbar"
 import ViewModeToggle, { ViewMode } from "@/components/ui/ViewModeToggle"
 import AddItemDropdown from "@/components/ui/AddItemDropdown"
 import DownloadDropdown from "@/components/ui/DownloadDropdown"
@@ -27,6 +27,23 @@ function genderBucket(gender?: string): (typeof GENDER_GROUPS)[number] {
   return "Other"
 }
 
+// ageRange is free-text ("40s", "25-35", "unknown"); pull the first number out
+// of it so the min/max age-range filter can compare against it.
+function parseAge(ageRange?: string): number | null {
+  const match = (ageRange || "").match(/\d+/)
+  return match ? parseInt(match[0], 10) : null
+}
+
+type CharacterSortOption = "name-asc" | "name-desc" | "gender" | "scenes-asc" | "scenes-desc"
+
+const characterSortOptions: SortOption[] = [
+  { value: "name-asc", label: "A-Z by Name" },
+  { value: "name-desc", label: "Z-A by Name" },
+  { value: "gender", label: "By Gender" },
+  { value: "scenes-asc", label: "Scene Appearances (Low-High)" },
+  { value: "scenes-desc", label: "Scene Appearances (High-Low)" },
+]
+
 export default function ResultsView() {
   const { currentBible, setView, setCurrentBible, updateCharacter, deleteCharacter, addCharacter, deleteBible } = useCharacterBible()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -35,6 +52,9 @@ export default function ResultsView() {
   const [newItemId, setNewItemId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [genderFilter, setGenderFilter] = useState<"all" | (typeof GENDER_GROUPS)[number]>("all")
+  const [ageMin, setAgeMin] = useState("")
+  const [ageMax, setAgeMax] = useState("")
+  const [sortBy, setSortBy] = useState<CharacterSortOption>("name-asc")
   const [viewMode, setViewMode] = useState<ViewMode>("full")
   const [detailId, setDetailId] = useState<string | null>(null)
   const [detailEdit, setDetailEdit] = useState(false)
@@ -77,17 +97,48 @@ export default function ResultsView() {
     )
   }
 
-  const filteredCharacters = currentBible.characters.filter((character) => {
-    const query = searchQuery.toLowerCase()
-    const matchesSearch =
-      character.name.toLowerCase().includes(query) ||
-      character.description?.toLowerCase().includes(query) ||
-      character.gender?.toLowerCase().includes(query) ||
-      character.ageRange?.toLowerCase().includes(query) ||
-      (character.aliases?.some((alias) => alias.toLowerCase().includes(query)))
-    const matchesGender = genderFilter === "all" || genderBucket(character.gender) === genderFilter
-    return matchesSearch && matchesGender
-  })
+  const filterCount = (genderFilter !== "all" ? 1 : 0) + (ageMin ? 1 : 0) + (ageMax ? 1 : 0)
+
+  const clearFilters = () => {
+    setGenderFilter("all")
+    setAgeMin("")
+    setAgeMax("")
+  }
+
+  const filteredCharacters = currentBible.characters
+    .filter((character) => {
+      const query = searchQuery.toLowerCase()
+      const matchesSearch =
+        character.name.toLowerCase().includes(query) ||
+        character.description?.toLowerCase().includes(query) ||
+        character.gender?.toLowerCase().includes(query) ||
+        character.ageRange?.toLowerCase().includes(query) ||
+        (character.aliases?.some((alias) => alias.toLowerCase().includes(query)))
+      const matchesGender = genderFilter === "all" || genderBucket(character.gender) === genderFilter
+      const age = parseAge(character.ageRange)
+      const matchesMin = !ageMin || (age !== null && age >= parseInt(ageMin, 10))
+      const matchesMax = !ageMax || (age !== null && age <= parseInt(ageMax, 10))
+      return matchesSearch && matchesGender && matchesMin && matchesMax
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "name-asc":
+          return a.name.localeCompare(b.name)
+        case "name-desc":
+          return b.name.localeCompare(a.name)
+        case "gender":
+          return (
+            GENDER_GROUPS.indexOf(genderBucket(a.gender)) - GENDER_GROUPS.indexOf(genderBucket(b.gender)) ||
+            a.name.localeCompare(b.name)
+          )
+        case "scenes-asc":
+          return a.sceneAppearances.length - b.sceneAppearances.length
+        case "scenes-desc":
+          return b.sceneAppearances.length - a.sceneAppearances.length
+        default:
+          return 0
+      }
+    })
 
   const handleAddCharacter = () => {
     const id = crypto.randomUUID()
@@ -229,26 +280,61 @@ export default function ResultsView() {
           </div>
         </div>
 
-        {/* Search Bar + Filter */}
-        <div className="px-6 pb-4 flex flex-col sm:flex-row gap-3">
-          <div className="flex-1">
-            <SearchBar
-              value={searchQuery}
-              onChange={setSearchQuery}
-              placeholder="Search characters..."
+        {/* Search Bar + Filters + Sort */}
+        <ListToolbar
+          className="px-6 pb-4"
+          accent="emerald"
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search characters..."
+          sortOptions={characterSortOptions}
+          sortValue={sortBy}
+          onSortChange={(v) => setSortBy(v as CharacterSortOption)}
+          filterCount={filterCount}
+          onClearFilters={clearFilters}
+        >
+          {/* Gender */}
+          <div>
+            <label className="block text-xs text-white/50 mb-1.5 font-sans">Gender</label>
+            <div className="relative">
+              <select
+                value={genderFilter}
+                onChange={(e) => setGenderFilter(e.target.value as "all" | (typeof GENDER_GROUPS)[number])}
+                className="appearance-none w-full pl-3 pr-9 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white focus:border-emerald-500/50 focus:outline-none font-sans text-sm cursor-pointer"
+              >
+                <option value="all" className="bg-[#0f1f17] text-white">All genders</option>
+                {GENDER_GROUPS.map((g) => (
+                  <option key={g} value={g} className="bg-[#0f1f17] text-white">{g}</option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+            </div>
+          </div>
+          {/* Age (Min) */}
+          <div>
+            <label className="block text-xs text-white/50 mb-1.5 font-sans">Age (Min)</label>
+            <input
+              type="number"
+              autoComplete="off"
+              value={ageMin}
+              onChange={(e) => setAgeMin(e.target.value)}
+              placeholder="18"
+              className="w-full px-3 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-emerald-500/50 focus:outline-none font-sans text-sm"
             />
           </div>
-          <select
-            value={genderFilter}
-            onChange={(e) => setGenderFilter(e.target.value as "all" | (typeof GENDER_GROUPS)[number])}
-            className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white/80 focus:border-emerald-500/50 focus:outline-none font-sans"
-          >
-            <option value="all" className="bg-[#0f1f17] text-white">All genders</option>
-            {GENDER_GROUPS.map((g) => (
-              <option key={g} value={g} className="bg-[#0f1f17] text-white">{g}</option>
-            ))}
-          </select>
-        </div>
+          {/* Age (Max) */}
+          <div>
+            <label className="block text-xs text-white/50 mb-1.5 font-sans">Age (Max)</label>
+            <input
+              type="number"
+              autoComplete="off"
+              value={ageMax}
+              onChange={(e) => setAgeMax(e.target.value)}
+              placeholder="65"
+              className="w-full px-3 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-emerald-500/50 focus:outline-none font-sans text-sm"
+            />
+          </div>
+        </ListToolbar>
       </div>
 
       {/* Characters Grid */}

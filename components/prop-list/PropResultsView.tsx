@@ -6,7 +6,7 @@ import { usePropList } from "./PropListContext"
 import PropCard from "./PropCard"
 import { Prop, PropCategory } from "@/types/prop-list"
 import { exportPropsAsJSON, exportPropsAsPDF, exportPropsAsExcel } from "@/lib/prop-export"
-import SearchBar from "@/components/ui/SearchBar"
+import ListToolbar, { SortOption } from "@/components/ui/ListToolbar"
 import ViewModeToggle, { ViewMode } from "@/components/ui/ViewModeToggle"
 import AddItemDropdown from "@/components/ui/AddItemDropdown"
 import DownloadDropdown from "@/components/ui/DownloadDropdown"
@@ -35,9 +35,21 @@ const CATEGORY_ORDER: PropCategory[] = [
   "document", "other",
 ]
 
+type PropSortOption = "name-asc" | "name-desc" | "category" | "scenes-asc" | "scenes-desc"
+
+const propSortOptions: SortOption[] = [
+  { value: "name-asc", label: "A-Z by Name" },
+  { value: "name-desc", label: "Z-A by Name" },
+  { value: "category", label: "By Type" },
+  { value: "scenes-asc", label: "Scene Appearances (Low-High)" },
+  { value: "scenes-desc", label: "Scene Appearances (High-Low)" },
+]
+
 export default function PropResultsView() {
   const { currentProject, setView, updateProp, deleteProp, addProp, deleteProject } = usePropList()
   const [searchQuery, setSearchQuery] = useState("")
+  const [sortBy, setSortBy] = useState<PropSortOption>("name-asc")
+  const [selectedCategories, setSelectedCategories] = useState<Set<PropCategory>>(new Set())
   const [viewMode, setViewMode] = useState<ViewMode>("full")
   const [showShareModal, setShowShareModal] = useState(false)
   const [showUploadModal, setShowUploadModal] = useState(false)
@@ -81,12 +93,44 @@ export default function PropResultsView() {
     )
   }
 
-  const filtered = currentProject.props.filter(
-    (p) =>
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.category.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const toggleCategory = (category: PropCategory) => {
+    setSelectedCategories((prev) => {
+      const next = new Set(prev)
+      next.has(category) ? next.delete(category) : next.add(category)
+      return next
+    })
+  }
+
+  const filterCount = selectedCategories.size
+
+  const filtered = currentProject.props
+    .filter((p) => {
+      const matchesSearch =
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.category.toLowerCase().includes(searchQuery.toLowerCase())
+      const matchesCategory = selectedCategories.size === 0 || selectedCategories.has(p.category)
+      return matchesSearch && matchesCategory
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "name-asc":
+          return a.name.localeCompare(b.name)
+        case "name-desc":
+          return b.name.localeCompare(a.name)
+        case "category":
+          return (
+            CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category) ||
+            a.name.localeCompare(b.name)
+          )
+        case "scenes-asc":
+          return a.sceneAppearances.length - b.sceneAppearances.length
+        case "scenes-desc":
+          return b.sceneAppearances.length - a.sceneAppearances.length
+        default:
+          return 0
+      }
+    })
 
   const handleAdd = () => {
     const id = crypto.randomUUID()
@@ -220,9 +264,40 @@ export default function PropResultsView() {
           </div>
         </div>
 
-        <div className="mt-4">
-          <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Search props..." />
-        </div>
+        <ListToolbar
+          className="mt-4"
+          accent="rose"
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search props..."
+          sortOptions={propSortOptions}
+          sortValue={sortBy}
+          onSortChange={(v) => setSortBy(v as PropSortOption)}
+          filterCount={filterCount}
+          onClearFilters={() => setSelectedCategories(new Set())}
+        >
+          <div className="col-span-2 md:col-span-3 lg:col-span-5">
+            <label className="block text-xs text-white/50 mb-2 font-sans">Categories</label>
+            <div className="flex flex-wrap gap-2">
+              {CATEGORY_ORDER.map((category) => {
+                const active = selectedCategories.has(category)
+                return (
+                  <button
+                    key={category}
+                    onClick={() => toggleCategory(category)}
+                    className={`px-3 py-1.5 rounded-lg border text-xs font-sans transition-colors ${
+                      active
+                        ? "bg-rose-500/20 border-rose-500/40 text-rose-200"
+                        : "bg-[#0f1f17] border-white/10 text-white/70 hover:border-white/20 hover:text-white"
+                    }`}
+                  >
+                    {CATEGORY_LABELS[category]}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </ListToolbar>
       </header>
 
       <div className="flex-1 overflow-y-auto p-6">

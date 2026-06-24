@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react"
 import type { PendingExtraction, SectionId } from "@/types/pending-extraction"
 import type { ProjectScript } from "@/types/script"
+import { DEMO_SCRIPT } from "@/lib/scriptFile"
 
 const STORAGE_KEY = "gogreenlight-pending-extractions"
 
@@ -14,6 +15,31 @@ const EMPTY_MAP: PendingMap = {
   "scene-list": [],
   "prop-list": [],
   "location-overview": [],
+  "character-bible": [],
+}
+
+// Demo seed: "The Velvet Court" was uploaded under My Characters, so the other
+// three pages get a "Ready to Extract" handoff entry to showcase the feature.
+// Stable ids keep this deterministic across reloads. Used only when nothing is
+// persisted yet (like demo data) — once a user starts or dismisses an entry,
+// their stored state wins.
+const DEMO_SOURCE: SectionId = "character-bible"
+const DEMO_NAME = "The Velvet Court"
+
+function buildDemoEntry(section: SectionId): PendingExtraction {
+  return {
+    id: `demo-pending-${section}-velvet-court`,
+    name: DEMO_NAME,
+    script: DEMO_SCRIPT,
+    sourceSection: DEMO_SOURCE,
+    createdAt: new Date("2026-05-06").getTime(),
+  }
+}
+
+const DEMO_MAP: PendingMap = {
+  "scene-list": [buildDemoEntry("scene-list")],
+  "prop-list": [buildDemoEntry("prop-list")],
+  "location-overview": [buildDemoEntry("location-overview")],
   "character-bible": [],
 }
 
@@ -32,12 +58,13 @@ function loadInitial(): PendingMap {
   try {
     if (typeof window === "undefined") return EMPTY_MAP
     const raw = window.localStorage.getItem(STORAGE_KEY)
-    if (!raw) return EMPTY_MAP
+    // No stored state yet: seed the demo handoff so the feature is visible.
+    if (!raw) return DEMO_MAP
     const parsed = JSON.parse(raw) as Partial<PendingMap>
     return { ...EMPTY_MAP, ...parsed }
   } catch (error) {
     console.warn("[v0] Failed to load pending extractions:", error)
-    return EMPTY_MAP
+    return DEMO_MAP
   }
 }
 

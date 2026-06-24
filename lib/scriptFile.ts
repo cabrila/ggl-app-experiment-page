@@ -1,5 +1,15 @@
 import type { ProjectScript } from "@/types/script"
 
+// A sample script used by the built-in demo projects so the "Script" button is
+// visible and functional out of the box. It points at a real PDF served from
+// /public, which works as both the <iframe> preview source and the download
+// href (same-origin). Real uploads instead store a base64 data URL.
+export const DEMO_SCRIPT: ProjectScript = {
+  name: "Sample Screenplay.pdf",
+  type: "application/pdf",
+  dataUrl: "/screenplays/A_Dinner_Party_screenplay.pdf",
+}
+
 // Reads an uploaded File into a ProjectScript (base64 data URL + metadata) so
 // it can be stored on a project and later re-downloaded / previewed.
 export function fileToProjectScript(file: File): Promise<ProjectScript> {

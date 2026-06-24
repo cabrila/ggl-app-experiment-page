@@ -10,6 +10,7 @@ import {
   updateCharacterBible as updateCharacterBibleInFirestore,
   deleteCharacterBible as deleteCharacterBibleFromFirestore,
 } from "@/lib/firestore"
+import { DEMO_SCRIPT } from "@/lib/scriptFile"
 
 interface CharacterBibleContextType {
   bibles: CharacterBible[]
@@ -188,8 +189,15 @@ const demoBibles: CharacterBible[] = [
   ...extraDemoBibles,
 ]
 
+// Attach a sample script to every demo bible so the "Script" button is visible
+// and works out of the box.
+const demoBiblesWithScript: CharacterBible[] = demoBibles.map((b) => ({
+  ...b,
+  script: DEMO_SCRIPT,
+}))
+
 export function CharacterBibleProvider({ children }: { children: ReactNode }) {
-  const [bibles, setBibles] = useState<CharacterBible[]>(demoBibles)
+  const [bibles, setBibles] = useState<CharacterBible[]>(demoBiblesWithScript)
   const [currentBible, setCurrentBible] = useState<CharacterBible | null>(null)
   // Latest currentBible for the Firestore subscription callback (set up with
   // [user] deps), so manual adds/edits refresh the open bible when signed in.
@@ -207,7 +215,7 @@ export function CharacterBibleProvider({ children }: { children: ReactNode }) {
       setUser(authUser)
       if (!authUser) {
         // User logged out, show demo data
-        setBibles(demoBibles)
+        setBibles(demoBiblesWithScript)
         setCurrentBible(null)
         setView("list")
         setIsLoading(false)

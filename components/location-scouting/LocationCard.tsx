@@ -4,6 +4,7 @@ import { useState } from "react"
 import { MapPin, Pencil, Trash2, X, Save, Map, ExternalLink } from "lucide-react"
 import { Location } from "@/types/location-scouting"
 import GoogleMapsModal from "@/components/ui/GoogleMapsModal"
+import CardMore from "@/components/ui/CardMore"
 
 interface LocationCardProps {
   location: Location
@@ -231,7 +232,7 @@ export default function LocationCard({
       </div>
 
       {/* Description */}
-      <p className="text-sm text-white/70 font-sans leading-relaxed mb-4">
+      <p className={`text-sm text-white/70 font-sans leading-relaxed mb-4 ${forceExpanded ? "" : "line-clamp-2"}`}>
         {location.description}
       </p>
 
@@ -267,14 +268,19 @@ export default function LocationCard({
       )}
 
       {/* Scouting Notes */}
-      <div className="p-3 bg-[#0f1f17] rounded-lg">
-        <p className="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-2">
-          Scouting Notes
-        </p>
-        <p className="text-sm text-white/60 font-sans leading-relaxed">
-          {location.scoutingNotes}
-        </p>
-      </div>
+      {location.scoutingNotes && (
+        <div className="p-3 bg-[#0f1f17] rounded-lg">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <span className="text-xs font-semibold text-amber-400 uppercase tracking-wider">
+              Scouting Notes
+            </span>
+            {!forceExpanded && <CardMore accent="amber" onClick={onNameClick} label="View full" />}
+          </div>
+          <p className={`text-sm text-white/60 font-sans leading-relaxed ${forceExpanded ? "" : "line-clamp-3"}`}>
+            {location.scoutingNotes}
+          </p>
+        </div>
+      )}
 
       {/* Google Maps Modal */}
       <GoogleMapsModal

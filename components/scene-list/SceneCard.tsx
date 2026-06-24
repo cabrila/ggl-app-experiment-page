@@ -1,8 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { Film, Pencil, Trash2, X, Save, ChevronDown, ChevronUp, MapPin, Clock } from "lucide-react"
+import { Film, Pencil, Trash2, X, Save, MapPin, Clock } from "lucide-react"
 import { Scene } from "@/types/scene-list"
+import CardMore from "@/components/ui/CardMore"
 
 interface SceneCardProps {
   scene: Scene
@@ -29,7 +30,6 @@ export default function SceneCard({
 }: SceneCardProps) {
   const [isEditing, setIsEditing] = useState(startInEdit)
   const [editData, setEditData] = useState<Scene>(scene)
-  const [isExpanded, setIsExpanded] = useState(false)
 
   const handleSave = () => {
     onUpdate(editData)
@@ -204,25 +204,29 @@ export default function SceneCard({
       {scene.notes && (
         <div className="p-3 bg-[#0f1f17] rounded-lg mb-3">
           <p className="text-xs font-semibold text-teal-400 uppercase tracking-wider mb-1">Notes</p>
-          <p className="text-sm text-white/60 font-sans leading-relaxed">{scene.notes}</p>
+          <p className={`text-sm text-white/60 font-sans leading-relaxed ${forceExpanded ? "" : "line-clamp-2"}`}>
+            {scene.notes}
+          </p>
         </div>
       )}
 
       {scene.rawText && (
         <div className="mt-3">
-          {!forceExpanded && (
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="flex items-center gap-2 text-sm text-white/50 hover:text-white/70 transition-colors w-full"
-            >
-              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              <span className="font-sans">{isExpanded ? "Hide raw text" : "Show raw text"}</span>
-            </button>
-          )}
-
-          {(forceExpanded || isExpanded) && (
-            <div className="mt-3 p-3 bg-[#0f1f17] rounded-lg">
+          {forceExpanded ? (
+            <div className="p-3 bg-[#0f1f17] rounded-lg">
+              <p className="text-xs font-semibold text-teal-400 uppercase tracking-wider mb-2">Raw Text</p>
               <p className="text-sm text-white/70 font-sans leading-relaxed whitespace-pre-wrap">
+                {scene.rawText}
+              </p>
+            </div>
+          ) : (
+            // Grid snapshot: clamp the raw text to a few lines with a [...] hint.
+            <div className="p-3 bg-[#0f1f17] rounded-lg">
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <span className="text-xs font-semibold text-teal-400 uppercase tracking-wider">Raw Text</span>
+                <CardMore accent="teal" onClick={onNameClick} label="Show full" />
+              </div>
+              <p className="text-sm text-white/60 font-sans leading-relaxed line-clamp-3">
                 {scene.rawText}
               </p>
             </div>

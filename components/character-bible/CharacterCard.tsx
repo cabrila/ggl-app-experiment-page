@@ -1,8 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { Trash2, X, Save, Pencil, ChevronDown, ChevronUp } from "lucide-react"
+import { Trash2, X, Save, Pencil } from "lucide-react"
 import { Character } from "@/types/character-bible"
+import CardMore from "@/components/ui/CardMore"
 
 interface CharacterCardProps {
   character: Character
@@ -34,7 +35,6 @@ export default function CharacterCard({
   startInEdit = false,
 }: CharacterCardProps) {
   const [isEditing, setIsEditing] = useState(startInEdit)
-  const [isAppearancesOpen, setIsAppearancesOpen] = useState(false)
   const [editState, setEditState] = useState({
     name: character.name,
     aliases: (character.aliases || []).join(", "),
@@ -269,42 +269,48 @@ export default function CharacterCard({
           <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-2">
             Description
           </p>
-          <p className="text-sm text-white/80 font-sans leading-relaxed">
+          <p className={`text-sm text-white/80 font-sans leading-relaxed ${forceExpanded ? "" : "line-clamp-3"}`}>
             {character.description}
           </p>
         </div>
       )}
 
-      {/* Scene Appearances (collapsible) */}
+      {/* Scene Appearances */}
       {hasAppearances && (
         <div className="mt-3">
-          {!forceExpanded && (
-            <button
-              onClick={() => setIsAppearancesOpen(!isAppearancesOpen)}
-              className="flex items-center gap-2 text-sm text-white/50 hover:text-white/70 transition-colors w-full"
-            >
-              {isAppearancesOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              <span className="font-sans">
+          {forceExpanded ? (
+            <>
+              <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-3 font-sans">
                 Scene Appearances ({appearanceCount})
-              </span>
-            </button>
-          )}
-
-          {(forceExpanded || isAppearancesOpen) && (
-            <div className="mt-3 space-y-3">
-              {character.sceneAppearances.map((sa, idx) => (
-                <div
-                  key={`${sa.sceneHeading}-${idx}`}
-                  className="p-3 bg-[#0f1f17] rounded-lg border border-white/5"
-                >
-                  <p className="text-xs font-semibold text-emerald-400/80 uppercase tracking-wider mb-1.5 font-sans">
-                    {sa.sceneHeading}
-                  </p>
-                  <p className="text-xs text-white/70 font-mono whitespace-pre-wrap leading-relaxed">
-                    {sa.citation}
-                  </p>
-                </div>
-              ))}
+              </p>
+              <div className="space-y-3">
+                {character.sceneAppearances.map((sa, idx) => (
+                  <div
+                    key={`${sa.sceneHeading}-${idx}`}
+                    className="p-3 bg-[#0f1f17] rounded-lg border border-white/5"
+                  >
+                    <p className="text-xs font-semibold text-emerald-400/80 uppercase tracking-wider mb-1.5 font-sans">
+                      {sa.sceneHeading}
+                    </p>
+                    <p className="text-xs text-white/70 font-mono whitespace-pre-wrap leading-relaxed">
+                      {sa.citation}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            // Grid snapshot: first appearance heading + [...] hint into the modal.
+            <div className="p-3 bg-[#0f1f17] rounded-lg">
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider font-sans">
+                  Scene Appearances ({appearanceCount})
+                </span>
+                <CardMore accent="emerald" onClick={onNameClick} label="View all" />
+              </div>
+              <p className="text-xs font-semibold text-emerald-400/80 uppercase tracking-wider truncate font-sans">
+                {character.sceneAppearances[0].sceneHeading}
+              </p>
             </div>
           )}
         </div>

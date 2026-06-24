@@ -1,8 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { Package, Pencil, Trash2, X, Save, ChevronDown, ChevronUp, Plus } from "lucide-react"
+import { Package, Pencil, Trash2, X, Save, Plus } from "lucide-react"
 import { Prop, PropCategory } from "@/types/prop-list"
+import CardMore from "@/components/ui/CardMore"
 
 const CATEGORIES: PropCategory[] = [
   "weapon",
@@ -59,7 +60,6 @@ export default function PropCard({
 }: PropCardProps) {
   const [isEditing, setIsEditing] = useState(startInEdit)
   const [editData, setEditData] = useState<Prop>(prop)
-  const [isExpanded, setIsExpanded] = useState(false)
 
   const handleSave = () => {
     onUpdate(editData)
@@ -267,48 +267,59 @@ export default function PropCard({
       </div>
 
       {prop.description && (
-        <p className="text-sm text-white/70 font-sans leading-relaxed mb-3">{prop.description}</p>
+        <p className={`text-sm text-white/70 font-sans leading-relaxed mb-3 ${forceExpanded ? "" : "line-clamp-2"}`}>
+          {prop.description}
+        </p>
       )}
 
       {prop.notes && (
         <div className="p-3 bg-[#0f1f17] rounded-lg mb-3">
           <p className="text-xs font-semibold text-rose-400 uppercase tracking-wider mb-1">Notes</p>
-          <p className="text-sm text-white/60 font-sans leading-relaxed">{prop.notes}</p>
+          <p className={`text-sm text-white/60 font-sans leading-relaxed ${forceExpanded ? "" : "line-clamp-2"}`}>
+            {prop.notes}
+          </p>
         </div>
       )}
 
       {prop.sceneAppearances.length > 0 && (
         <div className="mt-3">
-          {!forceExpanded && (
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="flex items-center gap-2 text-sm text-white/50 hover:text-white/70 transition-colors w-full"
-            >
-              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              <span className="font-sans">
+          {forceExpanded ? (
+            <>
+              <p className="text-xs font-semibold text-rose-400 uppercase tracking-wider mb-2">
                 {prop.sceneAppearances.length} Scene Appearance
                 {prop.sceneAppearances.length !== 1 ? "s" : ""}
-              </span>
-            </button>
-          )}
-
-          {(forceExpanded || isExpanded) && (
-            <div className="mt-3 space-y-2">
-              {prop.sceneAppearances.map((app) => (
-                <div key={app.id} className="p-3 bg-[#0f1f17] rounded-lg">
-                  <p className="text-xs font-semibold text-rose-400 font-mono uppercase tracking-wide mb-1">
-                    {app.sceneHeading}
-                  </p>
-                  {app.handledBy && (
-                    <p className="text-xs text-white/50 font-sans mb-1">Handled by: {app.handledBy}</p>
-                  )}
-                  {app.citation && (
-                    <p className="text-xs text-white/60 font-sans italic leading-relaxed">
-                      &ldquo;{app.citation}&rdquo;
+              </p>
+              <div className="space-y-2">
+                {prop.sceneAppearances.map((app) => (
+                  <div key={app.id} className="p-3 bg-[#0f1f17] rounded-lg">
+                    <p className="text-xs font-semibold text-rose-400 font-mono uppercase tracking-wide mb-1">
+                      {app.sceneHeading}
                     </p>
-                  )}
-                </div>
-              ))}
+                    {app.handledBy && (
+                      <p className="text-xs text-white/50 font-sans mb-1">Handled by: {app.handledBy}</p>
+                    )}
+                    {app.citation && (
+                      <p className="text-xs text-white/60 font-sans italic leading-relaxed">
+                        &ldquo;{app.citation}&rdquo;
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            // Grid snapshot: show the first appearance heading with a [...] hint
+            // so cards stay uniform; full list lives in the detail modal.
+            <div className="p-3 bg-[#0f1f17] rounded-lg">
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <span className="text-xs font-semibold text-rose-400 uppercase tracking-wider">
+                  Scene Appearances ({prop.sceneAppearances.length})
+                </span>
+                <CardMore accent="rose" onClick={onNameClick} label="View all" />
+              </div>
+              <p className="text-xs font-mono text-white/60 uppercase tracking-wide truncate">
+                {prop.sceneAppearances[0].sceneHeading}
+              </p>
             </div>
           )}
         </div>

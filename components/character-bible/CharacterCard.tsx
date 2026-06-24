@@ -221,7 +221,7 @@ export default function CharacterCard({
       {/* Aliases */}
       {hasAliases && (
         <p className="text-sm text-white/50 mb-3 font-sans">
-          also: {character.aliases.join(", ")}
+          Also appears in scripts as: {character.aliases.join(", ")}
         </p>
       )}
 

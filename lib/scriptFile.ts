@@ -10,6 +10,18 @@ export const DEMO_SCRIPT: ProjectScript = {
   dataUrl: "/screenplays/A_Dinner_Party_screenplay.pdf",
 }
 
+// Ensures demo projects/bibles carry the sample script so the "Script" button
+// shows up. This is applied AFTER loading from localStorage, so demo data that
+// was cached before scripts existed still gets the script re-attached. Only
+// demo entries are touched, and only when they don't already have a script.
+export function ensureDemoScript<T extends { isDemo?: boolean; script?: ProjectScript }>(
+  items: T[],
+): T[] {
+  return items.map((item) =>
+    item.isDemo && !item.script ? { ...item, script: DEMO_SCRIPT } : item,
+  )
+}
+
 // Reads an uploaded File into a ProjectScript (base64 data URL + metadata) so
 // it can be stored on a project and later re-downloaded / previewed.
 export function fileToProjectScript(file: File): Promise<ProjectScript> {

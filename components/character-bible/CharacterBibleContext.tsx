@@ -10,7 +10,7 @@ import {
   updateCharacterBible as updateCharacterBibleInFirestore,
   deleteCharacterBible as deleteCharacterBibleFromFirestore,
 } from "@/lib/firestore"
-import { DEMO_SCRIPT } from "@/lib/scriptFile"
+import { ensureDemoScript } from "@/lib/scriptFile"
 
 interface CharacterBibleContextType {
   bibles: CharacterBible[]
@@ -191,10 +191,7 @@ const demoBibles: CharacterBible[] = [
 
 // Attach a sample script to every demo bible so the "Script" button is visible
 // and works out of the box.
-const demoBiblesWithScript: CharacterBible[] = demoBibles.map((b) => ({
-  ...b,
-  script: DEMO_SCRIPT,
-}))
+const demoBiblesWithScript: CharacterBible[] = ensureDemoScript(demoBibles)
 
 export function CharacterBibleProvider({ children }: { children: ReactNode }) {
   const [bibles, setBibles] = useState<CharacterBible[]>(demoBiblesWithScript)

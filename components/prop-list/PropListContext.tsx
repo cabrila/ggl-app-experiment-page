@@ -11,7 +11,7 @@ import {
   deletePropProject as deletePropProjectFromFirestore,
 } from "@/lib/firestore"
 import { loadDemoData, saveDemoData, DEMO_STORAGE_KEYS } from "@/utils/demoPersistence"
-import { DEMO_SCRIPT } from "@/lib/scriptFile"
+import { ensureDemoScript } from "@/lib/scriptFile"
 
 type ViewState = "projects" | "upload" | "results"
 
@@ -398,16 +398,9 @@ const demoProjects: PropProject[] = [
   },
 ]
 
-// Attach a sample script to every demo project so the "Script" button is
-// visible and works out of the box.
-const demoProjectsWithScript: PropProject[] = demoProjects.map((p) => ({
-  ...p,
-  script: DEMO_SCRIPT,
-}))
-
 export function PropListProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<PropProject[]>(() =>
-    loadDemoData(DEMO_STORAGE_KEYS.propProjects, demoProjectsWithScript)
+    ensureDemoScript(loadDemoData(DEMO_STORAGE_KEYS.propProjects, demoProjects))
   )
   const [currentProject, setCurrentProject] = useState<PropProject | null>(null)
   const [view, setView] = useState<ViewState>("projects")
@@ -430,7 +423,7 @@ export function PropListProvider({ children }: { children: ReactNode }) {
     const unsubscribe = subscribeToAuthStateChanges((authUser) => {
       setUser(authUser)
       if (!authUser) {
-        setProjects(loadDemoData(DEMO_STORAGE_KEYS.propProjects, demoProjectsWithScript))
+        setProjects(ensureDemoScript(loadDemoData(DEMO_STORAGE_KEYS.propProjects, demoProjects)))
         setCurrentProject(null)
         setView("projects")
         setIsLoading(false)

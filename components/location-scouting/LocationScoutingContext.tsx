@@ -11,7 +11,7 @@ import {
   deleteLocationProject as deleteLocationProjectFromFirestore,
 } from "@/lib/firestore"
 import { loadDemoData, saveDemoData, DEMO_STORAGE_KEYS } from "@/utils/demoPersistence"
-import { DEMO_SCRIPT } from "@/lib/scriptFile"
+import { ensureDemoScript } from "@/lib/scriptFile"
 
 type ViewState = "projects" | "upload" | "results"
 
@@ -218,16 +218,9 @@ const demoProjects: LocationProject[] = [
   ...extraLocationProjects,
 ]
 
-// Attach a sample script to every demo project so the "Script" button is
-// visible and works out of the box.
-const demoProjectsWithScript: LocationProject[] = demoProjects.map((p) => ({
-  ...p,
-  script: DEMO_SCRIPT,
-}))
-
 export function LocationScoutingProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<LocationProject[]>(() =>
-    loadDemoData(DEMO_STORAGE_KEYS.locationProjects, demoProjectsWithScript)
+    ensureDemoScript(loadDemoData(DEMO_STORAGE_KEYS.locationProjects, demoProjects))
   )
   const [currentProject, setCurrentProject] = useState<LocationProject | null>(null)
   // Latest currentProject for the Firestore subscription callback (set up with
@@ -252,7 +245,7 @@ export function LocationScoutingProvider({ children }: { children: ReactNode }) 
       setUser(authUser)
       if (!authUser) {
         // User logged out (or no backend configured): show persisted demo data.
-        setProjects(loadDemoData(DEMO_STORAGE_KEYS.locationProjects, demoProjectsWithScript))
+        setProjects(ensureDemoScript(loadDemoData(DEMO_STORAGE_KEYS.locationProjects, demoProjects)))
         setCurrentProject(null)
         setView("projects")
         setIsLoading(false)

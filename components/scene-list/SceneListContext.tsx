@@ -11,7 +11,7 @@ import {
   deleteSceneProject as deleteSceneProjectFromFirestore,
 } from "@/lib/firestore"
 import { loadDemoData, saveDemoData, DEMO_STORAGE_KEYS } from "@/utils/demoPersistence"
-import { DEMO_SCRIPT } from "@/lib/scriptFile"
+import { ensureDemoScript } from "@/lib/scriptFile"
 
 type ViewState = "projects" | "upload" | "results"
 
@@ -278,16 +278,9 @@ const demoProjects: SceneProject[] = [
   },
 ]
 
-// Attach a sample script to every demo project so the "Script" button is
-// visible and works out of the box.
-const demoProjectsWithScript: SceneProject[] = demoProjects.map((p) => ({
-  ...p,
-  script: DEMO_SCRIPT,
-}))
-
 export function SceneListProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<SceneProject[]>(() =>
-    loadDemoData(DEMO_STORAGE_KEYS.sceneProjects, demoProjectsWithScript)
+    ensureDemoScript(loadDemoData(DEMO_STORAGE_KEYS.sceneProjects, demoProjects))
   )
   const [currentProject, setCurrentProject] = useState<SceneProject | null>(null)
   const [view, setView] = useState<ViewState>("projects")
@@ -310,7 +303,7 @@ export function SceneListProvider({ children }: { children: ReactNode }) {
     const unsubscribe = subscribeToAuthStateChanges((authUser) => {
       setUser(authUser)
       if (!authUser) {
-        setProjects(loadDemoData(DEMO_STORAGE_KEYS.sceneProjects, demoProjectsWithScript))
+        setProjects(ensureDemoScript(loadDemoData(DEMO_STORAGE_KEYS.sceneProjects, demoProjects)))
         setCurrentProject(null)
         setView("projects")
         setIsLoading(false)

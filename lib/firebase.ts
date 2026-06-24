@@ -48,10 +48,17 @@ const authReadyPromise = new Promise<void>((resolve) => {
   // Check if auth is already initialized
   if (typeof window !== "undefined" && isConfigValid && auth && typeof auth.onIdTokenChanged === "function") {
     resolve()
-  } else if (typeof window !== "undefined") {
-    // Poll for auth to be ready (in case of async loading)
+  } else if (typeof window !== "undefined" && isConfigValid) {
+    // Config is valid but auth may still be loading asynchronously. Poll for it,
+    // but give up after a bounded number of attempts so callers never hang
+    // forever (previously this polled indefinitely, which froze any
+    // `await waitForAuth()` call when auth failed to initialize).
+    let attempts = 0
+    const maxAttempts = 40 // ~2s at 50ms intervals
     const checkAuth = () => {
       if (auth && typeof auth.onIdTokenChanged === "function") {
+        resolve()
+      } else if (attempts++ >= maxAttempts) {
         resolve()
       } else {
         setTimeout(checkAuth, 50)
@@ -60,7 +67,9 @@ const authReadyPromise = new Promise<void>((resolve) => {
     // Start checking after a small delay
     setTimeout(checkAuth, 50)
   } else {
-    // Server-side: resolve immediately (auth won't work anyway)
+    // Server-side, or no valid Firebase config (e.g. demo mode): resolve
+    // immediately. auth.currentUser will be undefined and authHeaders() returns
+    // {} so callers can proceed (or get a clean 401) instead of hanging.
     resolve()
   }
 })

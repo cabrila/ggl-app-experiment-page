@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { ArrowLeft, Plus, Trash2, GripVertical, Copy, Check, ExternalLink, Eye, X, ChevronDown, ImageIcon } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, GripVertical, Copy, Check, ExternalLink, Eye, X, ChevronDown, ImageIcon, AlertCircle } from "lucide-react"
 import { usePublicCasting } from "./PublicCastingContext"
 import { CastingCallField, CastingCall, PublicCastingProject } from "@/types/public-casting"
 import CastingCallPreviewModal from "./CastingCallPreviewModal"
@@ -65,6 +65,15 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
   const [showTypePicker, setShowTypePicker] = useState(false)
   const [isHeaderDragOver, setIsHeaderDragOver] = useState(false)
   const headerImageInputRef = useRef<HTMLInputElement | null>(null)
+
+  // Validation + save feedback. `attemptedSave` flips on after the first save
+  // attempt so we only surface required-field errors once the user has tried.
+  const [attemptedSave, setAttemptedSave] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+
+  const titleMissing = !title.trim()
+  const projectNameMissing = !projectName.trim()
 
   const setHeaderImageFromFile = (file: File | undefined) => {
     if (!file || !file.type.startsWith("image/")) return
@@ -176,28 +185,44 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
     setDragOverIndex(null)
   }
 
-  const handleSave = async () => {
-    if (!title.trim() || !projectName.trim()) return
+  // Whether a backend is configured. In demo mode this is unset, and we save to
+  // the local context only so the feature still works end-to-end.
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL
 
+  const handleSave = async () => {
+    setAttemptedSave(true)
+    setSaveError(null)
+
+    // Required-field validation — surfaced inline (see the inputs + the banner
+    // near the Create button) instead of silently doing nothing.
+    if (titleMissing || projectNameMissing) {
+      setSaveError("Please fill in the required fields marked with * before continuing.")
+      return
+    }
+
+    setIsSaving(true)
     try {
       if (isEditing && editingProject && editingCastingCall) {
-        // Update existing casting call via API
-        await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/casting-calls/${editingCastingCall.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
-          body: JSON.stringify({
-            title,
-            description,
-            projectName,
-            fields,
-            headerImageUrl: headerImageUrl || undefined,
-            isCompleted,
-            talentPoolConsentEnabled,
-            talentPoolConsentText,
+        // Update existing casting call via API (when a backend is configured).
+        if (backendUrl) {
+          const res = await fetch(`${backendUrl}/api/casting-calls/${editingCastingCall.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
+            body: JSON.stringify({
+              title,
+              description,
+              projectName,
+              fields,
+              headerImageUrl: headerImageUrl || undefined,
+              isCompleted,
+              talentPoolConsentEnabled,
+              talentPoolConsentText,
+            })
           })
-        })
+          if (!res.ok) throw new Error(`Backend rejected update (HTTP ${res.status})`)
+        }
 
-        // Also update local mocked context for now so UI doesn't break
+        // Always update local context so the UI reflects the change.
         updateCastingCall(editingProject.id, editingCastingCall.id, {
           title,
           description,
@@ -211,35 +236,38 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
         setCreatedLink(editingCastingCall.shareableLink)
         setStep("success")
       } else {
-        // Create new casting call via API
+        // Create new casting call.
         let project = state.projects.find((p) => p.name === projectName)
         if (!project) {
           project = createProject(projectName)
         }
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/casting-calls`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
-          body: JSON.stringify({
-            projectId: project.id,
-            title,
-            description,
-            projectName,
-            fields,
-            headerImageUrl: headerImageUrl || undefined,
-            talentPoolConsentEnabled,
-            talentPoolConsentText,
+        // When a backend is configured, persist there first and reuse its id so
+        // the local entry, shareable link and public form all agree. In demo
+        // mode (no backend) we skip the network call entirely.
+        let backendId: string | undefined
+        if (backendUrl) {
+          const response = await fetch(`${backendUrl}/api/casting-calls`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
+            body: JSON.stringify({
+              projectId: project.id,
+              title,
+              description,
+              projectName,
+              fields,
+              headerImageUrl: headerImageUrl || undefined,
+              talentPoolConsentEnabled,
+              talentPoolConsentText,
+            })
           })
-        })
-        
-        if (!response.ok) {
-          throw new Error(`Backend rejected casting call (HTTP ${response.status})`)
+          if (!response.ok) {
+            throw new Error(`Backend rejected casting call (HTTP ${response.status})`)
+          }
+          const newDbCastingCall = await response.json()
+          backendId = newDbCastingCall.id
         }
-        const newDbCastingCall = await response.json()
 
-        // Also create in local context — reuse the backend id so the local
-        // entry, its shareable link, and the public form all reference the
-        // same casting call.
         const castingCall = createCastingCall(
           project.id,
           title,
@@ -248,16 +276,19 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
           fields,
           headerImageUrl || undefined,
           { talentPoolConsentEnabled, talentPoolConsentText },
-          newDbCastingCall.id,
+          backendId,
         )
 
-        // Use the ID from the backend to construct the link
         setCreatedLink(`${window.location.origin}/actor-submission/${castingCall.id}`)
         setStep("success")
       }
     } catch (error) {
-      console.error("Failed to save casting call to backend:", error)
-      alert("Failed to save to database. Check console.")
+      console.error("Failed to save casting call:", error)
+      setSaveError(
+        "We couldn't save your casting call to the server. Please check your connection and try again."
+      )
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -478,30 +509,46 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
 
               <div>
                 <label className="block text-xs font-semibold text-violet-400 uppercase tracking-wider mb-2">
-                  Casting Call Title *
+                  Casting Call Title <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g., Lead Role - Sarah"
-                  className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-violet-500/50 focus:outline-none transition-colors font-sans"
+                  aria-invalid={attemptedSave && titleMissing}
+                  className={`w-full px-4 py-3 bg-[#0f1f17] border rounded-lg text-white placeholder-white/30 focus:outline-none transition-colors font-sans ${
+                    attemptedSave && titleMissing
+                      ? "border-red-500/60 focus:border-red-500"
+                      : "border-white/10 focus:border-violet-500/50"
+                  }`}
                   autoComplete="off"
                 />
+                {attemptedSave && titleMissing && (
+                  <p className="text-xs text-red-400 mt-1.5 font-sans">A casting call title is required.</p>
+                )}
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-violet-400 uppercase tracking-wider mb-2">
-                  Project Name *
+                  Project Name <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="text"
                   value={projectName}
                   onChange={(e) => setProjectName(e.target.value)}
                   placeholder="e.g., Midnight Echo"
-                  className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white placeholder-white/30 focus:border-violet-500/50 focus:outline-none transition-colors font-sans"
+                  aria-invalid={attemptedSave && projectNameMissing}
+                  className={`w-full px-4 py-3 bg-[#0f1f17] border rounded-lg text-white placeholder-white/30 focus:outline-none transition-colors font-sans ${
+                    attemptedSave && projectNameMissing
+                      ? "border-red-500/60 focus:border-red-500"
+                      : "border-white/10 focus:border-violet-500/50"
+                  }`}
                   autoComplete="off"
                 />
+                {attemptedSave && projectNameMissing && (
+                  <p className="text-xs text-red-400 mt-1.5 font-sans">A project name is required.</p>
+                )}
               </div>
 
               <div>
@@ -731,14 +778,34 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
             </div>
           </div>
 
-          {/* Save/Create Button */}
+          {/* Save error / validation banner */}
+          {saveError && (
+            <div
+              role="alert"
+              className="flex items-start gap-2 px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-300 font-sans"
+            >
+              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span>{saveError}</span>
+            </div>
+          )}
+
+          {/* Save/Create Button — intentionally always clickable so that
+              required-field validation can show feedback instead of the button
+              silently doing nothing. */}
           <button
             onClick={handleSave}
-            disabled={!title.trim() || !projectName.trim()}
-            className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-500/30 disabled:cursor-not-allowed rounded-xl text-white font-semibold text-lg transition-colors font-sans"
+            disabled={isSaving}
+            className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-500/50 disabled:cursor-not-allowed rounded-xl text-white font-semibold text-lg transition-colors font-sans"
           >
-            {isEditing ? "Save Changes" : "Create Casting Call"}
+            {isSaving
+              ? isEditing ? "Saving..." : "Creating..."
+              : isEditing ? "Save Changes" : "Create Casting Call"}
           </button>
+          {(titleMissing || projectNameMissing) && (
+            <p className="text-center text-xs text-white/40 font-sans -mt-2">
+              Fields marked with <span className="text-red-400">*</span> are required.
+            </p>
+          )}
         </div>
       </div>
 

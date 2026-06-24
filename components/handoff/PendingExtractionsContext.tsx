@@ -6,6 +6,9 @@ import type { ProjectScript } from "@/types/script"
 import { DEMO_SCRIPT } from "@/lib/scriptFile"
 
 const STORAGE_KEY = "gogreenlight-pending-extractions"
+// Tracks demo handoff entries the user has started or dismissed, so they aren't
+// re-seeded on the next load (the demo entries otherwise always merge in).
+const DISMISSED_DEMO_KEY = "gogreenlight-pending-demo-dismissed"
 
 const ALL_SECTIONS: SectionId[] = ["scene-list", "prop-list", "location-overview", "character-bible"]
 
@@ -20,15 +23,17 @@ const EMPTY_MAP: PendingMap = {
 
 // Demo seed: "The Velvet Court" was uploaded under My Characters, so the other
 // three pages get a "Ready to Extract" handoff entry to showcase the feature.
-// Stable ids keep this deterministic across reloads. Used only when nothing is
-// persisted yet (like demo data) — once a user starts or dismisses an entry,
-// their stored state wins.
+// Stable ids (prefixed with DEMO_ID_PREFIX) keep this deterministic and let us
+// detect demo entries when the user dismisses or starts them.
+const DEMO_ID_PREFIX = "demo-pending-velvet-court-"
 const DEMO_SOURCE: SectionId = "character-bible"
 const DEMO_NAME = "The Velvet Court"
+// Which sections get a demo handoff (every section except the source).
+const DEMO_TARGET_SECTIONS: SectionId[] = ["scene-list", "prop-list", "location-overview"]
 
 function buildDemoEntry(section: SectionId): PendingExtraction {
   return {
-    id: `demo-pending-${section}-velvet-court`,
+    id: `${DEMO_ID_PREFIX}${section}`,
     name: DEMO_NAME,
     script: DEMO_SCRIPT,
     sourceSection: DEMO_SOURCE,
@@ -36,11 +41,40 @@ function buildDemoEntry(section: SectionId): PendingExtraction {
   }
 }
 
-const DEMO_MAP: PendingMap = {
-  "scene-list": [buildDemoEntry("scene-list")],
-  "prop-list": [buildDemoEntry("prop-list")],
-  "location-overview": [buildDemoEntry("location-overview")],
-  "character-bible": [],
+function loadDismissedDemoIds(): Set<string> {
+  try {
+    if (typeof window === "undefined") return new Set()
+    const raw = window.localStorage.getItem(DISMISSED_DEMO_KEY)
+    return raw ? new Set(JSON.parse(raw) as string[]) : new Set()
+  } catch {
+    return new Set()
+  }
+}
+
+function rememberDismissedDemoId(id: string) {
+  try {
+    if (typeof window === "undefined") return
+    const ids = loadDismissedDemoIds()
+    ids.add(id)
+    window.localStorage.setItem(DISMISSED_DEMO_KEY, JSON.stringify([...ids]))
+  } catch {
+    // ignore persistence errors
+  }
+}
+
+// Merge the demo handoff entries into a map, skipping any the user already
+// dismissed/started and any section that already has that exact demo id.
+function withDemoSeed(map: PendingMap): PendingMap {
+  const dismissed = loadDismissedDemoIds()
+  const next: PendingMap = { ...map }
+  for (const section of DEMO_TARGET_SECTIONS) {
+    const entry = buildDemoEntry(section)
+    if (dismissed.has(entry.id)) continue
+    const existing = next[section] ?? []
+    if (existing.some((e) => e.id === entry.id)) continue
+    next[section] = [...existing, entry]
+  }
+  return next
 }
 
 interface PendingExtractionsContextType {
@@ -58,13 +92,13 @@ function loadInitial(): PendingMap {
   try {
     if (typeof window === "undefined") return EMPTY_MAP
     const raw = window.localStorage.getItem(STORAGE_KEY)
-    // No stored state yet: seed the demo handoff so the feature is visible.
-    if (!raw) return DEMO_MAP
-    const parsed = JSON.parse(raw) as Partial<PendingMap>
-    return { ...EMPTY_MAP, ...parsed }
+    const stored = raw ? ({ ...EMPTY_MAP, ...(JSON.parse(raw) as Partial<PendingMap>) }) : EMPTY_MAP
+    // Always merge the demo handoff so it shows for existing users too, unless
+    // they've dismissed/started it.
+    return withDemoSeed(stored)
   } catch (error) {
     console.warn("[v0] Failed to load pending extractions:", error)
-    return DEMO_MAP
+    return withDemoSeed(EMPTY_MAP)
   }
 }
 
@@ -113,6 +147,10 @@ export function PendingExtractionsProvider({ children }: { children: ReactNode }
   )
 
   const remove = useCallback((section: SectionId, id: string) => {
+    // If a demo handoff is started/dismissed, remember it so it isn't re-seeded.
+    if (id.startsWith(DEMO_ID_PREFIX)) {
+      rememberDismissedDemoId(id)
+    }
     setPending((prev) => ({
       ...prev,
       [section]: (prev[section] ?? []).filter((e) => e.id !== id),

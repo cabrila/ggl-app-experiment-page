@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { Plus, Megaphone, Calendar, Users, Trash2, Eye, FileEdit, FolderEdit, QrCode, Search, SlidersHorizontal, ChevronDown, Filter, FolderPlus, ChevronRight, ImageIcon, X, Check } from "lucide-react"
+import { Plus, Megaphone, Calendar, Users, Trash2, Eye, FileEdit, FolderEdit, QrCode, Search, SlidersHorizontal, ChevronDown, Filter, FolderPlus, ChevronRight, ImageIcon, X, Check, FolderInput, FolderMinus } from "lucide-react"
 import { usePublicCasting } from "./PublicCastingContext"
 import { CastingCall, PublicCastingProject } from "@/types/public-casting"
 import CastingCallPreviewModal from "./CastingCallPreviewModal"
@@ -58,6 +58,9 @@ export default function CastingCallsList({
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null)
   const [editingGroupName, setEditingGroupName] = useState("")
   const groupImageInputRefs = useRef<Record<string, HTMLInputElement | null>>({})
+  // Dropdown menus: split "Create Casting Group" button + per-card "move" menu
+  const [showGroupMenu, setShowGroupMenu] = useState(false)
+  const [moveMenuProjectId, setMoveMenuProjectId] = useState<string | null>(null)
 
   const toggleSelectProject = (projectId: string) => {
     setSelectedProjectIds((prev) =>
@@ -91,6 +94,38 @@ export default function CastingCallsList({
 
     setGroups((prev) => [...prev, ...newGroups])
     setSelectedProjectIds([])
+    setShowGroupMenu(false)
+  }
+
+  // Add all currently-selected casting calls to an existing group.
+  const addSelectedToGroup = (groupId: string) => {
+    if (selectedProjectIds.length === 0) return
+    setGroups((prev) =>
+      prev.map((g) => {
+        // First strip the selected ids from every group to avoid duplicates,
+        // then add them to the target group.
+        const remaining = g.projectIds.filter((id) => !selectedProjectIds.includes(id))
+        return g.id === groupId
+          ? { ...g, projectIds: [...remaining, ...selectedProjectIds] }
+          : { ...g, projectIds: remaining }
+      })
+    )
+    setSelectedProjectIds([])
+    setShowGroupMenu(false)
+  }
+
+  // Move a single casting call to another group, or remove it from its group
+  // entirely (targetGroupId = null sends it back to the unassigned list).
+  const assignProjectToGroup = (projectId: string, targetGroupId: string | null) => {
+    setGroups((prev) =>
+      prev.map((g) => {
+        const remaining = g.projectIds.filter((id) => id !== projectId)
+        return targetGroupId && g.id === targetGroupId
+          ? { ...g, projectIds: [...remaining, projectId] }
+          : { ...g, projectIds: remaining }
+      })
+    )
+    setMoveMenuProjectId(null)
   }
 
   const toggleGroupCollapse = (groupId: string) => {
@@ -212,6 +247,432 @@ export default function CastingCallsList({
     }
   }
 
+  // Per-card control to move a casting call to another group or remove it from
+  // its current group. Only rendered for cards that live inside a group.
+  const renderMoveControl = (project: PublicCastingProject, currentGroupId: string) => (
+    <div className="relative">
+      <button
+        onClick={(e) => {
+          e.stopPropagation()
+          setMoveMenuProjectId(moveMenuProjectId === project.id ? null : project.id)
+        }}
+        className="p-1 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
+        title="Move to another group"
+      >
+        <FolderInput className="w-4 h-4" />
+      </button>
+      {moveMenuProjectId === project.id && (
+        <>
+          <div
+            className="fixed inset-0 z-20"
+            onClick={(e) => {
+              e.stopPropagation()
+              setMoveMenuProjectId(null)
+            }}
+          />
+          <div className="absolute top-full right-0 mt-1 w-52 bg-[#13261c] border border-white/10 rounded-xl overflow-hidden shadow-xl z-30 py-1">
+            <p className="px-3 py-1.5 text-[11px] uppercase tracking-wider text-white/40 font-sans">
+              Move to group
+            </p>
+            {groups
+              .filter((g) => g.id !== currentGroupId)
+              .map((g) => (
+                <button
+                  key={g.id}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    assignProjectToGroup(project.id, g.id)
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-white/70 hover:bg-white/5 hover:text-white transition-colors font-sans"
+                >
+                  <FolderInput className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="truncate">{g.name}</span>
+                </button>
+              ))}
+            {groups.filter((g) => g.id !== currentGroupId).length === 0 && (
+              <p className="px-3 py-2 text-xs text-white/40 font-sans">No other groups</p>
+            )}
+            <div className="border-t border-white/10 my-1" />
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                assignProjectToGroup(project.id, null)
+              }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors font-sans"
+            >
+              <FolderMinus className="w-3.5 h-3.5 flex-shrink-0" />
+              Remove from group
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+
+  // Renders a casting call card. Used both in the unassigned grid (currentGroupId
+  // = null) and inside casting groups (currentGroupId set) so the action buttons
+  // are identical everywhere.
+  const renderProjectCard = (project: PublicCastingProject, currentGroupId: string | null = null) => {
+    const castingCall = project.castingCalls[0]
+    const hasCastingCall = !!castingCall
+    const inGroup = !!currentGroupId
+
+    // List view - single dense row
+    if (viewMode === "list") {
+      return (
+        <div
+          key={project.id}
+          className={`group relative flex items-center gap-3 p-3 rounded-lg border bg-[#1a2e23] transition-colors ${
+            selectedProjectIds.includes(project.id)
+              ? "border-amber-500/50 ring-2 ring-amber-500/20"
+              : "border-white/10 hover:border-violet-500/30"
+          }`}
+        >
+          {!inGroup && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                toggleSelectProject(project.id)
+              }}
+              className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                selectedProjectIds.includes(project.id)
+                  ? "bg-amber-500 border-amber-500 text-white"
+                  : "border-white/40 hover:border-amber-400 bg-[#0f1f17]/80"
+              }`}
+              title={selectedProjectIds.includes(project.id) ? "Deselect" : "Select"}
+            >
+              {selectedProjectIds.includes(project.id) && (
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </button>
+          )}
+          <div className="w-10 h-10 rounded-lg bg-[#0f1f17] flex items-center justify-center flex-shrink-0 overflow-hidden">
+            {project.thumbnailUrl ? (
+              <img src={project.thumbnailUrl} alt={project.name} className="w-full h-full object-cover" />
+            ) : (
+              <Megaphone className="w-5 h-5 text-violet-400" />
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-white truncate font-sans">
+              {hasCastingCall && castingCall.title ? castingCall.title : project.name}
+            </p>
+            <p className="text-xs text-white/50 truncate font-sans">{project.name}</p>
+          </div>
+          <span className="text-xs text-white/40 font-sans flex items-center gap-1 flex-shrink-0">
+            <Users className="w-3 h-3" />
+            {project.submissions.length}
+          </span>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {hasCastingCall && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setPreviewCastingCall(castingCall)
+                  }}
+                  className="p-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/70 hover:text-white transition-colors"
+                  title="Preview"
+                >
+                  <Eye className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onEditCastingCall(castingCall, project)
+                  }}
+                  className="p-1.5 bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/30 rounded-lg text-violet-300 hover:text-violet-200 transition-colors"
+                  title="Edit"
+                >
+                  <FileEdit className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setQrCodeCastingCall(castingCall)
+                  }}
+                  className="p-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/70 hover:text-white transition-colors"
+                  title="Generate QR Code"
+                >
+                  <QrCode className="w-4 h-4" />
+                </button>
+              </>
+            )}
+            <button
+              onClick={(e) => handleEditProject(e, project)}
+              className="p-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/70 hover:text-white transition-colors"
+              title="Edit Project"
+            >
+              <FolderEdit className="w-4 h-4" />
+            </button>
+            <button
+              onClick={(e) => handleDeleteProject(e, project)}
+              className="p-1.5 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded-lg text-red-400 hover:text-red-300 transition-colors"
+              title="Delete"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+            {inGroup && renderMoveControl(project, currentGroupId!)}
+          </div>
+        </div>
+      )
+    }
+
+    // Minimal view - condensed card
+    if (viewMode === "minimal") {
+      return (
+        <div
+          key={project.id}
+          className={`group relative flex flex-col rounded-xl border bg-[#1a2e23] transition-colors overflow-hidden ${
+            selectedProjectIds.includes(project.id)
+              ? "border-amber-500/50 ring-2 ring-amber-500/20"
+              : "border-white/10 hover:border-violet-500/30"
+          }`}
+        >
+          {!inGroup && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                toggleSelectProject(project.id)
+              }}
+              className={`absolute top-2 left-2 z-10 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                selectedProjectIds.includes(project.id)
+                  ? "bg-amber-500 border-amber-500 text-white"
+                  : "border-white/40 hover:border-amber-400 bg-[#0f1f17]/80"
+              }`}
+              title={selectedProjectIds.includes(project.id) ? "Deselect" : "Select"}
+            >
+              {selectedProjectIds.includes(project.id) && (
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </button>
+          )}
+          <div className="h-24 bg-[#0f1f17] flex-shrink-0">
+            {project.thumbnailUrl ? (
+              <img src={project.thumbnailUrl} alt={project.name} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <Megaphone className="w-7 h-7 text-violet-400" />
+              </div>
+            )}
+          </div>
+          <div className="flex flex-col gap-1 p-3">
+            <h3 className="text-sm font-bold text-white font-sans line-clamp-1">
+              {hasCastingCall && castingCall.title ? castingCall.title : project.name}
+            </h3>
+            <p className="text-xs text-white/50 truncate font-sans">{project.name}</p>
+            <div className="flex items-center justify-between mt-1">
+              <span className="text-xs text-white/40 font-sans flex items-center gap-1">
+                <Users className="w-3 h-3" />
+                {project.submissions.length}
+              </span>
+              {(hasCastingCall || inGroup) && (
+                <div className="flex items-center gap-1.5">
+                  {hasCastingCall && (
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setPreviewCastingCall(castingCall)
+                        }}
+                        className="p-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/70 hover:text-white transition-colors"
+                        title="Preview"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onEditCastingCall(castingCall, project)
+                        }}
+                        className="p-1 bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/30 rounded-lg text-violet-300 hover:text-violet-200 transition-colors"
+                        title="Edit"
+                      >
+                        <FileEdit className="w-3.5 h-3.5" />
+                      </button>
+                    </>
+                  )}
+                  {inGroup && renderMoveControl(project, currentGroupId!)}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    // Full view - large card with thumbnail
+    return (
+      <div
+        key={project.id}
+        className={`group relative flex rounded-xl border bg-[#1a2e23] transition-colors overflow-hidden ${
+          selectedProjectIds.includes(project.id)
+            ? "border-amber-500/50 ring-2 ring-amber-500/20"
+            : "border-white/10 hover:border-violet-500/30"
+        }`}
+      >
+        {/* Selection checkbox - Upper Left Corner (unassigned only) */}
+        {!inGroup && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              toggleSelectProject(project.id)
+            }}
+            className={`absolute top-3 left-3 z-10 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+              selectedProjectIds.includes(project.id)
+                ? "bg-amber-500 border-amber-500 text-white"
+                : "border-white/40 hover:border-amber-400 bg-[#0f1f17]/80"
+            }`}
+            title={selectedProjectIds.includes(project.id) ? "Deselect" : "Select"}
+          >
+            {selectedProjectIds.includes(project.id) && (
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </button>
+        )}
+
+        {/* Thumbnail Section - 1/3 width */}
+        <div className="w-1/3 min-h-[180px] bg-[#0f1f17] border-r border-white/10 flex-shrink-0">
+          {project.thumbnailUrl ? (
+            <img
+              src={project.thumbnailUrl}
+              alt={project.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <div className="w-16 h-16 rounded-xl bg-violet-500/20 flex items-center justify-center">
+                <Megaphone className="w-8 h-8 text-violet-400" />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Content Section - 2/3 width */}
+        <div className="flex-1 flex flex-col px-5 pb-5 pt-3">
+          {/* Reserved header strip for action icons (always visible) */}
+          <div className="relative h-6 flex-shrink-0">
+            <div className="absolute top-0 right-0 flex items-center gap-1.5">
+              {inGroup && renderMoveControl(project, currentGroupId!)}
+              {hasCastingCall && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setQrCodeCastingCall(castingCall)
+                  }}
+                  className="p-1 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
+                  title="Generate QR Code"
+                >
+                  <QrCode className="w-4 h-4" />
+                </button>
+              )}
+              <button
+                onClick={(e) => handleEditProject(e, project)}
+                className="p-1 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
+                title="Edit Project"
+              >
+                <FolderEdit className="w-4 h-4" />
+              </button>
+              <button
+                onClick={(e) => handleDeleteProject(e, project)}
+                className="p-1 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-red-400 hover:text-red-300 transition-colors"
+                title="Delete"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Casting Call Title (if exists) */}
+          {hasCastingCall && castingCall.title && (
+            <h3 className="w-full text-lg font-bold text-white mb-0.5 font-sans line-clamp-2 text-pretty leading-snug">
+              {castingCall.title}
+            </h3>
+          )}
+
+          {/* Project Name */}
+          <p className="text-xs text-white/50 mb-2 font-sans truncate">
+            {project.name}
+          </p>
+
+          {/* Completed Status Label */}
+          {hasCastingCall && castingCall.isCompleted && (
+            <div className="mb-2">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-[11px] font-semibold rounded-full font-sans">
+                <Check className="w-3 h-3" />
+                Completed
+              </span>
+            </div>
+          )}
+
+          {/* Meta Info */}
+          <div className="flex flex-wrap items-center gap-2 text-xs text-white/50 mb-2">
+            <div className="flex items-center gap-1">
+              <Calendar className="w-3 h-3" />
+              <span>{project.createdAt.toLocaleDateString()}</span>
+            </div>
+          </div>
+
+          {/* Submissions count */}
+          {project.submissions.length > 0 && (
+            <div className="mb-10 flex items-center gap-1 text-xs text-violet-300">
+              <Users className="w-3 h-3" />
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onViewSubmissions(hasCastingCall ? castingCall.title : undefined)
+                }}
+                className="underline underline-offset-2 hover:text-violet-200 transition-colors font-sans"
+                title={`View submissions${hasCastingCall ? ` for ${castingCall.title}` : ""}`}
+              >
+                {project.submissions.length} submissions
+              </button>
+              {project.submissions.some((s) => s.isNew) && (
+                <span className="ml-1 px-1 py-0.5 bg-emerald-500/20 text-emerald-300 text-[10px] rounded">
+                  {project.submissions.filter((s) => s.isNew).length} new
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Action Buttons for Casting Call */}
+          {hasCastingCall && (
+            <div className="flex items-center gap-2 pt-2 mt-auto border-t border-white/10">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setPreviewCastingCall(castingCall)
+                }}
+                className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/70 hover:text-white text-xs transition-colors font-sans"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                Preview
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onEditCastingCall(castingCall, project)
+                }}
+                className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/30 rounded-lg text-violet-300 hover:text-violet-200 text-xs transition-colors font-sans"
+                title={`Edit form: ${castingCall.title}`}
+              >
+                <FileEdit className="w-3.5 h-3.5" />
+                Edit
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="h-full overflow-y-auto p-6 md:p-10">
       <div className="max-w-6xl mx-auto">
@@ -253,16 +714,61 @@ export default function CastingCallsList({
         {/* Selection Actions - Create Group + Clear (to the right of Submissions) */}
         {selectedProjectIds.length > 0 && (
           <>
-            <button
-              onClick={handleCreateGroups}
-              className="flex items-center gap-2 px-4 py-2.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 rounded-lg text-amber-300 transition-colors font-sans"
-            >
-              <FolderPlus className="w-4 h-4" />
-              <span>Create Casting Groups</span>
-              <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 bg-amber-500 text-white text-xs font-bold rounded-full">
-                {selectedProjectIds.length}
-              </span>
-            </button>
+            <div className="relative flex items-center">
+              {/* Primary action: create a brand new group from the selection */}
+              <button
+                onClick={handleCreateGroups}
+                className="flex items-center gap-2 px-4 py-2.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 rounded-l-lg text-amber-300 transition-colors font-sans"
+              >
+                <FolderPlus className="w-4 h-4" />
+                <span>Create Casting Group</span>
+                <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 bg-amber-500 text-white text-xs font-bold rounded-full">
+                  {selectedProjectIds.length}
+                </span>
+              </button>
+              {/* Secondary toggle: add selection to an existing group instead */}
+              <button
+                onClick={() => setShowGroupMenu((v) => !v)}
+                className="flex items-center px-2 py-2.5 bg-amber-500/20 hover:bg-amber-500/30 border border-l-0 border-amber-500/30 rounded-r-lg text-amber-300 transition-colors"
+                title="More group options"
+                aria-label="More group options"
+              >
+                <ChevronDown className={`w-4 h-4 transition-transform ${showGroupMenu ? "rotate-180" : ""}`} />
+              </button>
+
+              {showGroupMenu && (
+                <>
+                  <div className="fixed inset-0 z-20" onClick={() => setShowGroupMenu(false)} />
+                  <div className="absolute top-full left-0 mt-1 w-60 bg-[#13261c] border border-white/10 rounded-xl overflow-hidden shadow-xl z-30 py-1">
+                    <button
+                      onClick={handleCreateGroups}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-white/80 hover:bg-white/5 hover:text-white transition-colors font-sans"
+                    >
+                      <FolderPlus className="w-3.5 h-3.5 flex-shrink-0 text-amber-300" />
+                      Create new group
+                    </button>
+                    {groups.length > 0 && (
+                      <>
+                        <div className="border-t border-white/10 my-1" />
+                        <p className="px-3 py-1.5 text-[11px] uppercase tracking-wider text-white/40 font-sans">
+                          Add to existing group
+                        </p>
+                        {groups.map((g) => (
+                          <button
+                            key={g.id}
+                            onClick={() => addSelectedToGroup(g.id)}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-white/70 hover:bg-white/5 hover:text-white transition-colors font-sans"
+                          >
+                            <FolderInput className="w-3.5 h-3.5 flex-shrink-0" />
+                            <span className="truncate">{g.name}</span>
+                          </button>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
 
             <button
               onClick={() => setSelectedProjectIds([])}
@@ -375,325 +881,7 @@ export default function CastingCallsList({
               : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
           }
         >
-          {visibleProjects.map((project) => {
-            const castingCall = project.castingCalls[0]
-            const hasCastingCall = !!castingCall
-
-            // List view - single dense row
-            if (viewMode === "list") {
-              return (
-                <div
-                  key={project.id}
-                  className={`group relative flex items-center gap-3 p-3 rounded-lg border bg-[#1a2e23] transition-colors ${
-                    selectedProjectIds.includes(project.id)
-                      ? "border-amber-500/50 ring-2 ring-amber-500/20"
-                      : "border-white/10 hover:border-violet-500/30"
-                  }`}
-                >
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      toggleSelectProject(project.id)
-                    }}
-                    className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                      selectedProjectIds.includes(project.id)
-                        ? "bg-amber-500 border-amber-500 text-white"
-                        : "border-white/40 hover:border-amber-400 bg-[#0f1f17]/80"
-                    }`}
-                    title={selectedProjectIds.includes(project.id) ? "Deselect" : "Select"}
-                  >
-                    {selectedProjectIds.includes(project.id) && (
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </button>
-                  <div className="w-10 h-10 rounded-lg bg-[#0f1f17] flex items-center justify-center flex-shrink-0 overflow-hidden">
-                    {project.thumbnailUrl ? (
-                      <img src={project.thumbnailUrl} alt={project.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <Megaphone className="w-5 h-5 text-violet-400" />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-white truncate font-sans">
-                      {hasCastingCall && castingCall.title ? castingCall.title : project.name}
-                    </p>
-                    <p className="text-xs text-white/50 truncate font-sans">{project.name}</p>
-                  </div>
-                  <span className="text-xs text-white/40 font-sans flex items-center gap-1 flex-shrink-0">
-                    <Users className="w-3 h-3" />
-                    {project.submissions.length}
-                  </span>
-                  {hasCastingCall && (
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setPreviewCastingCall(castingCall)
-                        }}
-                        className="p-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/70 hover:text-white transition-colors"
-                        title="Preview"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onEditCastingCall(castingCall, project)
-                        }}
-                        className="p-1.5 bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/30 rounded-lg text-violet-300 hover:text-violet-200 transition-colors"
-                        title="Edit"
-                      >
-                        <FileEdit className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )
-            }
-
-            // Minimal view - condensed card
-            if (viewMode === "minimal") {
-              return (
-                <div
-                  key={project.id}
-                  className={`group relative flex flex-col rounded-xl border bg-[#1a2e23] transition-colors overflow-hidden ${
-                    selectedProjectIds.includes(project.id)
-                      ? "border-amber-500/50 ring-2 ring-amber-500/20"
-                      : "border-white/10 hover:border-violet-500/30"
-                  }`}
-                >
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      toggleSelectProject(project.id)
-                    }}
-                    className={`absolute top-2 left-2 z-10 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-                      selectedProjectIds.includes(project.id)
-                        ? "bg-amber-500 border-amber-500 text-white"
-                        : "border-white/40 hover:border-amber-400 bg-[#0f1f17]/80"
-                    }`}
-                    title={selectedProjectIds.includes(project.id) ? "Deselect" : "Select"}
-                  >
-                    {selectedProjectIds.includes(project.id) && (
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </button>
-                  <div className="h-24 bg-[#0f1f17] flex-shrink-0">
-                    {project.thumbnailUrl ? (
-                      <img src={project.thumbnailUrl} alt={project.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Megaphone className="w-7 h-7 text-violet-400" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-1 p-3">
-                    <h3 className="text-sm font-bold text-white font-sans line-clamp-1">
-                      {hasCastingCall && castingCall.title ? castingCall.title : project.name}
-                    </h3>
-                    <p className="text-xs text-white/50 truncate font-sans">{project.name}</p>
-                    <div className="flex items-center justify-between mt-1">
-                      <span className="text-xs text-white/40 font-sans flex items-center gap-1">
-                        <Users className="w-3 h-3" />
-                        {project.submissions.length}
-                      </span>
-                      {hasCastingCall && (
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setPreviewCastingCall(castingCall)
-                            }}
-                            className="p-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/70 hover:text-white transition-colors"
-                            title="Preview"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              onEditCastingCall(castingCall, project)
-                            }}
-                            className="p-1 bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/30 rounded-lg text-violet-300 hover:text-violet-200 transition-colors"
-                            title="Edit"
-                          >
-                            <FileEdit className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )
-            }
-
-            return (
-              <div
-                key={project.id}
-                className={`group relative flex rounded-xl border bg-[#1a2e23] transition-colors overflow-hidden ${
-                  selectedProjectIds.includes(project.id)
-                    ? "border-amber-500/50 ring-2 ring-amber-500/20"
-                    : "border-white/10 hover:border-violet-500/30"
-                }`}
-              >
-                {/* Selection checkbox - Upper Left Corner */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    toggleSelectProject(project.id)
-                  }}
-                  className={`absolute top-3 left-3 z-10 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-                    selectedProjectIds.includes(project.id)
-                      ? "bg-amber-500 border-amber-500 text-white"
-                      : "border-white/40 hover:border-amber-400 bg-[#0f1f17]/80"
-                  }`}
-                  title={selectedProjectIds.includes(project.id) ? "Deselect" : "Select"}
-                >
-                  {selectedProjectIds.includes(project.id) && (
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </button>
-
-                {/* Thumbnail Section - 1/3 width */}
-                <div className="w-1/3 min-h-[180px] bg-[#0f1f17] border-r border-white/10 flex-shrink-0">
-                  {project.thumbnailUrl ? (
-                    <img
-                      src={project.thumbnailUrl}
-                      alt={project.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <div className="w-16 h-16 rounded-xl bg-violet-500/20 flex items-center justify-center">
-                        <Megaphone className="w-8 h-8 text-violet-400" />
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Content Section - 2/3 width */}
-                <div className="flex-1 flex flex-col px-5 pb-5 pt-3">
-                  {/* Reserved header strip for action icons (always visible) */}
-                  <div className="relative h-6 flex-shrink-0">
-                    <div className="absolute top-0 right-0 flex items-center gap-1.5">
-                      {hasCastingCall && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setQrCodeCastingCall(castingCall)
-                          }}
-                          className="p-1 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
-                          title="Generate QR Code"
-                        >
-                          <QrCode className="w-4 h-4" />
-                        </button>
-                      )}
-                      <button
-                        onClick={(e) => handleEditProject(e, project)}
-                        className="p-1 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
-                        title="Edit Project"
-                      >
-                        <FolderEdit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={(e) => handleDeleteProject(e, project)}
-                        className="p-1 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-red-400 hover:text-red-300 transition-colors"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Casting Call Title (if exists) */}
-                  {hasCastingCall && castingCall.title && (
-                    <h3 className="w-full text-lg font-bold text-white mb-0.5 font-sans line-clamp-2 text-pretty leading-snug">
-                      {castingCall.title}
-                    </h3>
-                  )}
-
-                  {/* Project Name */}
-                  <p className="text-xs text-white/50 mb-2 font-sans truncate">
-                    {project.name}
-                  </p>
-
-                  {/* Completed Status Label */}
-                  {hasCastingCall && castingCall.isCompleted && (
-                    <div className="mb-2">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-[11px] font-semibold rounded-full font-sans">
-                        <Check className="w-3 h-3" />
-                        Completed
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Meta Info */}
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-white/50 mb-2">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      <span>{project.createdAt.toLocaleDateString()}</span>
-                    </div>
-                  </div>
-
-                  {/* Submissions count */}
-                  {project.submissions.length > 0 && (
-                    <div className="mb-10 flex items-center gap-1 text-xs text-violet-300">
-                      <Users className="w-3 h-3" />
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onViewSubmissions(hasCastingCall ? castingCall.title : undefined)
-                        }}
-                        className="underline underline-offset-2 hover:text-violet-200 transition-colors font-sans"
-                        title={`View submissions${hasCastingCall ? ` for ${castingCall.title}` : ""}`}
-                      >
-                        {project.submissions.length} submissions
-                      </button>
-                      {project.submissions.some((s) => s.isNew) && (
-                        <span className="ml-1 px-1 py-0.5 bg-emerald-500/20 text-emerald-300 text-[10px] rounded">
-                          {project.submissions.filter((s) => s.isNew).length} new
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Action Buttons for Casting Call */}
-                  {hasCastingCall && (
-                    <div className="flex items-center gap-2 pt-2 mt-auto border-t border-white/10">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setPreviewCastingCall(castingCall)
-                        }}
-                        className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/70 hover:text-white text-xs transition-colors font-sans"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        Preview
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onEditCastingCall(castingCall, project)
-                        }}
-                        className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/30 rounded-lg text-violet-300 hover:text-violet-200 text-xs transition-colors font-sans"
-                        title={`Edit form: ${castingCall.title}`}
-                      >
-                        <FileEdit className="w-3.5 h-3.5" />
-                        Edit
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )
-          })}
+          {visibleProjects.map((project) => renderProjectCard(project, null))}
         </div>
       )}
       </div>
@@ -809,113 +997,26 @@ export default function CastingCallsList({
                         />
                       </div>
 
-                      {/* Casting call slots - rendered in the slot matching the selected view mode */}
-                      <div
-                        className={
-                          viewMode === "list"
-                            ? "px-4 py-4 flex flex-col gap-2"
-                            : viewMode === "minimal"
-                            ? "px-4 py-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"
-                            : "px-4 py-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
-                        }
-                      >
-                      {groupProjects.map((project) => {
-                        const cc = project.castingCalls[0]
-
-                        // Full slot - thumbnail card
-                        if (viewMode === "full") {
-                          return (
-                            <div
-                              key={project.id}
-                              className="flex flex-col rounded-lg bg-[#0f1f17] border border-white/10 overflow-hidden"
-                            >
-                              <div className="h-24 bg-[#13261c] flex-shrink-0">
-                                {project.thumbnailUrl ? (
-                                  <img
-                                    src={project.thumbnailUrl || "/placeholder.svg"}
-                                    alt={project.name}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center">
-                                    <Megaphone className="w-7 h-7 text-violet-400" />
-                                  </div>
-                                )}
-                              </div>
-                              <div className="flex flex-col gap-1 p-3">
-                                <p className="text-sm font-semibold text-white font-sans line-clamp-1">
-                                  {cc?.title || project.name}
-                                </p>
-                                <p className="text-xs text-white/50 truncate font-sans">{project.name}</p>
-                                <span className="mt-1 text-xs text-white/40 font-sans flex items-center gap-1">
-                                  <Users className="w-3 h-3" />
-                                  {project.submissions.length} submissions
-                                </span>
-                              </div>
-                            </div>
-                          )
-                        }
-
-                        // Minimal slot - compact card
-                        if (viewMode === "minimal") {
-                          return (
-                            <div
-                              key={project.id}
-                              className="flex flex-col items-center text-center gap-2 p-3 rounded-lg bg-[#0f1f17] border border-white/10"
-                            >
-                              <div className="w-12 h-12 rounded-lg bg-violet-500/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                                {project.thumbnailUrl ? (
-                                  <img
-                                    src={project.thumbnailUrl || "/placeholder.svg"}
-                                    alt={project.name}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <Megaphone className="w-5 h-5 text-violet-400" />
-                                )}
-                              </div>
-                              <p className="text-xs font-semibold text-white line-clamp-1 w-full font-sans">
-                                {cc?.title || project.name}
-                              </p>
-                              <span className="text-[11px] text-white/40 font-sans flex items-center gap-1">
-                                <Users className="w-3 h-3" />
-                                {project.submissions.length}
-                              </span>
-                            </div>
-                          )
-                        }
-
-                        // List slot - dense row
-                        return (
-                          <div
-                            key={project.id}
-                            className="flex items-center gap-3 p-3 rounded-lg bg-[#0f1f17] border border-white/10"
-                          >
-                            <div className="w-10 h-10 rounded-lg bg-violet-500/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                              {project.thumbnailUrl ? (
-                                <img
-                                  src={project.thumbnailUrl || "/placeholder.svg"}
-                                  alt={project.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <Megaphone className="w-5 h-5 text-violet-400" />
-                              )}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-white truncate font-sans">{project.name}</p>
-                              {cc?.title && (
-                                <p className="text-xs text-white/50 truncate font-sans">{cc.title}</p>
-                              )}
-                            </div>
-                            <span className="text-xs text-white/40 font-sans flex items-center gap-1">
-                              <Users className="w-3 h-3" />
-                              {project.submissions.length}
-                            </span>
-                          </div>
-                        )
-                      })}
-                      </div>
+                      {/* Casting call slots - reuse the full card so every action
+                          button (preview, edit, QR, edit project, delete) plus the
+                          move/remove control is available inside the group too. */}
+                      {groupProjects.length === 0 ? (
+                        <p className="px-4 py-6 text-sm text-white/40 font-sans text-center">
+                          This group is empty. Use the move menu on a casting call to add one here.
+                        </p>
+                      ) : (
+                        <div
+                          className={
+                            viewMode === "list"
+                              ? "px-4 py-4 flex flex-col gap-2"
+                              : viewMode === "minimal"
+                              ? "px-4 py-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"
+                              : "px-4 py-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+                          }
+                        >
+                          {groupProjects.map((project) => renderProjectCard(project, group.id))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

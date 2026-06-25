@@ -12,14 +12,23 @@ const CACHE_KEY = "gogreenlight-script-cache"
 
 type ScriptCache = Record<string, ProjectScript>
 
+// In-memory mirror. Scripts can be several MB and localStorage is capped at
+// ~5MB, so a persist can fail with a quota error. The in-memory map guarantees
+// the script survives backend refreshes for the current session regardless.
+const memoryCache: ScriptCache = {}
+
 function read(): ScriptCache {
+  let stored: ScriptCache = {}
   try {
-    if (typeof window === "undefined") return {}
-    const raw = window.localStorage.getItem(CACHE_KEY)
-    return raw ? (JSON.parse(raw) as ScriptCache) : {}
+    if (typeof window !== "undefined") {
+      const raw = window.localStorage.getItem(CACHE_KEY)
+      if (raw) stored = JSON.parse(raw) as ScriptCache
+    }
   } catch {
-    return {}
+    stored = {}
   }
+  // In-memory entries take priority — they're always current for the session.
+  return { ...stored, ...memoryCache }
 }
 
 function write(cache: ScriptCache): void {
@@ -29,13 +38,14 @@ function write(cache: ScriptCache): void {
   } catch (err) {
     // Quota exceeded or storage unavailable. The in-memory copy still works for
     // the current session; it just won't survive a reload.
-    console.warn("[v0] Failed to cache script:", err)
+    console.warn("[v0] Failed to persist script cache (using in-memory only):", err)
   }
 }
 
 /** Persist a record's original uploaded script locally, keyed by its id. */
 export function cacheScript(id: string, script: ProjectScript | undefined | null): void {
   if (!id || !script) return
+  memoryCache[id] = script
   const cache = read()
   cache[id] = script
   write(cache)
@@ -48,6 +58,7 @@ export function getCachedScript(id: string): ProjectScript | undefined {
 
 /** Drop a cached script (e.g. when its project/bible is deleted). */
 export function removeCachedScript(id: string): void {
+  delete memoryCache[id]
   const cache = read()
   if (id in cache) {
     delete cache[id]

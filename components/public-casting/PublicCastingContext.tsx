@@ -626,7 +626,11 @@ export function PublicCastingProvider({ children }: { children: ReactNode }) {
             shareableLink: `${window.location.origin}/actor-submission/${call.id}`,
             headerImageUrl: call.headerImageUrl,
             isCompleted: call.isCompleted,
-            talentPoolConsentEnabled: call.talentPoolConsentEnabled,
+            // Consent is enabled by default. Only an explicit `false` from the
+            // backend disables it, so a missing/undefined value (e.g. legacy
+            // records or a backend that doesn't echo the flag) won't wrongly
+            // strip the consent checkbox from the form.
+            talentPoolConsentEnabled: call.talentPoolConsentEnabled ?? true,
             talentPoolConsentText: call.talentPoolConsentText,
           });
         });

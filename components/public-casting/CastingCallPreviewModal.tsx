@@ -143,8 +143,9 @@ export default function CastingCallPreviewModal({ castingCall, project, onClose 
     // Simulate network delay for realism
     await new Promise(resolve => setTimeout(resolve, 800))
     
-    // Add submission to context (include talent pool consent when enabled)
-    const submissionData = castingCall.talentPoolConsentEnabled
+    // Add submission to context (include talent pool consent when enabled).
+    // Consent is on by default — only an explicit `false` disables it.
+    const submissionData = castingCall.talentPoolConsentEnabled !== false
       ? { ...formData, "Talent Pool Consent": talentPoolConsent ? "Yes" : "No" }
       : formData
     addSubmission(castingCall.id, submissionData)
@@ -445,8 +446,9 @@ export default function CastingCallPreviewModal({ castingCall, project, onClose 
                   </div>
                 ))}
 
-                {/* Talent Pool Consent - always rendered at the very end of the form */}
-                {castingCall.talentPoolConsentEnabled && (
+                {/* Talent Pool Consent - rendered at the very end of the form;
+                    enabled by default unless explicitly turned off */}
+                {castingCall.talentPoolConsentEnabled !== false && (
                   <label className="flex items-start gap-3 cursor-pointer pt-2">
                     <input
                       type="checkbox"

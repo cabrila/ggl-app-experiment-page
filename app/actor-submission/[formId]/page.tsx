@@ -148,12 +148,20 @@ export default function ActorSubmissionForm() {
     try {
       // Pass the raw formData object directly as actorData.
       // The backend/approval system will parse the custom field labels.
+      // When the talent pool consent checkbox is shown, record the actor's
+      // answer ("Yes"/"No") alongside the rest of their submission so the
+      // casting team can see it. (Consent defaults to enabled unless the
+      // casting call explicitly disabled it.)
+      const consentEnabled = formConfig.talentPoolConsentEnabled !== false
+      const actorData = consentEnabled
+        ? { ...formData, "Talent Pool Consent": talentPoolConsent ? "Yes" : "No" }
+        : formData
       const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/public/submit-actor`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           castingCallId: formId,
-          actorData: formData,
+          actorData,
         })
       });
       // Only treat it as submitted if the backend actually accepted and stored
@@ -382,7 +390,7 @@ export default function ActorSubmissionForm() {
               ))}
             </div>
 
-            {formConfig.talentPoolConsentEnabled && (
+            {formConfig.talentPoolConsentEnabled !== false && (
               <div className="bg-slate-900/50 p-5 rounded-2xl border border-slate-700/50">
                 <label className="flex items-start gap-3 cursor-pointer group">
                   <div className="relative flex items-center pt-0.5">

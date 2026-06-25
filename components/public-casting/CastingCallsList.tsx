@@ -37,7 +37,6 @@ export default function CastingCallsList({
   useEffect(() => {
     void refreshFromBackend()
   }, [refreshFromBackend])
-  const [hoveredProjectId, setHoveredProjectId] = useState<string | null>(null)
   const [previewCastingCall, setPreviewCastingCall] = useState<CastingCall | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<PublicCastingProject | null>(null)
   const [editTarget, setEditTarget] = useState<PublicCastingProject | null>(null)
@@ -540,8 +539,6 @@ export default function CastingCallsList({
                     ? "border-amber-500/50 ring-2 ring-amber-500/20"
                     : "border-white/10 hover:border-violet-500/30"
                 }`}
-                onMouseEnter={() => setHoveredProjectId(project.id)}
-                onMouseLeave={() => setHoveredProjectId(null)}
               >
                 {/* Selection checkbox - Upper Left Corner */}
                 <button
@@ -582,38 +579,36 @@ export default function CastingCallsList({
 
                 {/* Content Section - 2/3 width */}
                 <div className="flex-1 flex flex-col px-5 pb-5 pt-3">
-                  {/* Reserved header strip for hover action icons (keeps content below them) */}
+                  {/* Reserved header strip for action icons (always visible) */}
                   <div className="relative h-6 flex-shrink-0">
-                    {hoveredProjectId === project.id && (
-                      <div className="absolute top-0 right-0 flex items-center gap-1.5">
-                        {hasCastingCall && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setQrCodeCastingCall(castingCall)
-                            }}
-                            className="p-1 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
-                            title="Generate QR Code"
-                          >
-                            <QrCode className="w-4 h-4" />
-                          </button>
-                        )}
+                    <div className="absolute top-0 right-0 flex items-center gap-1.5">
+                      {hasCastingCall && (
                         <button
-                          onClick={(e) => handleEditProject(e, project)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setQrCodeCastingCall(castingCall)
+                          }}
                           className="p-1 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
-                          title="Edit Project"
+                          title="Generate QR Code"
                         >
-                          <FolderEdit className="w-4 h-4" />
+                          <QrCode className="w-4 h-4" />
                         </button>
-                        <button
-                          onClick={(e) => handleDeleteProject(e, project)}
-                          className="p-1 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-red-400 hover:text-red-300 transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    )}
+                      )}
+                      <button
+                        onClick={(e) => handleEditProject(e, project)}
+                        className="p-1 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
+                        title="Edit Project"
+                      >
+                        <FolderEdit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={(e) => handleDeleteProject(e, project)}
+                        className="p-1 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-red-400 hover:text-red-300 transition-colors"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Casting Call Title (if exists) */}

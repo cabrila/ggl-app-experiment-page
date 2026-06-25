@@ -6,6 +6,7 @@ import { usePublicCasting } from "./PublicCastingContext"
 import { CastingCallField, CastingCall, PublicCastingProject } from "@/types/public-casting"
 import CastingCallPreviewModal from "./CastingCallPreviewModal"
 import { authHeaders } from "@/lib/firebase"
+import { fileToInlineImagePreferPng } from "@/utils/imageProcessing"
 
 interface CastingCallSetupProps {
   onBack: () => void
@@ -75,13 +76,15 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
   const titleMissing = !title.trim()
   const projectNameMissing = !projectName.trim()
 
-  const setHeaderImageFromFile = (file: File | undefined) => {
+  const setHeaderImageFromFile = async (file: File | undefined) => {
     if (!file || !file.type.startsWith("image/")) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      setHeaderImageUrl(reader.result as string)
-    }
-    reader.readAsDataURL(file)
+    // AI: Downscale before embedding as a data URL. The casting call is stored
+    // in a Firestore doc whose per-property limit is ~1 MiB; a raw header photo
+    // blows past it and the create/update write 500s. Prefer PNG so transparent
+    // logos/graphics survive, falling back to JPEG when a photo would exceed the
+    // limit. Banner bounds (1600x900) preserve aspect ratio, never stretch.
+    const dataUrl = await fileToInlineImagePreferPng(file, { maxWidth: 1600, maxHeight: 900 })
+    setHeaderImageUrl(dataUrl)
   }
 
   // Create a preview casting call object for the modal

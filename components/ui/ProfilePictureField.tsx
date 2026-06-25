@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react"
 import { ImagePlus, X } from "lucide-react"
+import { fileToDataUrl } from "@/utils/imageProcessing"
 
 interface ProfilePictureFieldProps {
   /** Current image value (data URL or remote URL). Empty string when none. */
@@ -31,11 +32,12 @@ export default function ProfilePictureField({
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
 
-  const readFile = (file: File | undefined) => {
+  const readFile = async (file: File | undefined) => {
     if (!file || !file.type.startsWith("image/")) return
-    const reader = new FileReader()
-    reader.onload = () => onChange(reader.result as string)
-    reader.readAsDataURL(file)
+    // AI: Compress before producing the data URL. These persist inline in
+    // Firestore (1 MiB/property cap) via the submission/actor docs; a raw phone
+    // photo otherwise 500s the public submit endpoint.
+    onChange(await fileToDataUrl(file))
   }
 
   const accentActive =

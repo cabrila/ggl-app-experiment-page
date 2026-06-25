@@ -4,6 +4,8 @@ Next.js web app for **tools.gogreenlight.ai**, a suite of AI-assisted pre-produc
 
 > Originally scaffolded with [v0.dev](https://v0.dev) and deployed on Vercel; it has since grown well beyond the starter template.
 
+**Repository:** [`cabrila/ggl-app-experiment-page`](https://github.com/cabrila/ggl-app-experiment-page) — deployed via Vercel (`main` → production `tools.gogreenlight.ai`, `dev` → preview `tools-dev.ggl.cx`). Pairs with the backend repo [`Greenlight-Casting/tools.gogreenlight.ai-dev`](https://github.com/Greenlight-Casting/tools.gogreenlight.ai-dev).
+
 ## Features
 
 Each tool uploads a document to the backend skills engine, polls for progress, then renders an editable, exportable result (JSON / PDF / Excel):

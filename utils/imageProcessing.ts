@@ -170,6 +170,53 @@ export function processImage(file: File, options: ImageProcessingOptions = {}): 
 }
 
 /**
+ * AI: Reads an image File and returns a compressed, downscaled data URL that is
+ * safe to store inline in a Firestore document (per-property limit ~1 MiB).
+ * Raw `readAsDataURL` on a phone photo easily exceeds that and makes the write
+ * 500, so all inline-image inputs should go through here. Falls back to a raw
+ * data URL only if canvas processing is unavailable, so callers always resolve.
+ */
+export async function fileToDataUrl(file: File, options: ImageProcessingOptions = {}): Promise<string> {
+  try {
+    const { dataUrl } = await processImage(file, options)
+    return dataUrl
+  } catch {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = () => reject(new Error("Failed to read image"))
+      reader.readAsDataURL(file)
+    })
+  }
+}
+
+// AI: Firestore caps a single property at 1,048,487 bytes. A data URL is ASCII,
+// so its string byte length is what counts against that limit; keep some headroom.
+const FIRESTORE_PROPERTY_LIMIT = 1_048_487
+const INLINE_IMAGE_BUDGET = FIRESTORE_PROPERTY_LIMIT - 4_000
+
+function dataUrlByteLength(dataUrl: string): number {
+  return new TextEncoder().encode(dataUrl).length
+}
+
+/**
+ * AI: Produces an inline image data URL, preferring PNG so transparency (logos,
+ * graphics) survives — but falls back to JPEG if the PNG would exceed the
+ * Firestore property limit. Photographic images don't compress well as PNG and
+ * would otherwise blow past ~1 MiB and 500 the write; JPEG keeps them safe.
+ * Use this for images stored inline in Firestore where transparency may matter.
+ */
+export async function fileToInlineImagePreferPng(
+  file: File,
+  options: ImageProcessingOptions = {},
+): Promise<string> {
+  const png = await fileToDataUrl(file, { ...options, format: "png" })
+  if (dataUrlByteLength(png) <= INLINE_IMAGE_BUDGET) return png
+  // Too large as PNG (likely a photo) — re-encode as JPEG to stay under the cap.
+  return fileToDataUrl(file, { ...options, format: "jpeg", quality: options.quality ?? 0.82 })
+}
+
+/**
  * Creates a thumbnail from an image file
  */
 export function createThumbnail(file: File, size = 150): Promise<string> {

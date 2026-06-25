@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react"
 import { ImagePlus, X } from "lucide-react"
+import { fileToDataUrl } from "@/utils/imageProcessing"
 
 type Accent = "rose" | "amber" | "emerald" | "violet" | "teal"
 
@@ -53,29 +54,21 @@ export default function ImageUploadField({
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
 
-  const readFiles = (files: FileList | null | undefined) => {
+  const readFiles = async (files: FileList | null | undefined) => {
     if (!files || files.length === 0) return
     const images = Array.from(files).filter((f) => f.type.startsWith("image/"))
     if (images.length === 0) return
 
+    // AI: Compress/downscale before producing data URLs — these are stored
+    // inline in Firestore (1 MiB/property cap); raw images otherwise 500 the write.
     if (!multiple) {
-      const reader = new FileReader()
-      reader.onload = () => onChange([reader.result as string])
-      reader.readAsDataURL(images[0])
+      onChange([await fileToDataUrl(images[0])])
       return
     }
 
     // Read all selected files, preserving order, then append to existing.
-    Promise.all(
-      images.map(
-        (file) =>
-          new Promise<string>((resolve) => {
-            const reader = new FileReader()
-            reader.onload = () => resolve(reader.result as string)
-            reader.readAsDataURL(file)
-          }),
-      ),
-    ).then((dataUrls) => onChange([...value, ...dataUrls]))
+    const dataUrls = await Promise.all(images.map((file) => fileToDataUrl(file)))
+    onChange([...value, ...dataUrls])
   }
 
   const removeAt = (idx: number) => {

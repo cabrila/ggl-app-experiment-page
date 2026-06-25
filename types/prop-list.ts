@@ -29,6 +29,10 @@ export interface Prop {
   sceneAppearances: PropSceneAppearance[]
   notes?: string
   referenceImageUrl?: string
+  /** User-uploaded reference image(s) for the "Prop Image and Sources" field (data URLs). */
+  referenceImages?: string[]
+  /** External reference/source link, opened in a new tab. */
+  referenceLink?: string
 }
 
 export interface PropProject {

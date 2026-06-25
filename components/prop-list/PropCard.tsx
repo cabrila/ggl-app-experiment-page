@@ -1,9 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { Package, Pencil, Trash2, X, Save, Plus } from "lucide-react"
+import { Package, Pencil, Trash2, X, Save, Plus, ExternalLink } from "lucide-react"
 import { Prop, PropCategory } from "@/types/prop-list"
 import CardMore from "@/components/ui/CardMore"
+import ImageUploadField from "@/components/ui/ImageUploadField"
+import ImageCarouselModal from "@/components/ui/ImageCarouselModal"
 
 const CATEGORIES: PropCategory[] = [
   "weapon",
@@ -60,6 +62,9 @@ export default function PropCard({
 }: PropCardProps) {
   const [isEditing, setIsEditing] = useState(startInEdit)
   const [editData, setEditData] = useState<Prop>(prop)
+  const [carouselOpen, setCarouselOpen] = useState(false)
+
+  const referenceImages = prop.referenceImages ?? []
 
   const handleSave = () => {
     onUpdate(editData)
@@ -143,6 +148,33 @@ export default function PropCard({
           rows={2}
           className="w-full px-4 py-3 bg-[#0f1f17] rounded-lg text-white font-sans mb-4 border border-white/10 focus:border-rose-500/50 focus:outline-none resize-none"
         />
+
+        {/* Prop Image and Sources */}
+        <div className="p-4 bg-[#0f1f17] rounded-lg mb-4 border border-white/10">
+          <p className="text-xs font-semibold text-rose-400 uppercase tracking-wider mb-3">
+            Prop Image and Sources
+          </p>
+
+          <label className="block text-xs text-white/60 mb-2 font-sans">Prop Image</label>
+          <ImageUploadField
+            value={editData.referenceImages ?? []}
+            onChange={(imgs) => setEditData({ ...editData, referenceImages: imgs })}
+            accent="rose"
+            placeholder="Click or drag an image to upload"
+          />
+
+          <label className="block text-xs text-white/60 mt-3 mb-2 font-sans">
+            References Link (opens in new tab)
+          </label>
+          <input
+            type="url"
+            autoComplete="off"
+            value={editData.referenceLink || ""}
+            onChange={(e) => setEditData({ ...editData, referenceLink: e.target.value })}
+            placeholder="https://example.com/prop-reference"
+            className="w-full px-3 py-2 bg-[#1a2e23] rounded-lg text-white font-sans text-sm border border-white/10 focus:border-rose-500/50 focus:outline-none"
+          />
+        </div>
 
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
@@ -278,6 +310,56 @@ export default function PropCard({
           <p className={`text-sm text-white/60 font-sans leading-relaxed ${forceExpanded ? "" : "line-clamp-2"}`}>
             {prop.notes}
           </p>
+        </div>
+      )}
+
+      {(referenceImages.length > 0 || prop.referenceLink) && (
+        <div className="mb-3">
+          <p className="text-xs font-semibold text-rose-400 uppercase tracking-wider mb-2">
+            Prop Image and Sources
+          </p>
+          {referenceImages.length > 0 && (
+            <div className={`grid gap-2 mb-2 ${referenceImages.length === 1 ? "grid-cols-1" : "grid-cols-3"}`}>
+              {(forceExpanded ? referenceImages : referenceImages.slice(0, 3)).map((img, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    setCarouselOpen(true)
+                  }}
+                  className={`relative overflow-hidden rounded-lg border border-white/10 bg-[#0f1f17] cursor-zoom-in ${
+                    referenceImages.length === 1 ? "h-40" : "aspect-square"
+                  }`}
+                  title="View image"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={img || "/placeholder.svg"}
+                    alt={`${prop.name} reference ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+          {prop.referenceLink && (
+            <a
+              href={prop.referenceLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/70 hover:text-white text-sm transition-colors"
+            >
+              <ExternalLink className="w-4 h-4" />
+              <span className="font-sans">References Link</span>
+            </a>
+          )}
+
+          <ImageCarouselModal
+            isOpen={carouselOpen}
+            onClose={() => setCarouselOpen(false)}
+            images={referenceImages}
+            title={`${prop.name} — Images`}
+          />
         </div>
       )}
 

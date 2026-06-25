@@ -16,6 +16,8 @@ export interface Location {
   scoutingNotes: string
   locationIdeaMapUrl?: string
   locationIdeaLink?: string
+  /** User-uploaded location idea images (data URLs), browsable in a carousel. */
+  locationIdeaImages?: string[]
 }
 
 export interface LocationProject {

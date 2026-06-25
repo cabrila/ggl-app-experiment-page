@@ -247,36 +247,38 @@ export default function CastingCallsList({
     }
   }
 
-  // Per-card control to move a casting call to another group or remove it from
-  // its current group. Only rendered for cards that live inside a group.
-  const renderMoveControl = (project: PublicCastingProject, currentGroupId: string) => (
-    <div className="relative">
-      <button
-        onClick={(e) => {
-          e.stopPropagation()
-          setMoveMenuProjectId(moveMenuProjectId === project.id ? null : project.id)
-        }}
-        className="p-1 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
-        title="Move to another group"
-      >
-        <FolderInput className="w-4 h-4" />
-      </button>
-      {moveMenuProjectId === project.id && (
-        <>
-          <div
-            className="fixed inset-0 z-20"
-            onClick={(e) => {
-              e.stopPropagation()
-              setMoveMenuProjectId(null)
-            }}
-          />
-          <div className="absolute top-full right-0 mt-1 w-52 bg-[#13261c] border border-white/10 rounded-xl overflow-hidden shadow-xl z-30 py-1">
-            <p className="px-3 py-1.5 text-[11px] uppercase tracking-wider text-white/40 font-sans">
-              Move to group
-            </p>
-            {groups
-              .filter((g) => g.id !== currentGroupId)
-              .map((g) => (
+  // Per-card control to move/add a casting call to a group. Rendered on every
+  // card once at least one group exists: cards inside a group can move to a
+  // different group or be removed, while unassigned cards can be added to a group.
+  const renderMoveControl = (project: PublicCastingProject, currentGroupId: string | null) => {
+    const inGroup = !!currentGroupId
+    const targetGroups = groups.filter((g) => g.id !== currentGroupId)
+    return (
+      <div className="relative">
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            setMoveMenuProjectId(moveMenuProjectId === project.id ? null : project.id)
+          }}
+          className="p-1 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
+          title={inGroup ? "Move to another group" : "Add to a casting group"}
+        >
+          <FolderInput className="w-4 h-4" />
+        </button>
+        {moveMenuProjectId === project.id && (
+          <>
+            <div
+              className="fixed inset-0 z-20"
+              onClick={(e) => {
+                e.stopPropagation()
+                setMoveMenuProjectId(null)
+              }}
+            />
+            <div className="absolute top-full right-0 mt-1 w-52 bg-[#13261c] border border-white/10 rounded-xl overflow-hidden shadow-xl z-30 py-1">
+              <p className="px-3 py-1.5 text-[11px] uppercase tracking-wider text-white/40 font-sans">
+                {inGroup ? "Move to group" : "Add to group"}
+              </p>
+              {targetGroups.map((g) => (
                 <button
                   key={g.id}
                   onClick={(e) => {
@@ -289,25 +291,30 @@ export default function CastingCallsList({
                   <span className="truncate">{g.name}</span>
                 </button>
               ))}
-            {groups.filter((g) => g.id !== currentGroupId).length === 0 && (
-              <p className="px-3 py-2 text-xs text-white/40 font-sans">No other groups</p>
-            )}
-            <div className="border-t border-white/10 my-1" />
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                assignProjectToGroup(project.id, null)
-              }}
-              className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors font-sans"
-            >
-              <FolderMinus className="w-3.5 h-3.5 flex-shrink-0" />
-              Remove from group
-            </button>
-          </div>
-        </>
-      )}
-    </div>
-  )
+              {targetGroups.length === 0 && (
+                <p className="px-3 py-2 text-xs text-white/40 font-sans">No other groups</p>
+              )}
+              {inGroup && (
+                <>
+                  <div className="border-t border-white/10 my-1" />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      assignProjectToGroup(project.id, null)
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors font-sans"
+                  >
+                    <FolderMinus className="w-3.5 h-3.5 flex-shrink-0" />
+                    Remove from group
+                  </button>
+                </>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    )
+  }
 
   // Renders a casting call card. Used both in the unassigned grid (currentGroupId
   // = null) and inside casting groups (currentGroupId set) so the action buttons
@@ -316,6 +323,9 @@ export default function CastingCallsList({
     const castingCall = project.castingCalls[0]
     const hasCastingCall = !!castingCall
     const inGroup = !!currentGroupId
+    // The move/add-to-group control appears on grouped cards, and on unassigned
+    // cards too once at least one group exists so any call can be added easily.
+    const showMoveControl = inGroup || groups.length > 0
 
     // List view - single dense row
     if (viewMode === "list") {
@@ -414,7 +424,7 @@ export default function CastingCallsList({
             >
               <Trash2 className="w-4 h-4" />
             </button>
-            {inGroup && renderMoveControl(project, currentGroupId!)}
+            {showMoveControl && renderMoveControl(project, currentGroupId)}
           </div>
         </div>
       )
@@ -425,7 +435,7 @@ export default function CastingCallsList({
       return (
         <div
           key={project.id}
-          className={`group relative flex flex-col rounded-xl border bg-[#1a2e23] transition-colors overflow-hidden ${
+          className={`group relative flex flex-col rounded-xl border bg-[#1a2e23] transition-colors ${
             selectedProjectIds.includes(project.id)
               ? "border-amber-500/50 ring-2 ring-amber-500/20"
               : "border-white/10 hover:border-violet-500/30"
@@ -451,7 +461,7 @@ export default function CastingCallsList({
               )}
             </button>
           )}
-          <div className="h-24 bg-[#0f1f17] flex-shrink-0">
+          <div className="h-24 bg-[#0f1f17] flex-shrink-0 rounded-t-xl overflow-hidden">
             {project.thumbnailUrl ? (
               <img src={project.thumbnailUrl} alt={project.name} className="w-full h-full object-cover" />
             ) : (
@@ -470,7 +480,7 @@ export default function CastingCallsList({
                 <Users className="w-3 h-3" />
                 {project.submissions.length}
               </span>
-              {(hasCastingCall || inGroup) && (
+              {(hasCastingCall || showMoveControl) && (
                 <div className="flex items-center gap-1.5">
                   {hasCastingCall && (
                     <>
@@ -496,7 +506,7 @@ export default function CastingCallsList({
                       </button>
                     </>
                   )}
-                  {inGroup && renderMoveControl(project, currentGroupId!)}
+                  {showMoveControl && renderMoveControl(project, currentGroupId)}
                 </div>
               )}
             </div>
@@ -509,7 +519,7 @@ export default function CastingCallsList({
     return (
       <div
         key={project.id}
-        className={`group relative flex rounded-xl border bg-[#1a2e23] transition-colors overflow-hidden ${
+        className={`group relative flex rounded-xl border bg-[#1a2e23] transition-colors ${
           selectedProjectIds.includes(project.id)
             ? "border-amber-500/50 ring-2 ring-amber-500/20"
             : "border-white/10 hover:border-violet-500/30"
@@ -538,7 +548,7 @@ export default function CastingCallsList({
         )}
 
         {/* Thumbnail Section - 1/3 width */}
-        <div className="w-1/3 min-h-[180px] bg-[#0f1f17] border-r border-white/10 flex-shrink-0">
+        <div className="w-1/3 min-h-[180px] bg-[#0f1f17] border-r border-white/10 flex-shrink-0 rounded-l-xl overflow-hidden">
           {project.thumbnailUrl ? (
             <img
               src={project.thumbnailUrl}
@@ -559,7 +569,7 @@ export default function CastingCallsList({
           {/* Reserved header strip for action icons (always visible) */}
           <div className="relative h-6 flex-shrink-0">
             <div className="absolute top-0 right-0 flex items-center gap-1.5">
-              {inGroup && renderMoveControl(project, currentGroupId!)}
+              {showMoveControl && renderMoveControl(project, currentGroupId)}
               {hasCastingCall && (
                 <button
                   onClick={(e) => {
@@ -714,27 +724,31 @@ export default function CastingCallsList({
         {/* Selection Actions - Create Group + Clear (to the right of Submissions) */}
         {selectedProjectIds.length > 0 && (
           <>
-            <div className="relative flex items-center">
-              {/* Primary action: create a brand new group from the selection */}
+            <div className="relative flex items-center group/ccg">
+              {/* Single dropdown trigger: create a new group or add to an existing one */}
               <button
-                onClick={handleCreateGroups}
-                className="flex items-center gap-2 px-4 py-2.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 rounded-l-lg text-amber-300 transition-colors font-sans"
+                onClick={() => setShowGroupMenu((v) => !v)}
+                aria-haspopup="menu"
+                aria-expanded={showGroupMenu}
+                className="flex items-center gap-2 px-4 py-2.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 rounded-lg text-amber-300 transition-colors font-sans"
               >
                 <FolderPlus className="w-4 h-4" />
                 <span>Create Casting Group</span>
                 <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 bg-amber-500 text-white text-xs font-bold rounded-full">
                   {selectedProjectIds.length}
                 </span>
-              </button>
-              {/* Secondary toggle: add selection to an existing group instead */}
-              <button
-                onClick={() => setShowGroupMenu((v) => !v)}
-                className="flex items-center px-2 py-2.5 bg-amber-500/20 hover:bg-amber-500/30 border border-l-0 border-amber-500/30 rounded-r-lg text-amber-300 transition-colors"
-                title="More group options"
-                aria-label="More group options"
-              >
                 <ChevronDown className={`w-4 h-4 transition-transform ${showGroupMenu ? "rotate-180" : ""}`} />
               </button>
+
+              {/* On-hover tooltip explaining the action (hidden while the menu is open) */}
+              {!showGroupMenu && (
+                <div
+                  role="tooltip"
+                  className="pointer-events-none absolute bottom-full left-0 mb-2 w-64 px-3 py-2 rounded-lg bg-[#0b1812] border border-white/10 text-xs text-white/70 font-sans shadow-xl opacity-0 invisible group-hover/ccg:opacity-100 group-hover/ccg:visible transition-opacity z-40"
+                >
+                  Organize the selected casting calls into a group — start a new casting group or add them to an existing one.
+                </div>
+              )}
 
               {showGroupMenu && (
                 <>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Upload, ArrowLeft, FileText, X, Loader2, AlertCircle, RefreshCw, PenLine } from "lucide-react"
+import { Upload, ArrowLeft, FileText, X, Loader2, AlertCircle, RefreshCw, PenLine, Download } from "lucide-react"
 import { useActorList } from "./ActorListContext"
 import { Actor } from "@/types/actor-list"
 import { useImportJob } from "@/hooks/useImportJob"
@@ -135,6 +135,21 @@ export default function ActorUploadView() {
             </h1>
             <p className="text-white/50 font-sans">
               Upload an Actor list (PDF, CSV, Excel). AI will extract and structure the actors details.
+            </p>
+          </div>
+
+          {/* Sample actor list download */}
+          <div className="flex flex-col items-center -mt-4 mb-8">
+            <a
+              href="/sample-lists/Sample_Actor_List.xlsx"
+              download="Sample_Actor_List.xlsx"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20 hover:text-emerald-200 transition-colors font-sans text-sm"
+            >
+              <Download className="w-4 h-4 shrink-0" />
+              <span>Download a sample actor list</span>
+            </a>
+            <p className="mt-2 text-white/40 text-xs font-sans text-center max-w-md">
+              No list handy? Test the tools with this Excel template — fill in your own actors or import it as-is.
             </p>
           </div>
 

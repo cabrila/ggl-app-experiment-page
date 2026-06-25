@@ -1,9 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { Trash2, X, Save, Pencil } from "lucide-react"
+import { Trash2, X, Save, Pencil, Images } from "lucide-react"
 import { Character } from "@/types/character-bible"
 import CardMore from "@/components/ui/CardMore"
+import ImageUploadField from "@/components/ui/ImageUploadField"
+import ImageCarouselModal from "@/components/ui/ImageCarouselModal"
 
 interface CharacterCardProps {
   character: Character
@@ -41,7 +43,12 @@ export default function CharacterCard({
     gender: character.gender === "unknown" ? "" : (character.gender || ""),
     ageRange: character.ageRange === "unknown" ? "" : (character.ageRange || ""),
     description: character.description || "",
+    inspirationImages: character.inspirationImages ?? [],
   })
+  const [carouselOpen, setCarouselOpen] = useState(false)
+  const [carouselStart, setCarouselStart] = useState(0)
+
+  const inspirationImages = character.inspirationImages ?? []
 
   const handleSave = () => {
     const updates: Partial<Character> = {
@@ -52,6 +59,7 @@ export default function CharacterCard({
       gender: editState.gender || "unknown",
       ageRange: editState.ageRange || "unknown",
       description: editState.description || "",
+      inspirationImages: editState.inspirationImages,
     }
     onUpdate(updates)
     setIsEditing(false)
@@ -64,6 +72,7 @@ export default function CharacterCard({
       gender: character.gender === "unknown" ? "" : (character.gender || ""),
       ageRange: character.ageRange === "unknown" ? "" : (character.ageRange || ""),
       description: character.description || "",
+      inspirationImages: character.inspirationImages ?? [],
     })
     setIsEditing(false)
   }
@@ -143,6 +152,20 @@ export default function CharacterCard({
             rows={4}
             placeholder="e.g. A brief description of the character's traits, backstory, etc."
             className="w-full px-4 py-3 bg-[#0f1f17] border border-white/10 rounded-lg text-white font-sans resize-none focus:outline-none focus:border-emerald-500/50"
+          />
+        </div>
+
+        {/* Character Inspiration */}
+        <div className="mb-5">
+          <label className="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-2">
+            Character Inspiration
+          </label>
+          <ImageUploadField
+            value={editState.inspirationImages}
+            onChange={(imgs) => setEditState({ ...editState, inspirationImages: imgs })}
+            multiple
+            accent="emerald"
+            placeholder="Add image"
           />
         </div>
 
@@ -275,6 +298,54 @@ export default function CharacterCard({
         </div>
       )}
 
+      {/* Character Inspiration */}
+      {inspirationImages.length > 0 && (
+        <div className="mb-3">
+          <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-2">
+            Character Inspiration
+          </p>
+          <div className="grid grid-cols-3 gap-2 mb-2">
+            {(forceExpanded ? inspirationImages : inspirationImages.slice(0, 3)).map((img, idx) => {
+              const isLastVisible = !forceExpanded && idx === 2 && inspirationImages.length > 3
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    setCarouselStart(idx)
+                    setCarouselOpen(true)
+                  }}
+                  className="relative aspect-square overflow-hidden rounded-lg border border-white/10 bg-[#0f1f17] cursor-zoom-in"
+                  title="View images"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={img || "/placeholder.svg"}
+                    alt={`${character.name} inspiration ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  {isLastVisible && (
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-sans text-sm font-semibold">
+                      +{inspirationImages.length - 3}
+                    </div>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+          <button
+            onClick={() => {
+              setCarouselStart(0)
+              setCarouselOpen(true)
+            }}
+            className="inline-flex items-center gap-2 px-3 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-lg text-emerald-400 hover:text-emerald-300 text-sm transition-colors"
+          >
+            <Images className="w-4 h-4" />
+            <span className="font-sans">View Images ({inspirationImages.length})</span>
+          </button>
+        </div>
+      )}
+
       {/* Scene Appearances */}
       {hasAppearances && (
         <div className="mt-3">
@@ -315,6 +386,15 @@ export default function CharacterCard({
           )}
         </div>
       )}
+
+      {/* Character Inspiration Carousel */}
+      <ImageCarouselModal
+        isOpen={carouselOpen}
+        onClose={() => setCarouselOpen(false)}
+        images={inspirationImages}
+        startIndex={carouselStart}
+        title={`${character.name} — Character Inspiration`}
+      />
     </div>
   )
 }

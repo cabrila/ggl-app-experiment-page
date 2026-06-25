@@ -27,6 +27,8 @@ export interface Character {
   ageRange: string                               // e.g. "40s", "25-35", or "unknown"
   description: string                            // 1-3 sentence prose summary
   sceneAppearances: CharacterSceneAppearance[]   // empty array if none
+  /** User-uploaded "Character Inspiration" images (data URLs), browsable in a carousel. */
+  inspirationImages?: string[]
 }
 
 export interface CharacterBible {

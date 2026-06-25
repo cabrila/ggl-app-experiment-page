@@ -8,6 +8,8 @@ export interface Scene {
   timeOfDay: string
   rawText: string
   notes?: string
+  /** User-uploaded "Scene Inspiration" images (data URLs), browsable in a carousel. */
+  inspirationImages?: string[]
 }
 
 export interface SceneProject {

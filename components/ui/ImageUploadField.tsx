@@ -3,7 +3,7 @@
 import { useRef, useState } from "react"
 import { ImagePlus, X } from "lucide-react"
 
-type Accent = "rose" | "amber" | "emerald" | "violet"
+type Accent = "rose" | "amber" | "emerald" | "violet" | "teal"
 
 interface ImageUploadFieldProps {
   /** Current image values (data URLs or remote URLs). */
@@ -25,6 +25,7 @@ const ACCENT_ACTIVE: Record<Accent, string> = {
   amber: "border-amber-500 bg-amber-500/10",
   emerald: "border-emerald-500 bg-emerald-500/10",
   violet: "border-violet-500 bg-violet-500/10",
+  teal: "border-teal-500 bg-teal-500/10",
 }
 
 const ACCENT_HOVER: Record<Accent, string> = {
@@ -32,6 +33,7 @@ const ACCENT_HOVER: Record<Accent, string> = {
   amber: "hover:border-amber-500/50",
   emerald: "hover:border-emerald-500/50",
   violet: "hover:border-violet-500/50",
+  teal: "hover:border-teal-500/50",
 }
 
 /**

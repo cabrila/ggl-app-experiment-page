@@ -1,8 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { Package, Pencil, Trash2, X, Save, ChevronDown, ChevronUp, Plus } from "lucide-react"
+import { Package, Pencil, Trash2, X, Save, Plus, ExternalLink } from "lucide-react"
 import { Prop, PropCategory } from "@/types/prop-list"
+import CardMore from "@/components/ui/CardMore"
+import ImageUploadField from "@/components/ui/ImageUploadField"
+import ImageCarouselModal from "@/components/ui/ImageCarouselModal"
 
 const CATEGORIES: PropCategory[] = [
   "weapon",
@@ -59,7 +62,9 @@ export default function PropCard({
 }: PropCardProps) {
   const [isEditing, setIsEditing] = useState(startInEdit)
   const [editData, setEditData] = useState<Prop>(prop)
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [carouselOpen, setCarouselOpen] = useState(false)
+
+  const referenceImages = prop.referenceImages ?? []
 
   const handleSave = () => {
     onUpdate(editData)
@@ -143,6 +148,33 @@ export default function PropCard({
           rows={2}
           className="w-full px-4 py-3 bg-[#0f1f17] rounded-lg text-white font-sans mb-4 border border-white/10 focus:border-rose-500/50 focus:outline-none resize-none"
         />
+
+        {/* Prop Image and Sources */}
+        <div className="p-4 bg-[#0f1f17] rounded-lg mb-4 border border-white/10">
+          <p className="text-xs font-semibold text-rose-400 uppercase tracking-wider mb-3">
+            Prop Image and Sources
+          </p>
+
+          <label className="block text-xs text-white/60 mb-2 font-sans">Prop Image</label>
+          <ImageUploadField
+            value={editData.referenceImages ?? []}
+            onChange={(imgs) => setEditData({ ...editData, referenceImages: imgs })}
+            accent="rose"
+            placeholder="Click or drag an image to upload"
+          />
+
+          <label className="block text-xs text-white/60 mt-3 mb-2 font-sans">
+            References Link (opens in new tab)
+          </label>
+          <input
+            type="url"
+            autoComplete="off"
+            value={editData.referenceLink || ""}
+            onChange={(e) => setEditData({ ...editData, referenceLink: e.target.value })}
+            placeholder="https://example.com/prop-reference"
+            className="w-full px-3 py-2 bg-[#1a2e23] rounded-lg text-white font-sans text-sm border border-white/10 focus:border-rose-500/50 focus:outline-none"
+          />
+        </div>
 
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
@@ -267,48 +299,109 @@ export default function PropCard({
       </div>
 
       {prop.description && (
-        <p className="text-sm text-white/70 font-sans leading-relaxed mb-3">{prop.description}</p>
+        <p className={`text-sm text-white/70 font-sans leading-relaxed mb-3 ${forceExpanded ? "" : "line-clamp-2"}`}>
+          {prop.description}
+        </p>
       )}
 
       {prop.notes && (
         <div className="p-3 bg-[#0f1f17] rounded-lg mb-3">
           <p className="text-xs font-semibold text-rose-400 uppercase tracking-wider mb-1">Notes</p>
-          <p className="text-sm text-white/60 font-sans leading-relaxed">{prop.notes}</p>
+          <p className={`text-sm text-white/60 font-sans leading-relaxed ${forceExpanded ? "" : "line-clamp-2"}`}>
+            {prop.notes}
+          </p>
+        </div>
+      )}
+
+      {(referenceImages.length > 0 || prop.referenceLink) && (
+        <div className="mb-3">
+          <p className="text-xs font-semibold text-rose-400 uppercase tracking-wider mb-2">
+            Prop Image and Sources
+          </p>
+          {referenceImages.length > 0 && (
+            <div className={`grid gap-2 mb-2 ${referenceImages.length === 1 ? "grid-cols-1" : "grid-cols-3"}`}>
+              {(forceExpanded ? referenceImages : referenceImages.slice(0, 3)).map((img, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    setCarouselOpen(true)
+                  }}
+                  className={`relative overflow-hidden rounded-lg border border-white/10 bg-[#0f1f17] cursor-zoom-in ${
+                    referenceImages.length === 1 ? "h-40" : "aspect-square"
+                  }`}
+                  title="View image"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={img || "/placeholder.svg"}
+                    alt={`${prop.name} reference ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+          {prop.referenceLink && (
+            <a
+              href={prop.referenceLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/70 hover:text-white text-sm transition-colors"
+            >
+              <ExternalLink className="w-4 h-4" />
+              <span className="font-sans">References Link</span>
+            </a>
+          )}
+
+          <ImageCarouselModal
+            isOpen={carouselOpen}
+            onClose={() => setCarouselOpen(false)}
+            images={referenceImages}
+            title={`${prop.name} — Images`}
+          />
         </div>
       )}
 
       {prop.sceneAppearances.length > 0 && (
         <div className="mt-3">
-          {!forceExpanded && (
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="flex items-center gap-2 text-sm text-white/50 hover:text-white/70 transition-colors w-full"
-            >
-              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              <span className="font-sans">
+          {forceExpanded ? (
+            <>
+              <p className="text-xs font-semibold text-rose-400 uppercase tracking-wider mb-2">
                 {prop.sceneAppearances.length} Scene Appearance
                 {prop.sceneAppearances.length !== 1 ? "s" : ""}
-              </span>
-            </button>
-          )}
-
-          {(forceExpanded || isExpanded) && (
-            <div className="mt-3 space-y-2">
-              {prop.sceneAppearances.map((app) => (
-                <div key={app.id} className="p-3 bg-[#0f1f17] rounded-lg">
-                  <p className="text-xs font-semibold text-rose-400 font-mono uppercase tracking-wide mb-1">
-                    {app.sceneHeading}
-                  </p>
-                  {app.handledBy && (
-                    <p className="text-xs text-white/50 font-sans mb-1">Handled by: {app.handledBy}</p>
-                  )}
-                  {app.citation && (
-                    <p className="text-xs text-white/60 font-sans italic leading-relaxed">
-                      &ldquo;{app.citation}&rdquo;
+              </p>
+              <div className="space-y-2">
+                {prop.sceneAppearances.map((app) => (
+                  <div key={app.id} className="p-3 bg-[#0f1f17] rounded-lg">
+                    <p className="text-xs font-semibold text-rose-400 font-mono uppercase tracking-wide mb-1">
+                      {app.sceneHeading}
                     </p>
-                  )}
-                </div>
-              ))}
+                    {app.handledBy && (
+                      <p className="text-xs text-white/50 font-sans mb-1">Handled by: {app.handledBy}</p>
+                    )}
+                    {app.citation && (
+                      <p className="text-xs text-white/60 font-sans italic leading-relaxed">
+                        &ldquo;{app.citation}&rdquo;
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            // Grid snapshot: show the first appearance heading with a [...] hint
+            // so cards stay uniform; full list lives in the detail modal.
+            <div className="p-3 bg-[#0f1f17] rounded-lg">
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <span className="text-xs font-semibold text-rose-400 uppercase tracking-wider">
+                  Scene Appearances ({prop.sceneAppearances.length})
+                </span>
+                <CardMore accent="rose" onClick={onNameClick} label="View all" />
+              </div>
+              <p className="text-xs font-mono text-white/60 uppercase tracking-wide truncate">
+                {prop.sceneAppearances[0].sceneHeading}
+              </p>
             </div>
           )}
         </div>

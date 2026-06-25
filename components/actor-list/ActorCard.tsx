@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Pencil, Trash2, Phone, Mail, X, Save, Plus, Video, ExternalLink, ChevronDown } from "lucide-react"
+import { Pencil, Trash2, Phone, Mail, X, Save, Plus, Video, ExternalLink } from "lucide-react"
 import { Actor, CustomField } from "@/types/actor-list"
 import ImageModal from "@/components/ui/ImageModal"
 import MediaModal from "@/components/ui/MediaModal"
@@ -51,7 +51,6 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
   const [showImageModal, setShowImageModal] = useState(false)
   const [activeImage, setActiveImage] = useState<string | undefined>(undefined)
   const [showMediaModal, setShowMediaModal] = useState(false)
-  const [showMoreInfo, setShowMoreInfo] = useState(false)
 
   const handleSave = () => {
     const cleanedVideos = (editedActor.videos || []).map((v) => v.trim()).filter(Boolean)
@@ -147,7 +146,16 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
   const hasVideos = actorVideos.length > 0
   const hasPhotos = actorPhotos.length > 0
   const hasMoreInfo = hasCustomFields || hasMedia || hasVideos || hasPhotos
-  const moreInfoOpen = forceExpanded || showMoreInfo
+
+  // Compact summary of what lives inside "More Information" for the grid snapshot.
+  const moreInfoSummary = [
+    hasCustomFields ? `${actor.customFields!.length} field${actor.customFields!.length !== 1 ? "s" : ""}` : null,
+    hasMedia ? "media" : null,
+    hasVideos ? `${actorVideos.length} video${actorVideos.length !== 1 ? "s" : ""}` : null,
+    hasPhotos ? `${actorPhotos.length} photo${actorPhotos.length !== 1 ? "s" : ""}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ")
 
   // Edit Mode
   if (isEditing) {
@@ -533,36 +541,38 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
           <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">
             Notes
           </p>
-          <p className="text-sm text-white/80 font-sans leading-relaxed">
+          <p className={`text-sm text-white/80 font-sans leading-relaxed ${forceExpanded ? "" : "line-clamp-3"}`}>
             {actor.notes}
           </p>
         </div>
       )}
 
       {/* More Information - extra submission fields + media material */}
-      {hasMoreInfo && (
+      {hasMoreInfo && !forceExpanded && (
+        // Grid snapshot: a compact summary with a [...] hint; full panel in modal.
+        <button
+          onClick={onNameClick}
+          className="mt-3 w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg border border-white/10 bg-[#0f1f17] hover:bg-[#0f1f17]/70 transition-colors text-left"
+        >
+          <span className="min-w-0">
+            <span className="block text-xs font-semibold text-white/60 uppercase tracking-wider">
+              More Information
+            </span>
+            {moreInfoSummary && (
+              <span className="block text-xs text-white/40 font-sans truncate mt-0.5">{moreInfoSummary}</span>
+            )}
+          </span>
+          <span className="font-mono text-sm text-emerald-400 shrink-0" aria-hidden="true">[...]</span>
+        </button>
+      )}
+      {hasMoreInfo && forceExpanded && (
         <div className="mt-3 rounded-lg border border-white/10 overflow-hidden">
-          {forceExpanded ? (
-            <div className="w-full flex items-center px-3 py-2.5 bg-[#0f1f17]">
-              <span className="text-xs font-semibold text-white/60 uppercase tracking-wider">
-                More Information
-              </span>
-            </div>
-          ) : (
-            <button
-              onClick={() => setShowMoreInfo((v) => !v)}
-              className="w-full flex items-center justify-between px-3 py-2.5 bg-[#0f1f17] hover:bg-[#0f1f17]/70 transition-colors"
-              aria-expanded={moreInfoOpen}
-            >
-              <span className="text-xs font-semibold text-white/60 uppercase tracking-wider">
-                More Information
-              </span>
-              <ChevronDown
-                className={`w-4 h-4 text-white/40 transition-transform ${moreInfoOpen ? "rotate-180" : ""}`}
-              />
-            </button>
-          )}
-          {moreInfoOpen && (
+          <div className="w-full flex items-center px-3 py-2.5 bg-[#0f1f17]">
+            <span className="text-xs font-semibold text-white/60 uppercase tracking-wider">
+              More Information
+            </span>
+          </div>
+          {(
             <div className="px-3 py-3 bg-[#0f1f17] border-t border-white/10 space-y-3">
               {hasCustomFields && (
                 <div className="space-y-2">

@@ -51,7 +51,20 @@ export default function ActorResultsView() {
   const [ageMax, setAgeMax] = useState("")
   const [filterByLocation, setFilterByLocation] = useState("")
   const [filterByAvailability, setFilterByAvailability] = useState("")
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
   const gridRef = useRef<HTMLDivElement>(null)
+
+  const toggleGroup = (gender: string) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev)
+      if (next.has(gender)) {
+        next.delete(gender)
+      } else {
+        next.add(gender)
+      }
+      return next
+    })
+  }
 
   const advancedFilterCount =
     (ageMin ? 1 : 0) +
@@ -494,13 +507,22 @@ export default function ActorResultsView() {
             {GENDER_GROUPS.map((gender) => {
               const genderActors = filteredActors.filter((a) => (a.gender || "Not-specified") === gender)
               if (genderActors.length === 0) return null
+              const isCollapsed = collapsedGroups.has(gender)
               return (
                 <div key={gender} className="border border-white/10 rounded-xl overflow-hidden">
-                  <div className="px-4 py-3 bg-white/5 border-b border-white/10">
+                  <button
+                    onClick={() => toggleGroup(gender)}
+                    className="w-full flex items-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 border-b border-white/10 transition-colors text-left"
+                    aria-expanded={!isCollapsed}
+                  >
+                    <ChevronDown
+                      className={`w-4 h-4 text-white/60 transition-transform ${isCollapsed ? "-rotate-90" : ""}`}
+                    />
                     <h3 className="text-sm font-semibold text-white/80 uppercase tracking-wider">
                       {gender} ({genderActors.length})
                     </h3>
-                  </div>
+                  </button>
+                  {!isCollapsed && (
                   <div className="divide-y divide-white/5">
                     {genderActors.map((actor) => (
                       <div
@@ -561,6 +583,7 @@ export default function ActorResultsView() {
                       </div>
                     ))}
                   </div>
+                  )}
                 </div>
               )
             })}

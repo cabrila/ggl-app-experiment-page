@@ -4,19 +4,31 @@ import { useState, useRef, useEffect } from "react"
 import { Upload, ArrowLeft, FileText, Loader2, X, AlertCircle, RefreshCw, PenLine, Download } from "lucide-react"
 import { useLocationScouting } from "./LocationScoutingContext"
 import { Location, LocationProject } from "@/types/location-scouting"
+import type { ProjectScript } from "@/types/script"
+import { fileToProjectScript, projectScriptToFile } from "@/lib/scriptFile"
 import { useImportJob } from "@/hooks/useImportJob"
 import type { LocationOverviewResult } from "@/types/ai"
 import { aiLocationToLocation } from "@/lib/location-mapping"
 import { trackFileUpload, trackExtractClick, trackExtractComplete } from "@/lib/analytics"
+import { usePendingExtractions } from "@/components/handoff/PendingExtractionsContext"
+
+const SECTION_ID = "location-overview" as const
 
 export default function LocationUploadView() {
-  const { setView, addProject, setCurrentProject } = useLocationScouting()
+  const { setView, addProject, setCurrentProject, pendingScript, setPendingScript } = useLocationScouting()
+  const { addForOtherSections, remove: removePending } = usePendingExtractions()
   const [isDragging, setIsDragging] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   // Guard so a completed extraction creates its project exactly ONCE (the
   // completion effect re-fires as addProject's identity changes on re-render).
   const createdRef = useRef(false)
+  // The uploaded file captured as a downloadable/previewable script, attached
+  // to the project once extraction completes.
+  const scriptRef = useRef<ProjectScript | null>(null)
+  // When this upload was initiated from a "Ready to Extract" entry, its id is
+  // stored here so we can suppress re-fan-out and remove it on success.
+  const activePendingIdRef = useRef<string | null>(null)
 
   // Use the AI service integration hook
   const { status, message, progress, result, error, run, reset } = useImportJob<LocationOverviewResult>("location-overview")
@@ -43,6 +55,30 @@ export default function LocationUploadView() {
     const t = setTimeout(() => setProgressStale(true), 3000)
     return () => clearTimeout(t)
   }, [progress, status])
+
+  // Consume a "Ready to Extract" handoff: pre-load the stored script so the
+  // user just presses Extract.
+  useEffect(() => {
+    if (!pendingScript || file) return
+    const entry = pendingScript
+    let cancelled = false
+    ;(async () => {
+      try {
+        const reconstructed = await projectScriptToFile(entry.script)
+        if (cancelled) return
+        scriptRef.current = entry.script
+        activePendingIdRef.current = entry.id
+        setFile(reconstructed)
+      } catch (err) {
+        console.error("[v0] Failed to load pending script:", err)
+      } finally {
+        if (!cancelled) setPendingScript(null)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [pendingScript, file, setPendingScript])
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -90,6 +126,17 @@ export default function LocationUploadView() {
     trackExtractClick("location-overview", fileExt)
     
     const sourceTitle = file.name.replace(/\.(pdf|docx)$/i, "")
+    // Capture the uploaded file so it can be re-downloaded/previewed later.
+    try {
+      scriptRef.current = await fileToProjectScript(file)
+    } catch (err) {
+      console.error("[v0] Failed to capture uploaded script:", err)
+      scriptRef.current = null
+    }
+    // Fan out to the other sections for a fresh upload only.
+    if (!activePendingIdRef.current && scriptRef.current) {
+      addForOtherSections(SECTION_ID, sourceTitle, scriptRef.current)
+    }
     await run(file, sourceTitle)
   }
 
@@ -110,18 +157,25 @@ export default function LocationUploadView() {
         locations,
         createdAt: new Date(),
         updatedAt: new Date(),
+        script: scriptRef.current ?? undefined,
       }
 
       addProject(newProject)
       setCurrentProject(newProject)
       trackExtractComplete("location-overview", locations.length)
+      if (activePendingIdRef.current) {
+        removePending(SECTION_ID, activePendingIdRef.current)
+        activePendingIdRef.current = null
+      }
       setView("results")
     }
-  }, [status, result, file, addProject, setCurrentProject, setView])
+  }, [status, result, file, addProject, setCurrentProject, setView, removePending])
 
   const handleRetry = () => {
     reset()
     createdRef.current = false
+    scriptRef.current = null
+    activePendingIdRef.current = null
     setFile(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
@@ -132,6 +186,8 @@ export default function LocationUploadView() {
     setFile(null)
     reset()
     createdRef.current = false
+    scriptRef.current = null
+    activePendingIdRef.current = null
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }

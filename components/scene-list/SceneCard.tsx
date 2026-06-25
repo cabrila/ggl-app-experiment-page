@@ -1,8 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { Film, Pencil, Trash2, X, Save, ChevronDown, ChevronUp, MapPin, Clock } from "lucide-react"
+import { Film, Pencil, Trash2, X, Save, MapPin, Clock, Images } from "lucide-react"
 import { Scene } from "@/types/scene-list"
+import CardMore from "@/components/ui/CardMore"
+import ImageUploadField from "@/components/ui/ImageUploadField"
+import ImageCarouselModal from "@/components/ui/ImageCarouselModal"
 
 interface SceneCardProps {
   scene: Scene
@@ -29,7 +32,10 @@ export default function SceneCard({
 }: SceneCardProps) {
   const [isEditing, setIsEditing] = useState(startInEdit)
   const [editData, setEditData] = useState<Scene>(scene)
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [carouselOpen, setCarouselOpen] = useState(false)
+  const [carouselStart, setCarouselStart] = useState(0)
+
+  const inspirationImages = scene.inspirationImages ?? []
 
   const handleSave = () => {
     onUpdate(editData)
@@ -119,6 +125,20 @@ export default function SceneCard({
           className="w-full px-4 py-3 bg-[#0f1f17] rounded-lg text-white font-sans mb-4 border border-white/10 focus:border-teal-500/50 focus:outline-none resize-none"
         />
 
+        {/* Scene Inspiration */}
+        <label className="block text-xs font-semibold text-teal-400 uppercase tracking-wider mb-2">
+          Scene Inspiration
+        </label>
+        <div className="mb-4">
+          <ImageUploadField
+            value={editData.inspirationImages ?? []}
+            onChange={(imgs) => setEditData({ ...editData, inspirationImages: imgs })}
+            multiple
+            accent="teal"
+            placeholder="Add image"
+          />
+        </div>
+
         <div className="flex items-center justify-between pt-2">
           <button
             onClick={onDelete}
@@ -204,31 +224,92 @@ export default function SceneCard({
       {scene.notes && (
         <div className="p-3 bg-[#0f1f17] rounded-lg mb-3">
           <p className="text-xs font-semibold text-teal-400 uppercase tracking-wider mb-1">Notes</p>
-          <p className="text-sm text-white/60 font-sans leading-relaxed">{scene.notes}</p>
+          <p className={`text-sm text-white/60 font-sans leading-relaxed ${forceExpanded ? "" : "line-clamp-2"}`}>
+            {scene.notes}
+          </p>
+        </div>
+      )}
+
+      {/* Scene Inspiration */}
+      {inspirationImages.length > 0 && (
+        <div className="mb-3">
+          <p className="text-xs font-semibold text-teal-400 uppercase tracking-wider mb-2">
+            Scene Inspiration
+          </p>
+          <div className="grid grid-cols-3 gap-2 mb-2">
+            {(forceExpanded ? inspirationImages : inspirationImages.slice(0, 3)).map((img, idx) => {
+              const isLastVisible = !forceExpanded && idx === 2 && inspirationImages.length > 3
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    setCarouselStart(idx)
+                    setCarouselOpen(true)
+                  }}
+                  className="relative aspect-square overflow-hidden rounded-lg border border-white/10 bg-[#0f1f17] cursor-zoom-in"
+                  title="View images"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={img || "/placeholder.svg"}
+                    alt={`${scene.sceneHeading} inspiration ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  {isLastVisible && (
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-sans text-sm font-semibold">
+                      +{inspirationImages.length - 3}
+                    </div>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+          <button
+            onClick={() => {
+              setCarouselStart(0)
+              setCarouselOpen(true)
+            }}
+            className="inline-flex items-center gap-2 px-3 py-2 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/20 rounded-lg text-teal-400 hover:text-teal-300 text-sm transition-colors"
+          >
+            <Images className="w-4 h-4" />
+            <span className="font-sans">View Images ({inspirationImages.length})</span>
+          </button>
         </div>
       )}
 
       {scene.rawText && (
         <div className="mt-3">
-          {!forceExpanded && (
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="flex items-center gap-2 text-sm text-white/50 hover:text-white/70 transition-colors w-full"
-            >
-              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              <span className="font-sans">{isExpanded ? "Hide raw text" : "Show raw text"}</span>
-            </button>
-          )}
-
-          {(forceExpanded || isExpanded) && (
-            <div className="mt-3 p-3 bg-[#0f1f17] rounded-lg">
+          {forceExpanded ? (
+            <div className="p-3 bg-[#0f1f17] rounded-lg">
+              <p className="text-xs font-semibold text-teal-400 uppercase tracking-wider mb-2">Raw Text</p>
               <p className="text-sm text-white/70 font-sans leading-relaxed whitespace-pre-wrap">
+                {scene.rawText}
+              </p>
+            </div>
+          ) : (
+            // Grid snapshot: clamp the raw text to a few lines with a [...] hint.
+            <div className="p-3 bg-[#0f1f17] rounded-lg">
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <span className="text-xs font-semibold text-teal-400 uppercase tracking-wider">Raw Text</span>
+                <CardMore accent="teal" onClick={onNameClick} label="Show full" />
+              </div>
+              <p className="text-sm text-white/60 font-sans leading-relaxed line-clamp-3">
                 {scene.rawText}
               </p>
             </div>
           )}
         </div>
       )}
+
+      {/* Scene Inspiration Carousel */}
+      <ImageCarouselModal
+        isOpen={carouselOpen}
+        onClose={() => setCarouselOpen(false)}
+        images={inspirationImages}
+        startIndex={carouselStart}
+        title={`${scene.sceneHeading} — Scene Inspiration`}
+      />
     </div>
   )
 }

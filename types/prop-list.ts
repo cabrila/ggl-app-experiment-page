@@ -1,3 +1,5 @@
+import type { ProjectScript } from "./script"
+
 export type PropCategory =
   | "weapon"
   | "container"
@@ -27,6 +29,10 @@ export interface Prop {
   sceneAppearances: PropSceneAppearance[]
   notes?: string
   referenceImageUrl?: string
+  /** User-uploaded reference image(s) for the "Prop Image and Sources" field (data URLs). */
+  referenceImages?: string[]
+  /** External reference/source link, opened in a new tab. */
+  referenceLink?: string
 }
 
 export interface PropProject {
@@ -37,4 +43,6 @@ export interface PropProject {
   updatedAt: Date
   thumbnailUrl?: string
   isDemo?: boolean
+  /** The original script this list was extracted from (if uploaded). */
+  script?: ProjectScript
 }

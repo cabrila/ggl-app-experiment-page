@@ -9,9 +9,16 @@ import EditProjectWithThumbnailModal from "@/components/ui/EditProjectWithThumbn
 import { trackListCreated, trackDelete } from "@/lib/analytics"
 import { Badge } from "@/components/ui/badge"
 import ShareModal from "@/components/modals/ShareModal"
+import ReadyToExtractCard from "@/components/handoff/ReadyToExtractCard"
+import { usePendingExtractions } from "@/components/handoff/PendingExtractionsContext"
+import { SECTION_LABELS } from "@/types/pending-extraction"
+
+const SECTION_ID = "prop-list" as const
 
 export default function PropProjectsList() {
-  const { projects, setView, setCurrentProject, deleteProject, updateProject } = usePropList()
+  const { projects, setView, setCurrentProject, deleteProject, updateProject, setPendingScript } = usePropList()
+  const { getForSection, remove: removePending } = usePendingExtractions()
+  const pending = getForSection(SECTION_ID)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<PropProject | null>(null)
   const [editTarget, setEditTarget] = useState<PropProject | null>(null)
@@ -140,6 +147,21 @@ export default function PropProjectsList() {
                 </div>
               </button>
             </div>
+          ))}
+
+          {pending.map((entry) => (
+            <ReadyToExtractCard
+              key={entry.id}
+              name={entry.name}
+              scriptName={entry.script.name}
+              sourceLabel={`From ${SECTION_LABELS[entry.sourceSection]}`}
+              icon={Package}
+              onStart={() => {
+                setPendingScript(entry)
+                setView("upload")
+              }}
+              onDismiss={() => removePending(SECTION_ID, entry.id)}
+            />
           ))}
 
           <button

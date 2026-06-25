@@ -11,6 +11,8 @@ import {
   deleteLocationProject as deleteLocationProjectFromFirestore,
 } from "@/lib/firestore"
 import { loadDemoData, saveDemoData, DEMO_STORAGE_KEYS } from "@/utils/demoPersistence"
+import { ensureDemoScript } from "@/lib/scriptFile"
+import type { PendingExtraction } from "@/types/pending-extraction"
 
 type ViewState = "projects" | "upload" | "results"
 
@@ -27,6 +29,9 @@ interface LocationScoutingContextType {
   addLocation: (projectId: string, location: Location | Location[]) => void
   updateLocation: (projectId: string, location: Location) => void
   deleteLocation: (projectId: string, locationId: string) => void
+  /** A "Ready to Extract" entry chosen on the list, to pre-load in the upload view. */
+  pendingScript: PendingExtraction | null
+  setPendingScript: (pending: PendingExtraction | null) => void
 }
 
 const LocationScoutingContext = createContext<LocationScoutingContextType | null>(null)
@@ -219,7 +224,7 @@ const demoProjects: LocationProject[] = [
 
 export function LocationScoutingProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<LocationProject[]>(() =>
-    loadDemoData(DEMO_STORAGE_KEYS.locationProjects, demoProjects)
+    ensureDemoScript(loadDemoData(DEMO_STORAGE_KEYS.locationProjects, demoProjects))
   )
   const [currentProject, setCurrentProject] = useState<LocationProject | null>(null)
   // Latest currentProject for the Firestore subscription callback (set up with
@@ -229,6 +234,7 @@ export function LocationScoutingProvider({ children }: { children: ReactNode }) 
     currentProjectRef.current = currentProject
   }, [currentProject])
   const [view, setView] = useState<ViewState>("projects")
+  const [pendingScript, setPendingScript] = useState<PendingExtraction | null>(null)
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -244,7 +250,7 @@ export function LocationScoutingProvider({ children }: { children: ReactNode }) 
       setUser(authUser)
       if (!authUser) {
         // User logged out (or no backend configured): show persisted demo data.
-        setProjects(loadDemoData(DEMO_STORAGE_KEYS.locationProjects, demoProjects))
+        setProjects(ensureDemoScript(loadDemoData(DEMO_STORAGE_KEYS.locationProjects, demoProjects)))
         setCurrentProject(null)
         setView("projects")
         setIsLoading(false)
@@ -286,7 +292,7 @@ export function LocationScoutingProvider({ children }: { children: ReactNode }) 
     if (user) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { id, isDemo, ...projectData } = project
+        const { id, isDemo, script, ...projectData } = project
         const newId = await addLocationProject(user.uid, projectData)
         // Firestore subscription will update the state
         setCurrentProject({ ...project, id: newId, isDemo: false })
@@ -306,7 +312,7 @@ export function LocationScoutingProvider({ children }: { children: ReactNode }) 
     if (user && !existingProject.isDemo) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { id, isDemo, ...projectData } = project
+        const { id, isDemo, script, ...projectData } = project
         await updateLocationProjectInFirestore(user.uid, project.id, projectData)
         // Firestore subscription will update the state
       } catch (error) {
@@ -436,6 +442,8 @@ export function LocationScoutingProvider({ children }: { children: ReactNode }) 
         addLocation,
         updateLocation,
         deleteLocation,
+        pendingScript,
+        setPendingScript,
       }}
     >
       {children}

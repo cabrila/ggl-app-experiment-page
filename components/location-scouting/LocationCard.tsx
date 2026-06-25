@@ -1,9 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { MapPin, Pencil, Trash2, X, Save, Map, ExternalLink } from "lucide-react"
+import { MapPin, Pencil, Trash2, X, Save, Map, ExternalLink, Images } from "lucide-react"
 import { Location } from "@/types/location-scouting"
 import GoogleMapsModal from "@/components/ui/GoogleMapsModal"
+import CardMore from "@/components/ui/CardMore"
+import ImageUploadField from "@/components/ui/ImageUploadField"
+import ImageCarouselModal from "@/components/ui/ImageCarouselModal"
 
 interface LocationCardProps {
   location: Location
@@ -31,6 +34,10 @@ export default function LocationCard({
   const [isEditing, setIsEditing] = useState(startInEdit)
   const [editData, setEditData] = useState<Location>(location)
   const [showMapModal, setShowMapModal] = useState(false)
+  const [carouselOpen, setCarouselOpen] = useState(false)
+  const [carouselStart, setCarouselStart] = useState(0)
+
+  const ideaImages = location.locationIdeaImages ?? []
 
   const handleSave = () => {
     onUpdate(editData)
@@ -120,7 +127,21 @@ export default function LocationCard({
           <p className="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-3">
             Location Idea
           </p>
-          
+
+          {/* Location Idea Images (multiple) */}
+          <label className="block text-xs text-white/60 mb-2 font-sans">
+            Images (upload one or more)
+          </label>
+          <div className="mb-3">
+            <ImageUploadField
+              value={editData.locationIdeaImages ?? []}
+              onChange={(imgs) => setEditData({ ...editData, locationIdeaImages: imgs })}
+              multiple
+              accent="amber"
+              placeholder="Add image"
+            />
+          </div>
+
           {/* Google Maps Link */}
           <label className="block text-xs text-white/60 mb-2 font-sans">
             Google Maps URL (opens in modal)
@@ -231,17 +252,65 @@ export default function LocationCard({
       </div>
 
       {/* Description */}
-      <p className="text-sm text-white/70 font-sans leading-relaxed mb-4">
+      <p className={`text-sm text-white/70 font-sans leading-relaxed mb-4 ${forceExpanded ? "" : "line-clamp-2"}`}>
         {location.description}
       </p>
 
       {/* Location Idea Links */}
-      {(location.locationIdeaMapUrl || location.locationIdeaLink) && (
+      {(location.locationIdeaMapUrl || location.locationIdeaLink || ideaImages.length > 0) && (
         <div className="mb-4">
           <p className="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-2">
             Location Idea
           </p>
+
+          {/* Image thumbnails — click to browse in a carousel */}
+          {ideaImages.length > 0 && (
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              {(forceExpanded ? ideaImages : ideaImages.slice(0, 3)).map((img, idx) => {
+                const isLastVisible = !forceExpanded && idx === 2 && ideaImages.length > 3
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setCarouselStart(idx)
+                      setCarouselOpen(true)
+                    }}
+                    className="relative aspect-square overflow-hidden rounded-lg border border-white/10 bg-[#0f1f17] cursor-zoom-in group/thumb"
+                    title="View images"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={img || "/placeholder.svg"}
+                      alt={`${location.name} idea ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                    {isLastVisible && (
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-sans text-sm font-semibold">
+                        +{ideaImages.length - 3}
+                      </div>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+
           <div className="flex flex-wrap items-center gap-2">
+            {ideaImages.length > 0 && (
+              <button
+                onClick={() => {
+                  setCarouselStart(0)
+                  setCarouselOpen(true)
+                }}
+                className="inline-flex items-center gap-2 px-3 py-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-lg text-amber-400 hover:text-amber-300 text-sm transition-colors"
+              >
+                <Images className="w-4 h-4" />
+                <span className="font-sans">
+                  View Images ({ideaImages.length})
+                </span>
+              </button>
+            )}
             {location.locationIdeaMapUrl && (
               <button
                 onClick={() => setShowMapModal(true)}
@@ -267,14 +336,19 @@ export default function LocationCard({
       )}
 
       {/* Scouting Notes */}
-      <div className="p-3 bg-[#0f1f17] rounded-lg">
-        <p className="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-2">
-          Scouting Notes
-        </p>
-        <p className="text-sm text-white/60 font-sans leading-relaxed">
-          {location.scoutingNotes}
-        </p>
-      </div>
+      {location.scoutingNotes && (
+        <div className="p-3 bg-[#0f1f17] rounded-lg">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <span className="text-xs font-semibold text-amber-400 uppercase tracking-wider">
+              Scouting Notes
+            </span>
+            {!forceExpanded && <CardMore accent="amber" onClick={onNameClick} label="View full" />}
+          </div>
+          <p className={`text-sm text-white/60 font-sans leading-relaxed ${forceExpanded ? "" : "line-clamp-3"}`}>
+            {location.scoutingNotes}
+          </p>
+        </div>
+      )}
 
       {/* Google Maps Modal */}
       <GoogleMapsModal
@@ -282,6 +356,15 @@ export default function LocationCard({
         onClose={() => setShowMapModal(false)}
         url={location.locationIdeaMapUrl || ""}
         title={location.name}
+      />
+
+      {/* Location Idea Image Carousel */}
+      <ImageCarouselModal
+        isOpen={carouselOpen}
+        onClose={() => setCarouselOpen(false)}
+        images={ideaImages}
+        startIndex={carouselStart}
+        title={`${location.name} — Location Ideas`}
       />
     </div>
   )

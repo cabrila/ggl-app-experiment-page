@@ -9,9 +9,16 @@ import EditProjectWithThumbnailModal from "@/components/ui/EditProjectWithThumbn
 import { trackListCreated, trackDelete } from "@/lib/analytics"
 import { Badge } from "@/components/ui/badge"
 import ShareModal from "@/components/modals/ShareModal"
+import ReadyToExtractCard from "@/components/handoff/ReadyToExtractCard"
+import { usePendingExtractions } from "@/components/handoff/PendingExtractionsContext"
+import { SECTION_LABELS } from "@/types/pending-extraction"
+
+const SECTION_ID = "character-bible" as const
 
 export default function ProjectsList() {
-  const { bibles, setView, setCurrentBible, deleteBible, updateBible } = useCharacterBible()
+  const { bibles, setView, setCurrentBible, deleteBible, updateBible, setPendingScript } = useCharacterBible()
+  const { getForSection, remove: removePending } = usePendingExtractions()
+  const pending = getForSection(SECTION_ID)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<CharacterBible | null>(null)
   const [editTarget, setEditTarget] = useState<CharacterBible | null>(null)
@@ -164,6 +171,23 @@ export default function ProjectsList() {
               </div>
             </button>
           </div>
+        ))}
+
+        {/* Ready to Extract handoff cards */}
+        {pending.map((entry) => (
+          <ReadyToExtractCard
+            key={entry.id}
+            name={entry.name}
+            scriptName={entry.script.name}
+            sourceLabel={`From ${SECTION_LABELS[entry.sourceSection]}`}
+            icon={Users}
+            minHeightClass="min-h-[140px]"
+            onStart={() => {
+              setPendingScript(entry)
+              setView("upload")
+            }}
+            onDismiss={() => removePending(SECTION_ID, entry.id)}
+          />
         ))}
 
         {/* New Character Bible Card */}

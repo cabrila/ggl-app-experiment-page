@@ -10,6 +10,8 @@ import {
   updateCharacterBible as updateCharacterBibleInFirestore,
   deleteCharacterBible as deleteCharacterBibleFromFirestore,
 } from "@/lib/firestore"
+import { ensureDemoScript } from "@/lib/scriptFile"
+import type { PendingExtraction } from "@/types/pending-extraction"
 
 interface CharacterBibleContextType {
   bibles: CharacterBible[]
@@ -24,6 +26,9 @@ interface CharacterBibleContextType {
   addCharacter: (bibleId: string, character: Character | Character[]) => void
   updateCharacter: (bibleId: string, characterId: string, updates: Partial<Character>) => void
   deleteCharacter: (bibleId: string, characterId: string) => void
+  /** A "Ready to Extract" entry chosen on the list, to pre-load in the upload view. */
+  pendingScript: PendingExtraction | null
+  setPendingScript: (pending: PendingExtraction | null) => void
 }
 
 const CharacterBibleContext = createContext<CharacterBibleContextType | undefined>(undefined)
@@ -188,8 +193,12 @@ const demoBibles: CharacterBible[] = [
   ...extraDemoBibles,
 ]
 
+// Attach a sample script to every demo bible so the "Script" button is visible
+// and works out of the box.
+const demoBiblesWithScript: CharacterBible[] = ensureDemoScript(demoBibles)
+
 export function CharacterBibleProvider({ children }: { children: ReactNode }) {
-  const [bibles, setBibles] = useState<CharacterBible[]>(demoBibles)
+  const [bibles, setBibles] = useState<CharacterBible[]>(demoBiblesWithScript)
   const [currentBible, setCurrentBible] = useState<CharacterBible | null>(null)
   // Latest currentBible for the Firestore subscription callback (set up with
   // [user] deps), so manual adds/edits refresh the open bible when signed in.
@@ -198,6 +207,7 @@ export function CharacterBibleProvider({ children }: { children: ReactNode }) {
     currentBibleRef.current = currentBible
   }, [currentBible])
   const [view, setView] = useState<CharacterBibleView>("list")
+  const [pendingScript, setPendingScript] = useState<PendingExtraction | null>(null)
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -207,7 +217,7 @@ export function CharacterBibleProvider({ children }: { children: ReactNode }) {
       setUser(authUser)
       if (!authUser) {
         // User logged out, show demo data
-        setBibles(demoBibles)
+        setBibles(demoBiblesWithScript)
         setCurrentBible(null)
         setView("list")
         setIsLoading(false)
@@ -249,7 +259,7 @@ export function CharacterBibleProvider({ children }: { children: ReactNode }) {
     if (user) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { id, isDemo, ...bibleData } = bible
+        const { id, isDemo, script, ...bibleData } = bible
         const newId = await addCharacterBible(user.uid, bibleData)
         // Firestore subscription will update the state
         // Set the new bible as current with the Firestore ID
@@ -275,7 +285,11 @@ export function CharacterBibleProvider({ children }: { children: ReactNode }) {
 
     if (user && !bible.isDemo) {
       try {
-        await updateCharacterBibleInFirestore(user.uid, id, updates)
+        // Keep the uploaded script out of Firestore writes (it can exceed the
+        // 1MB doc limit); it lives in memory / demo storage only.
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { script, ...updatesData } = updates
+        await updateCharacterBibleInFirestore(user.uid, id, updatesData)
         // Firestore subscription will update the state
       } catch (error) {
         console.error("[v0] Error updating character bible:", error)
@@ -431,6 +445,8 @@ export function CharacterBibleProvider({ children }: { children: ReactNode }) {
         addCharacter,
         updateCharacter,
         deleteCharacter,
+        pendingScript,
+        setPendingScript,
       }}
     >
       {children}

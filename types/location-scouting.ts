@@ -3,6 +3,8 @@
 // the skill returns a comma-separated union across scenes (e.g. "DAY, NIGHT")
 // and values beyond the four canonical ones (SUNRISE, MORNING, …). Matches the
 // scene-list convention where timeOfDay is also a string.
+import type { ProjectScript } from "./script"
+
 export type LocationType = "INT" | "EXT" | "INT/EXT" | "Not specified"
 
 export interface Location {
@@ -14,6 +16,8 @@ export interface Location {
   scoutingNotes: string
   locationIdeaMapUrl?: string
   locationIdeaLink?: string
+  /** User-uploaded location idea images (data URLs), browsable in a carousel. */
+  locationIdeaImages?: string[]
 }
 
 export interface LocationProject {
@@ -24,4 +28,6 @@ export interface LocationProject {
   updatedAt: Date
   thumbnailUrl?: string
   isDemo?: boolean
+  /** The original script this list was extracted from (if uploaded). */
+  script?: ProjectScript
 }

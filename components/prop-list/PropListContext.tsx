@@ -11,6 +11,8 @@ import {
   deletePropProject as deletePropProjectFromFirestore,
 } from "@/lib/firestore"
 import { loadDemoData, saveDemoData, DEMO_STORAGE_KEYS } from "@/utils/demoPersistence"
+import { ensureDemoScript } from "@/lib/scriptFile"
+import type { PendingExtraction } from "@/types/pending-extraction"
 
 type ViewState = "projects" | "upload" | "results"
 
@@ -27,6 +29,9 @@ interface PropListContextType {
   addProp: (projectId: string, prop: Prop | Prop[]) => void
   updateProp: (projectId: string, prop: Prop) => void
   deleteProp: (projectId: string, propId: string) => void
+  /** A "Ready to Extract" entry chosen on the list, to pre-load in the upload view. */
+  pendingScript: PendingExtraction | null
+  setPendingScript: (pending: PendingExtraction | null) => void
 }
 
 const PropListContext = createContext<PropListContextType | null>(null)
@@ -399,10 +404,11 @@ const demoProjects: PropProject[] = [
 
 export function PropListProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<PropProject[]>(() =>
-    loadDemoData(DEMO_STORAGE_KEYS.propProjects, demoProjects)
+    ensureDemoScript(loadDemoData(DEMO_STORAGE_KEYS.propProjects, demoProjects))
   )
   const [currentProject, setCurrentProject] = useState<PropProject | null>(null)
   const [view, setView] = useState<ViewState>("projects")
+  const [pendingScript, setPendingScript] = useState<PendingExtraction | null>(null)
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   // Latest currentProject for the Firestore subscription callback (set up with
@@ -422,7 +428,7 @@ export function PropListProvider({ children }: { children: ReactNode }) {
     const unsubscribe = subscribeToAuthStateChanges((authUser) => {
       setUser(authUser)
       if (!authUser) {
-        setProjects(loadDemoData(DEMO_STORAGE_KEYS.propProjects, demoProjects))
+        setProjects(ensureDemoScript(loadDemoData(DEMO_STORAGE_KEYS.propProjects, demoProjects)))
         setCurrentProject(null)
         setView("projects")
         setIsLoading(false)
@@ -458,7 +464,7 @@ export function PropListProvider({ children }: { children: ReactNode }) {
     if (user) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { id, isDemo, ...projectData } = project
+        const { id, isDemo, script, ...projectData } = project
         const newId = await addPropProject(user.uid, projectData)
         setCurrentProject({ ...project, id: newId, isDemo: false })
       } catch (error) {
@@ -476,7 +482,7 @@ export function PropListProvider({ children }: { children: ReactNode }) {
     if (user && !existingProject.isDemo) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { id, isDemo, ...projectData } = project
+        const { id, isDemo, script, ...projectData } = project
         await updatePropProjectInFirestore(user.uid, project.id, projectData)
       } catch (error) {
         console.error("[v0] Error updating prop project:", error)
@@ -577,6 +583,8 @@ export function PropListProvider({ children }: { children: ReactNode }) {
         addProp,
         updateProp,
         deleteProp,
+        pendingScript,
+        setPendingScript,
       }}
     >
       {children}

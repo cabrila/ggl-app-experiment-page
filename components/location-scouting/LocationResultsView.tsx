@@ -1,15 +1,16 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { ArrowLeft, Plus, Trash2, Share2, MapPin, Pencil, X } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Share2, MapPin, Pencil, X, ChevronDown } from "lucide-react"
 import { useLocationScouting } from "./LocationScoutingContext"
 import LocationCard from "./LocationCard"
 import { Location } from "@/types/location-scouting"
 import { exportLocationsAsJSON, exportLocationsAsPDF, exportLocationsAsExcel } from "@/lib/location-export"
-import SearchBar from "@/components/ui/SearchBar"
+import ListToolbar, { SortOption } from "@/components/ui/ListToolbar"
 import ViewModeToggle, { ViewMode } from "@/components/ui/ViewModeToggle"
 import AddItemDropdown from "@/components/ui/AddItemDropdown"
 import DownloadDropdown from "@/components/ui/DownloadDropdown"
+import ScriptButton from "@/components/ui/ScriptButton"
 import AddViaUploadModal, { FoundEntry } from "@/components/ui/AddViaUploadModal"
 import type { LocationOverviewResult } from "@/types/ai"
 import { aiLocationToLocation } from "@/lib/location-mapping"
@@ -26,6 +27,17 @@ const TYPE_GROUPS: { value: Location["type"]; label: string }[] = [
 // (e.g. "DAY, NIGHT"), so filtering uses substring matching, not equality.
 const TIME_OPTIONS = ["DAY", "NIGHT", "DAWN", "DUSK"]
 
+type LocationSortOption = "name-asc" | "name-desc" | "type" | "time"
+
+const locationSortOptions: SortOption[] = [
+  { value: "name-asc", label: "A-Z by Name" },
+  { value: "name-desc", label: "Z-A by Name" },
+  { value: "type", label: "By Type" },
+  { value: "time", label: "By Time of Day" },
+]
+
+const TYPE_ORDER: Location["type"][] = ["INT", "EXT", "INT/EXT", "Not specified"]
+
 export default function LocationResultsView() {
   const {
     currentProject,
@@ -38,6 +50,7 @@ export default function LocationResultsView() {
   const [searchQuery, setSearchQuery] = useState("")
   const [typeFilter, setTypeFilter] = useState<"all" | Location["type"]>("all")
   const [timeFilter, setTimeFilter] = useState<"all" | string>("all")
+  const [sortBy, setSortBy] = useState<LocationSortOption>("name-asc")
   const [viewMode, setViewMode] = useState<ViewMode>("full")
   const [showShareModal, setShowShareModal] = useState(false)
   const [showUploadModal, setShowUploadModal] = useState(false)
@@ -83,17 +96,39 @@ export default function LocationResultsView() {
     )
   }
 
-  const filteredLocations = currentProject.locations.filter((location) => {
-    const matchesSearch =
-      location.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      location.description.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesType = typeFilter === "all" || location.type === typeFilter
-    // AI: substring match so a "DAY" filter still hits a "DAY, NIGHT" union.
-    const matchesTime =
-      timeFilter === "all" ||
-      location.timeOfDay.toUpperCase().includes(timeFilter.toUpperCase())
-    return matchesSearch && matchesType && matchesTime
-  })
+  const filterCount = (typeFilter !== "all" ? 1 : 0) + (timeFilter !== "all" ? 1 : 0)
+
+  const clearFilters = () => {
+    setTypeFilter("all")
+    setTimeFilter("all")
+  }
+
+  const filteredLocations = currentProject.locations
+    .filter((location) => {
+      const matchesSearch =
+        location.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        location.description.toLowerCase().includes(searchQuery.toLowerCase())
+      const matchesType = typeFilter === "all" || location.type === typeFilter
+      // AI: substring match so a "DAY" filter still hits a "DAY, NIGHT" union.
+      const matchesTime =
+        timeFilter === "all" ||
+        location.timeOfDay.toUpperCase().includes(timeFilter.toUpperCase())
+      return matchesSearch && matchesType && matchesTime
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "name-asc":
+          return a.name.localeCompare(b.name)
+        case "name-desc":
+          return b.name.localeCompare(a.name)
+        case "type":
+          return TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type) || a.name.localeCompare(b.name)
+        case "time":
+          return a.timeOfDay.localeCompare(b.timeOfDay) || a.name.localeCompare(b.name)
+        default:
+          return 0
+      }
+    })
 
   const handleAddLocation = () => {
     const id = crypto.randomUUID()
@@ -194,6 +229,7 @@ export default function LocationResultsView() {
               onDownloadExcel={handleExportExcel}
               onDownloadPDF={handleExportPDF}
             />
+            <ScriptButton script={currentProject?.script} />
             <button
               onClick={() => setShowShareModal(true)}
               className="flex items-center gap-2 px-3 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-lg text-white font-sans text-sm transition-colors"
@@ -216,36 +252,54 @@ export default function LocationResultsView() {
           </div>
         </div>
 
-        {/* Search + Filters */}
-        <div className="mt-4 flex flex-col sm:flex-row gap-3">
-          <div className="flex-1">
-            <SearchBar
-              value={searchQuery}
-              onChange={setSearchQuery}
-              placeholder="Search locations..."
-            />
+        {/* Search + Filters + Sort */}
+        <ListToolbar
+          className="mt-4"
+          accent="amber"
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search locations..."
+          sortOptions={locationSortOptions}
+          sortValue={sortBy}
+          onSortChange={(v) => setSortBy(v as LocationSortOption)}
+          filterCount={filterCount}
+          onClearFilters={clearFilters}
+        >
+          {/* Type */}
+          <div>
+            <label className="block text-xs text-white/50 mb-1.5 font-sans">Type</label>
+            <div className="relative">
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value as "all" | Location["type"])}
+                className="appearance-none w-full pl-3 pr-9 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white focus:border-amber-500/50 focus:outline-none font-sans text-sm cursor-pointer"
+              >
+                <option value="all" className="bg-[#0f1f17] text-white">All types</option>
+                {TYPE_GROUPS.map((t) => (
+                  <option key={t.value} value={t.value} className="bg-[#0f1f17] text-white">{t.label}</option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+            </div>
           </div>
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value as "all" | Location["type"])}
-            className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white/80 focus:border-amber-500/50 focus:outline-none font-sans"
-          >
-            <option value="all" className="bg-[#0f1f17] text-white">All types</option>
-            {TYPE_GROUPS.map((t) => (
-              <option key={t.value} value={t.value} className="bg-[#0f1f17] text-white">{t.label}</option>
-            ))}
-          </select>
-          <select
-            value={timeFilter}
-            onChange={(e) => setTimeFilter(e.target.value as "all" | Location["timeOfDay"])}
-            className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white/80 focus:border-amber-500/50 focus:outline-none font-sans"
-          >
-            <option value="all" className="bg-[#0f1f17] text-white">Any time</option>
-            {TIME_OPTIONS.map((t) => (
-              <option key={t} value={t} className="bg-[#0f1f17] text-white">{t}</option>
-            ))}
-          </select>
-        </div>
+          {/* Time of Day */}
+          <div>
+            <label className="block text-xs text-white/50 mb-1.5 font-sans">Time of Day</label>
+            <div className="relative">
+              <select
+                value={timeFilter}
+                onChange={(e) => setTimeFilter(e.target.value as "all" | Location["timeOfDay"])}
+                className="appearance-none w-full pl-3 pr-9 py-2.5 bg-[#0f1f17] border border-white/10 rounded-lg text-white focus:border-amber-500/50 focus:outline-none font-sans text-sm cursor-pointer"
+              >
+                <option value="all" className="bg-[#0f1f17] text-white">Any time</option>
+                {TIME_OPTIONS.map((t) => (
+                  <option key={t} value={t} className="bg-[#0f1f17] text-white">{t}</option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+            </div>
+          </div>
+        </ListToolbar>
       </header>
 
       {/* Locations Grid */}

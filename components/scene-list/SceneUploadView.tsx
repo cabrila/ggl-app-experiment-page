@@ -4,18 +4,30 @@ import { useState, useRef, useEffect } from "react"
 import { Upload, ArrowLeft, FileText, Loader2, X, AlertCircle, RefreshCw, PenLine, Download } from "lucide-react"
 import { useSceneList } from "./SceneListContext"
 import { Scene, SceneProject } from "@/types/scene-list"
+import type { ProjectScript } from "@/types/script"
+import { fileToProjectScript, projectScriptToFile } from "@/lib/scriptFile"
 import { useImportJob } from "@/hooks/useImportJob"
 import type { SceneExtractResult } from "@/types/ai"
 import { trackFileUpload, trackExtractClick, trackExtractComplete } from "@/lib/analytics"
+import { usePendingExtractions } from "@/components/handoff/PendingExtractionsContext"
+
+const SECTION_ID = "scene-list" as const
 
 export default function SceneUploadView() {
-  const { setView, addProject, setCurrentProject } = useSceneList()
+  const { setView, addProject, setCurrentProject, pendingScript, setPendingScript } = useSceneList()
+  const { addForOtherSections, remove: removePending } = usePendingExtractions()
+  // When this upload was initiated from a "Ready to Extract" entry, its id is
+  // stored here so we can (a) suppress re-fan-out and (b) remove it on success.
+  const activePendingIdRef = useRef<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   // Guard so a completed extraction creates its project exactly ONCE (the
   // completion effect re-fires as addProject's identity changes on re-render).
   const createdRef = useRef(false)
+  // The uploaded file captured as a downloadable/previewable script, attached
+  // to the project once extraction completes.
+  const scriptRef = useRef<ProjectScript | null>(null)
 
   // Same upstream AI service as Character Bible — see `useImportJob` and
   // `app/api/import/[taskType]/route.ts`. No direct Gemini call.
@@ -45,6 +57,32 @@ export default function SceneUploadView() {
     const t = setTimeout(() => setProgressStale(true), 3000)
     return () => clearTimeout(t)
   }, [progress, status])
+
+  // Consume a "Ready to Extract" handoff: pre-load the stored script into the
+  // upload view (file-selected state) so the user just presses Extract. We
+  // record its id so completion can remove the entry and so we don't fan it
+  // back out to other sections.
+  useEffect(() => {
+    if (!pendingScript || file) return
+    const entry = pendingScript
+    let cancelled = false
+    ;(async () => {
+      try {
+        const reconstructed = await projectScriptToFile(entry.script)
+        if (cancelled) return
+        scriptRef.current = entry.script
+        activePendingIdRef.current = entry.id
+        setFile(reconstructed)
+      } catch (err) {
+        console.error("[v0] Failed to load pending script:", err)
+      } finally {
+        if (!cancelled) setPendingScript(null)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [pendingScript, file, setPendingScript])
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -86,6 +124,18 @@ export default function SceneUploadView() {
     const ext = file.name.split(".").pop()?.toLowerCase() || "unknown"
     trackExtractClick("scene-list", ext)
     const sourceTitle = file.name.replace(/\.(pdf|docx)$/i, "")
+    // Capture the uploaded file so it can be re-downloaded/previewed later.
+    try {
+      scriptRef.current = await fileToProjectScript(file)
+    } catch (err) {
+      console.error("[v0] Failed to capture uploaded script:", err)
+      scriptRef.current = null
+    }
+    // Fan out a "Ready to Extract" entry to the other sections — but only for a
+    // fresh upload, not a run initiated from another section's handoff.
+    if (!activePendingIdRef.current && scriptRef.current) {
+      addForOtherSections(SECTION_ID, sourceTitle, scriptRef.current)
+    }
     await run(file, sourceTitle)
   }
 
@@ -121,16 +171,25 @@ export default function SceneUploadView() {
       scenes,
       createdAt: new Date(),
       updatedAt: new Date(),
+      script: scriptRef.current ?? undefined,
     }
     addProject(newProject)
     setCurrentProject(newProject)
     trackExtractComplete("scene-list", scenes.length)
+    // If this run came from a "Ready to Extract" entry, clear it now that the
+    // project exists.
+    if (activePendingIdRef.current) {
+      removePending(SECTION_ID, activePendingIdRef.current)
+      activePendingIdRef.current = null
+    }
     setView("results")
-  }, [status, result, file, addProject, setCurrentProject, setView])
+  }, [status, result, file, addProject, setCurrentProject, setView, removePending])
 
   const handleRetry = () => {
     reset()
     createdRef.current = false
+    scriptRef.current = null
+    activePendingIdRef.current = null
     setFile(null)
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
@@ -139,6 +198,8 @@ export default function SceneUploadView() {
     setFile(null)
     reset()
     createdRef.current = false
+    scriptRef.current = null
+    activePendingIdRef.current = null
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
 

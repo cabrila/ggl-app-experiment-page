@@ -266,6 +266,94 @@ const createDemoData = (): PublicCastingProject[] => {
       isCompleted: true,
       shareableLink: "https://gogreenlight.ai/cast/stu901",
     },
+    {
+      id: "cc-8",
+      title: "Lead Role - Captain Vega",
+      description: "Casting a commanding lead for the starship captain in our sci-fi feature. Gravitas and warmth essential.",
+      projectName: "Crimson Tide",
+      fields: [
+        { id: "f1", label: "Full Name", type: "text", required: true, placeholder: "Enter your full name" },
+        { id: "f2", label: "Email", type: "email", required: true, placeholder: "your@email.com" },
+        { id: "f3", label: "Phone", type: "phone", required: true, placeholder: "+1-555-0000" },
+        { id: "f4", label: "Age", type: "number", required: true, placeholder: "Your age" },
+        { id: "f5", label: "Playing Age Range", type: "text", required: false, placeholder: "e.g., 35-50" },
+        { id: "f6", label: "Headshot URL", type: "url", required: false, placeholder: "Link to your headshot" },
+        { id: "f7", label: "Reel URL", type: "url", required: false, placeholder: "Link to your demo reel" },
+        { id: "f8", label: "Additional Notes", type: "textarea", required: false, placeholder: "Tell us about yourself..." },
+      ],
+      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      isActive: true,
+      shareableLink: "https://gogreenlight.ai/cast/vwx234",
+    },
+    {
+      id: "cc-9",
+      title: "Comic Relief - Benny",
+      description: "Seeking a naturally funny performer with impeccable timing for the scene-stealing sidekick role.",
+      projectName: "Crimson Tide",
+      fields: [
+        { id: "f1", label: "Full Name", type: "text", required: true, placeholder: "Enter your full name" },
+        { id: "f2", label: "Email", type: "email", required: true, placeholder: "your@email.com" },
+        { id: "f3", label: "Phone", type: "phone", required: false, placeholder: "+1-555-0000" },
+        { id: "f4", label: "Age", type: "number", required: true, placeholder: "Your age" },
+        { id: "f5", label: "Headshot URL", type: "url", required: false, placeholder: "Link to your headshot" },
+        { id: "f6", label: "Comedy Experience", type: "textarea", required: true, placeholder: "Improv, stand-up, on-camera comedy..." },
+      ],
+      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      isActive: true,
+      shareableLink: "https://gogreenlight.ai/cast/yza567",
+    },
+    {
+      id: "cc-10",
+      title: "Mysterious Stranger",
+      description: "A pivotal recurring guest role requiring quiet intensity and a distinctive screen presence.",
+      projectName: "Crimson Tide",
+      fields: [
+        { id: "f1", label: "Full Name", type: "text", required: true, placeholder: "Enter your full name" },
+        { id: "f2", label: "Email", type: "email", required: true, placeholder: "your@email.com" },
+        { id: "f3", label: "Phone", type: "phone", required: true, placeholder: "+1-555-0000" },
+        { id: "f4", label: "Age", type: "number", required: true, placeholder: "Your age" },
+        { id: "f5", label: "Playing Age Range", type: "text", required: false, placeholder: "e.g., 30-45" },
+        { id: "f6", label: "Headshot URL", type: "url", required: false, placeholder: "Link to your headshot" },
+        { id: "f7", label: "Additional Notes", type: "textarea", required: false, placeholder: "Tell us about yourself..." },
+      ],
+      createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
+      isActive: true,
+      shareableLink: "https://gogreenlight.ai/cast/bcd890",
+    },
+    {
+      id: "cc-11",
+      title: "Child Role - Lily",
+      description: "Casting a bright young performer (guardian consent required) for a warm-hearted supporting role.",
+      projectName: "Crimson Tide",
+      fields: [
+        { id: "f1", label: "Full Name", type: "text", required: true, placeholder: "Enter your full name" },
+        { id: "f2", label: "Guardian Email", type: "email", required: true, placeholder: "guardian@email.com" },
+        { id: "f3", label: "Guardian Phone", type: "phone", required: true, placeholder: "+1-555-0000" },
+        { id: "f4", label: "Age", type: "number", required: true, placeholder: "Child's age" },
+        { id: "f5", label: "Headshot URL", type: "url", required: false, placeholder: "Link to a headshot" },
+        { id: "f6", label: "Experience", type: "textarea", required: false, placeholder: "Any prior acting experience" },
+      ],
+      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      isActive: true,
+      shareableLink: "https://gogreenlight.ai/cast/efg123",
+    },
+    {
+      id: "cc-12",
+      title: "Ensemble Dancer",
+      description: "Seeking trained dancers for the high-energy ensemble numbers. Multiple styles welcome.",
+      projectName: "Crimson Tide",
+      fields: [
+        { id: "f1", label: "Full Name", type: "text", required: true, placeholder: "Enter your full name" },
+        { id: "f2", label: "Email", type: "email", required: true, placeholder: "your@email.com" },
+        { id: "f3", label: "Phone", type: "phone", required: true, placeholder: "+1-555-0000" },
+        { id: "f4", label: "Age", type: "number", required: true, placeholder: "Your age" },
+        { id: "f5", label: "Headshot URL", type: "url", required: false, placeholder: "Link to your headshot" },
+        { id: "f6", label: "Dance Styles & Training", type: "textarea", required: true, placeholder: "Ballet, jazz, hip-hop, etc." },
+      ],
+      createdAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000),
+      isActive: true,
+      shareableLink: "https://gogreenlight.ai/cast/hij456",
+    },
   ]
 
   const cc1Names = [
@@ -301,6 +389,30 @@ const createDemoData = (): PublicCastingProject[] => {
   const cc7Names = [
     "Brock Hayes", "Tanya Voss", "Reed Calloway", "Kira Sloane", "Dax Romero",
     "Mara Quinn", "Cole Bishop", "Nyla Frost", "Garrett Lyne", "Sasha Petrov",
+  ]
+  const cc8Names = [
+    "Adriana Vega", "Marcus Holloway", "Elena Cardoza", "Idris Bello", "Nina Castellan",
+    "Rafael Mendes", "Greta Lindholm", "Omar Haddad", "Celeste Moreau", "Viktor Asch",
+    "Priscilla Tan", "Andre Beaumont", "Yara Solis",
+  ]
+  const cc9Names = [
+    "Benny Calloway", "Dax Friedman", "Pete Sorrentino", "Marcy Klein", "Reggie Boon",
+    "Lola Fitzgerald", "Tobey Marsh", "Gus Pennington", "Wanda Cho", "Earl Dempsey",
+    "Connie Vasquez", "Hal Bridger",
+  ]
+  const cc10Names = [
+    "Sloane Whittaker", "Cass Morrow", "Dmitri Sokolov", "Vesper Lyng", "Elias Thorne",
+    "Mara Delacroix", "Cyrus Vane", "Isolde Frost", "Lucian Reyes", "Ondine Marsh",
+    "Caspian Hale", "Renata Vogel", "Soren Black", "Mireille Dubois",
+  ]
+  const cc11Names = [
+    "Lily Harper", "Noah Bennett", "Ruby Carmichael", "Eli Sandoval", "Maisie Tran",
+    "Oscar Delgado", "Poppy Whitfield", "Theo Marsh", "Daisy Kovac", "Sammy Okoye",
+  ]
+  const cc12Names = [
+    "Aaliyah Monroe", "Diego Salcedo", "Keiko Tanaka", "Marcus Pratt", "Lena Vasquez",
+    "Jordan Wells", "Simone Devereaux", "Tariq Hassan", "Yuki Mori", "Bianca Russo",
+    "Cory Lindgren", "Anaya Patel", "Felix Romano", "Greta Halvorsen", "Marlon Ruiz",
   ]
 
   const extraSubmissions: CastingSubmission[] = [
@@ -371,6 +483,59 @@ const createDemoData = (): PublicCastingProject[] => {
         headshot: headshotPool[(i + 3) % headshotPool.length],
       }, 600 + i * 6, false),
     ),
+    ...cc8Names.map((name, i) =>
+      buildSubmission("cc8", i + 1, "cc-8", "Lead Role - Captain Vega", {
+        name,
+        email: `${name.toLowerCase().replace(/\s+/g, ".")}@email.com`,
+        phone: `+1-555-8${String(100 + i).padStart(3, "0")}`,
+        age: String(38 + (i % 12)),
+        playingAge: `${35 + (i % 4)}-${48 + (i % 4)}`,
+        headshot: headshotPool[i % headshotPool.length],
+        reel: `https://reels.example.com/${name.toLowerCase().replace(/\s+/g, "-")}`,
+        notes: i % 2 === 0 ? "Lead credits in genre features; commanding screen presence." : "Classically trained with extensive ensemble-leading experience.",
+      }, 2 + i * 4, i < 3),
+    ),
+    ...cc9Names.map((name, i) =>
+      buildSubmission("cc9", i + 1, "cc-9", "Comic Relief - Benny", {
+        name,
+        email: `${name.toLowerCase().replace(/\s+/g, ".")}@email.com`,
+        phone: i % 2 === 0 ? `+1-555-9${String(100 + i).padStart(3, "0")}` : "",
+        age: String(24 + (i % 14)),
+        headshot: headshotPool[(i + 1) % headshotPool.length],
+        comedyExperience: i % 2 === 0 ? "Improv house regular with national touring credits." : "Stand-up and sketch comedy with on-camera work.",
+      }, 3 + i * 5, i < 2),
+    ),
+    ...cc10Names.map((name, i) =>
+      buildSubmission("cc10", i + 1, "cc-10", "Mysterious Stranger", {
+        name,
+        email: `${name.toLowerCase().replace(/\s+/g, ".")}@email.com`,
+        phone: `+1-555-A${String(100 + i).padStart(3, "0")}`,
+        age: String(30 + (i % 16)),
+        playingAge: `${30 + (i % 5)}-${42 + (i % 5)}`,
+        headshot: headshotPool[(i + 2) % headshotPool.length],
+        notes: i % 2 === 0 ? "Specializes in quiet, enigmatic roles; strong stillness on camera." : "Distinctive presence honed in independent and prestige drama.",
+      }, 2 + i * 4, i < 3),
+    ),
+    ...cc11Names.map((name, i) =>
+      buildSubmission("cc11", i + 1, "cc-11", "Child Role - Lily", {
+        name,
+        guardianEmail: `guardian.${name.toLowerCase().replace(/\s+/g, ".")}@email.com`,
+        guardianPhone: `+1-555-B${String(100 + i).padStart(3, "0")}`,
+        age: String(7 + (i % 5)),
+        headshot: headshotPool[i % headshotPool.length],
+        experience: i % 2 === 0 ? "School productions and a regional commercial." : "First-time auditioner; very enthusiastic and coachable.",
+      }, 4 + i * 6, i < 2),
+    ),
+    ...cc12Names.map((name, i) =>
+      buildSubmission("cc12", i + 1, "cc-12", "Ensemble Dancer", {
+        name,
+        email: `${name.toLowerCase().replace(/\s+/g, ".")}@email.com`,
+        phone: `+1-555-C${String(100 + i).padStart(3, "0")}`,
+        age: String(19 + (i % 12)),
+        headshot: headshotPool[(i + 3) % headshotPool.length],
+        danceStyles: i % 2 === 0 ? "Contemporary and ballet, 10+ years training." : "Hip-hop and jazz with commercial choreography credits.",
+      }, 2 + i * 3, i < 4),
+    ),
   ]
 
   // Each casting call form is its own entry/card on the My Casting Calls page.
@@ -389,7 +554,9 @@ const createDemoData = (): PublicCastingProject[] => {
 }
 
 export function PublicCastingProvider({ children }: { children: ReactNode }) {
-  const user = useFirebaseUser()
+  // Use the actual Firebase User (null in demo mode) — not the info object,
+  // which is always truthy and would wrongly clear demo data for demo users.
+  const { user } = useFirebaseUser()
   const hasFetched = useRef(false)
   const [state, setState] = useState<PublicCastingState>(() => {
     const demo = createDemoData()

@@ -12,6 +12,7 @@ import {
 } from "@/lib/firestore"
 import { loadDemoData, saveDemoData, DEMO_STORAGE_KEYS } from "@/utils/demoPersistence"
 import { ensureDemoScript } from "@/lib/scriptFile"
+import { cacheScript, attachCachedScripts, removeCachedScript } from "@/lib/scriptCache"
 import type { PendingExtraction } from "@/types/pending-extraction"
 
 type ViewState = "projects" | "upload" | "results"
@@ -268,11 +269,14 @@ export function LocationScoutingProvider({ children }: { children: ReactNode }) 
     const unsubscribe = subscribeToLocationProjects(
       user.uid,
       (firestoreProjects) => {
-        setProjects(firestoreProjects)
+        // Firestore doesn't store the uploaded script — re-attach it from the
+        // local cache so the "Script" preview button survives the refresh.
+        const withScripts = attachCachedScripts(firestoreProjects)
+        setProjects(withScripts)
         // Update currentProject if it exists in the new data (read latest via ref)
         const current = currentProjectRef.current
         if (current) {
-          const updated = firestoreProjects.find((p) => p.id === current.id)
+          const updated = withScripts.find((p) => p.id === current.id)
           if (updated) {
             setCurrentProject(updated)
           }
@@ -294,6 +298,9 @@ export function LocationScoutingProvider({ children }: { children: ReactNode }) 
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { id, isDemo, script, ...projectData } = project
         const newId = await addLocationProject(user.uid, projectData)
+        // Persist the script client-side under the new id so it's re-attached
+        // when the Firestore subscription (which omits it) refreshes.
+        if (script) cacheScript(newId, script)
         // Firestore subscription will update the state
         setCurrentProject({ ...project, id: newId, isDemo: false })
       } catch (error) {
@@ -342,6 +349,7 @@ export function LocationScoutingProvider({ children }: { children: ReactNode }) 
       // Demo mode
       setProjects((prev) => prev.filter((p) => p.id !== projectId))
     }
+    removeCachedScript(projectId)
 
     if (currentProject?.id === projectId) {
       setCurrentProject(null)

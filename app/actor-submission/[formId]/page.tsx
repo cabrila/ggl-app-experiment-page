@@ -233,20 +233,46 @@ export default function ActorSubmissionForm() {
       <div className="max-w-2xl mx-auto">
         <div className="bg-slate-800 rounded-3xl shadow-2xl shadow-black/50 overflow-hidden border border-slate-700">
           
-          {/* Header Image */}
-          {formConfig.headerImageUrl && (
-            <div className="w-full h-48 sm:h-64 bg-slate-900 relative">
-              <img
-                src={formConfig.headerImageUrl}
-                alt="Casting call header"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-800 to-transparent" />
-            </div>
-          )}
+          {/* Header Image(s) */}
+          {(() => {
+            const images: string[] = formConfig.headerImageUrls?.length
+              ? formConfig.headerImageUrls
+              : formConfig.headerImageUrl
+                ? [formConfig.headerImageUrl]
+                : []
+            if (images.length === 0) return null
+            return (
+              <>
+                <div className="w-full h-48 sm:h-64 bg-slate-900 relative">
+                  <img
+                    src={images[0]}
+                    alt="Casting call header"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-800 to-transparent" />
+                </div>
+                {images.length > 1 && (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 px-8 pt-4">
+                    {images.slice(1).map((url, i) => (
+                      <div
+                        key={i}
+                        className="aspect-square rounded-xl overflow-hidden border border-slate-700"
+                      >
+                        <img
+                          src={url}
+                          alt={`Casting call header ${i + 2}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )
+          })()}
 
           {/* Form Header */}
-          <div className={`px-8 ${formConfig.headerImageUrl ? '-mt-12 relative z-10' : 'pt-10'} text-center mb-8`}>
+          <div className={`px-8 ${formConfig.headerImageUrl || formConfig.headerImageUrls?.length ? '-mt-12 relative z-10' : 'pt-10'} text-center mb-8`}>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-emerald-300 text-sm mb-4 font-sans font-medium shadow-lg backdrop-blur-md">
               {formConfig.projectName}
             </div>

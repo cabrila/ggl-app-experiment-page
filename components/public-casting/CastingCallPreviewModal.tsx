@@ -258,16 +258,39 @@ export default function CastingCallPreviewModal({ castingCall, project, onClose 
           ) : (
             // Form State
             <form onSubmit={handleSubmit}>
-              {/* Header Image */}
-              {castingCall.headerImageUrl && (
-                <div className="w-full h-40 rounded-xl overflow-hidden mb-6">
-                  <img
-                    src={castingCall.headerImageUrl || "/placeholder.svg"}
-                    alt={`${castingCall.title} header`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
+              {/* Header Image(s) */}
+              {(() => {
+                const images = castingCall.headerImageUrls?.length
+                  ? castingCall.headerImageUrls
+                  : castingCall.headerImageUrl
+                    ? [castingCall.headerImageUrl]
+                    : []
+                if (images.length === 0) return null
+                if (images.length === 1) {
+                  return (
+                    <div className="w-full h-40 rounded-xl overflow-hidden mb-6">
+                      <img
+                        src={images[0] || "/placeholder.svg"}
+                        alt={`${castingCall.title} header`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )
+                }
+                return (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-6">
+                    {images.map((url, i) => (
+                      <div key={i} className="aspect-square rounded-xl overflow-hidden">
+                        <img
+                          src={url || "/placeholder.svg"}
+                          alt={`${castingCall.title} header ${i + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )
+              })()}
               {/* Form Header */}
               <div className="text-center mb-8">
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/20 rounded-full text-emerald-300 text-sm mb-4 font-sans font-medium">

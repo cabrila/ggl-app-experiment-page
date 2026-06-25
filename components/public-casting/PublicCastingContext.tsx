@@ -20,7 +20,7 @@ interface PublicCastingContextType {
   selectProject: (id: string) => void
   updateProject: (id: string, updates: Partial<PublicCastingProject>) => void
   deleteProject: (id: string) => void
-  createCastingCall: (projectId: string, title: string, description: string, projectName: string, fields: CastingCallField[], headerImageUrl?: string, consent?: { talentPoolConsentEnabled?: boolean; talentPoolConsentText?: string }, id?: string) => CastingCall
+  createCastingCall: (projectId: string, title: string, description: string, projectName: string, fields: CastingCallField[], headerImageUrls?: string[], consent?: { talentPoolConsentEnabled?: boolean; talentPoolConsentText?: string }, id?: string) => CastingCall
   updateCastingCall: (projectId: string, castingCallId: string, updates: Partial<CastingCall>) => void
   deleteCastingCall: (projectId: string, castingCallId: string) => void
   selectCastingCall: (id: string) => void
@@ -624,7 +624,11 @@ export function PublicCastingProvider({ children }: { children: ReactNode }) {
             createdAt: new Date(call.createdAt),
             isActive: call.status === 'active',
             shareableLink: `${window.location.origin}/actor-submission/${call.id}`,
-            headerImageUrl: call.headerImageUrl,
+            // Prefer the multi-image array; fall back to the legacy single image
+            // so older casting calls still show their header.
+            headerImageUrls:
+              call.headerImageUrls ?? (call.headerImageUrl ? [call.headerImageUrl] : undefined),
+            headerImageUrl: call.headerImageUrl ?? call.headerImageUrls?.[0],
             isCompleted: call.isCompleted,
             // Consent is enabled by default. Only an explicit `false` from the
             // backend disables it, so a missing/undefined value (e.g. legacy
@@ -730,7 +734,7 @@ export function PublicCastingProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const createCastingCall = useCallback(
-    (projectId: string, title: string, description: string, projectName: string, fields: CastingCallField[], headerImageUrl?: string, consent?: { talentPoolConsentEnabled?: boolean; talentPoolConsentText?: string }, id?: string): CastingCall => {
+    (projectId: string, title: string, description: string, projectName: string, fields: CastingCallField[], headerImageUrls?: string[], consent?: { talentPoolConsentEnabled?: boolean; talentPoolConsentText?: string }, id?: string): CastingCall => {
       // AI: Use the backend-assigned id when supplied so the local entry, its
       // shareable link, and the persisted casting call all agree. Without this
       // the local `cc-<timestamp>` id diverged from the backend's auto-id, so
@@ -745,7 +749,8 @@ export function PublicCastingProvider({ children }: { children: ReactNode }) {
         createdAt: new Date(),
         isActive: true,
         shareableLink: `${window.location.origin}/actor-submission/${resolvedId}`,
-        headerImageUrl,
+        headerImageUrls,
+        headerImageUrl: headerImageUrls?.[0],
         talentPoolConsentEnabled: consent?.talentPoolConsentEnabled,
         talentPoolConsentText: consent?.talentPoolConsentText,
       }

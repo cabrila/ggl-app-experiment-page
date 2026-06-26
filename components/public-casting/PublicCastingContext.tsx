@@ -564,11 +564,16 @@ export function PublicCastingProvider({ children }: { children: ReactNode }) {
       DEMO_STORAGE_KEYS.publicCasting,
       null
     )
+    // Fall back to demo data when nothing has been persisted yet OR when the
+    // persisted projects array is empty. A stale empty array (e.g. left behind
+    // by a prior signed-in session that cleared projects) must not permanently
+    // suppress the demo casting calls in demo mode.
+    const hasPersistedProjects = !!persisted?.projects && persisted.projects.length > 0
     return {
-      projects: persisted?.projects ?? demo,
+      projects: hasPersistedProjects ? persisted!.projects : demo,
       currentProject: null,
       currentCastingCall: null,
-      newSubmissionsCount: persisted?.newSubmissionsCount ?? 16,
+      newSubmissionsCount: hasPersistedProjects ? persisted!.newSubmissionsCount : 16,
     }
   })
 

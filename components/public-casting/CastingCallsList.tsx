@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
-import { Plus, Megaphone, Calendar, Users, Trash2, Eye, FileEdit, FolderEdit, QrCode, Search, SlidersHorizontal, ChevronDown, Filter, FolderPlus, ChevronRight, ImageIcon, X, Check, FolderInput, FolderMinus } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { Plus, Megaphone, Calendar, Users, Trash2, Eye, FileEdit, FolderEdit, QrCode, Search, SlidersHorizontal, ChevronDown, Filter, FolderPlus, ChevronRight, X, Check, FolderInput, FolderMinus } from "lucide-react"
 import { usePublicCasting } from "./PublicCastingContext"
 import { CastingCall, PublicCastingProject } from "@/types/public-casting"
 import CastingCallPreviewModal from "./CastingCallPreviewModal"
@@ -23,7 +23,6 @@ interface CastingGroup {
   id: string
   name: string
   projectIds: string[]
-  headerImageUrl?: string
 }
 
 export default function CastingCallsList({
@@ -57,8 +56,7 @@ export default function CastingCallsList({
   const [collapsedGroupIds, setCollapsedGroupIds] = useState<string[]>([])
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null)
   const [editingGroupName, setEditingGroupName] = useState("")
-  const groupImageInputRefs = useRef<Record<string, HTMLInputElement | null>>({})
-  // Dropdown menus: split "Create Casting Group" button + per-card "move" menu
+  // Dropdown menus: "Create Casting Group" menu + per-card "move" menu
   const [showGroupMenu, setShowGroupMenu] = useState(false)
   const [moveMenuProjectId, setMoveMenuProjectId] = useState<string | null>(null)
 
@@ -71,28 +69,15 @@ export default function CastingCallsList({
   const handleCreateGroups = () => {
     if (selectedProjectIds.length === 0) return
 
-    const selectedProjects = state.projects.filter((p) => selectedProjectIds.includes(p.id))
+    // All selected casting calls go into a single new group, regardless of their
+    // project names. The group is named "New Group" and can be renamed afterwards.
+    const newGroup: CastingGroup = {
+      id: `group-${Date.now()}`,
+      name: "New Group",
+      projectIds: [...selectedProjectIds],
+    }
 
-    // Group selected projects by their casting call's projectName (falls back to project name)
-    const buckets = new Map<string, { name: string; projectIds: string[] }>()
-    selectedProjects.forEach((project) => {
-      const groupName = project.castingCalls[0]?.projectName?.trim() || project.name
-      const key = groupName.toLowerCase()
-      const existing = buckets.get(key)
-      if (existing) {
-        existing.projectIds.push(project.id)
-      } else {
-        buckets.set(key, { name: groupName, projectIds: [project.id] })
-      }
-    })
-
-    const newGroups: CastingGroup[] = Array.from(buckets.values()).map((bucket, i) => ({
-      id: `group-${Date.now()}-${i}`,
-      name: bucket.name,
-      projectIds: bucket.projectIds,
-    }))
-
-    setGroups((prev) => [...prev, ...newGroups])
+    setGroups((prev) => [...prev, newGroup])
     setSelectedProjectIds([])
     setShowGroupMenu(false)
   }
@@ -153,16 +138,6 @@ export default function CastingCallsList({
   const deleteGroup = (groupId: string) => {
     setGroups((prev) => prev.filter((g) => g.id !== groupId))
     setCollapsedGroupIds((prev) => prev.filter((id) => id !== groupId))
-  }
-
-  const setGroupImageFromFile = (groupId: string, file: File | undefined) => {
-    if (!file || !file.type.startsWith("image/")) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      const url = reader.result as string
-      setGroups((prev) => prev.map((g) => (g.id === groupId ? { ...g, headerImageUrl: url } : g)))
-    }
-    reader.readAsDataURL(file)
   }
 
   const sortOptions: { value: CastingSortOption; label: string }[] = [
@@ -268,13 +243,13 @@ export default function CastingCallsList({
         {moveMenuProjectId === project.id && (
           <>
             <div
-              className="fixed inset-0 z-20"
+              className="fixed inset-0 z-40"
               onClick={(e) => {
                 e.stopPropagation()
                 setMoveMenuProjectId(null)
               }}
             />
-            <div className="absolute top-full right-0 mt-1 w-52 bg-[#13261c] border border-white/10 rounded-xl overflow-hidden shadow-xl z-30 py-1">
+            <div className="absolute top-full right-0 mt-1 w-52 bg-[#13261c] border border-white/10 rounded-xl overflow-hidden shadow-xl z-50 py-1">
               <p className="px-3 py-1.5 text-[11px] uppercase tracking-wider text-white/40 font-sans">
                 {inGroup ? "Move to group" : "Add to group"}
               </p>
@@ -326,6 +301,9 @@ export default function CastingCallsList({
     // The move/add-to-group control appears on grouped cards, and on unassigned
     // cards too once at least one group exists so any call can be added easily.
     const showMoveControl = inGroup || groups.length > 0
+    // When this card's move menu is open, lift the whole card above its siblings
+    // so the dropdown is never painted behind neighbouring cards (list/minimal).
+    const isMoveMenuOpen = moveMenuProjectId === project.id
 
     // List view - single dense row
     if (viewMode === "list") {
@@ -333,6 +311,8 @@ export default function CastingCallsList({
         <div
           key={project.id}
           className={`group relative flex items-center gap-3 p-3 rounded-lg border bg-[#1a2e23] transition-colors ${
+            isMoveMenuOpen ? "z-50" : ""
+          } ${
             selectedProjectIds.includes(project.id)
               ? "border-amber-500/50 ring-2 ring-amber-500/20"
               : "border-white/10 hover:border-violet-500/30"
@@ -436,6 +416,8 @@ export default function CastingCallsList({
         <div
           key={project.id}
           className={`group relative flex flex-col rounded-xl border bg-[#1a2e23] transition-colors ${
+            isMoveMenuOpen ? "z-50" : ""
+          } ${
             selectedProjectIds.includes(project.id)
               ? "border-amber-500/50 ring-2 ring-amber-500/20"
               : "border-white/10 hover:border-violet-500/30"
@@ -520,6 +502,8 @@ export default function CastingCallsList({
       <div
         key={project.id}
         className={`group relative flex rounded-xl border bg-[#1a2e23] transition-colors ${
+          isMoveMenuOpen ? "z-50" : ""
+        } ${
           selectedProjectIds.includes(project.id)
             ? "border-amber-500/50 ring-2 ring-amber-500/20"
             : "border-white/10 hover:border-violet-500/30"
@@ -976,41 +960,6 @@ export default function CastingCallsList({
                   {/* Group Contents - only visible when expanded */}
                   {!isCollapsed && (
                     <div className="border-t border-white/10">
-                      {/* Header image / upload zone - lives inside the collapsible area */}
-                      <div
-                        onClick={() => groupImageInputRefs.current[group.id]?.click()}
-                        onDragOver={(e) => e.preventDefault()}
-                        onDrop={(e) => {
-                          e.preventDefault()
-                          setGroupImageFromFile(group.id, e.dataTransfer.files?.[0])
-                        }}
-                        className="relative h-28 w-full cursor-pointer bg-[#0f1f17] group/header"
-                        title="Click or drag an image to set the group header"
-                      >
-                        {group.headerImageUrl ? (
-                          <img
-                            src={group.headerImageUrl || "/placeholder.svg"}
-                            alt={`${group.name} header`}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center text-white/40 gap-1">
-                            <ImageIcon className="w-6 h-6" />
-                            <span className="text-xs font-sans">Click or drag to upload header image</span>
-                          </div>
-                        )}
-                        <div className="absolute inset-0 bg-black/0 group-hover/header:bg-black/20 transition-colors" />
-                        <input
-                          ref={(el) => {
-                            groupImageInputRefs.current[group.id] = el
-                          }}
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => setGroupImageFromFile(group.id, e.target.files?.[0])}
-                        />
-                      </div>
-
                       {/* Casting call slots - reuse the full card so every action
                           button (preview, edit, QR, edit project, delete) plus the
                           move/remove control is available inside the group too. */}

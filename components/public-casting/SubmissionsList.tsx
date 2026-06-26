@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react"
 import Image from "next/image"
-import { ArrowLeft, Search, SlidersHorizontal, ChevronDown, ListPlus, Plus, X, Phone, Mail, Star, Filter } from "lucide-react"
+import { ArrowLeft, Search, SlidersHorizontal, ChevronDown, ChevronRight, ListPlus, Plus, X, Phone, Mail, Star, Filter, ChevronsDownUp, ChevronsUpDown } from "lucide-react"
 import { usePublicCasting } from "./PublicCastingContext"
 import SubmissionCard from "./SubmissionCard"
 import { CastingSubmission } from "@/types/public-casting"
@@ -104,6 +104,16 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
   const [showAddModal, setShowAddModal] = useState(false)
   const [newListName, setNewListName] = useState("")
   const [detailSubmissionId, setDetailSubmissionId] = useState<string | null>(null)
+  // Track which form groups are collapsed so users can quickly scan an overview.
+  const [collapsedForms, setCollapsedForms] = useState<Set<string>>(new Set())
+
+  const toggleFormCollapse = (form: string) => {
+    setCollapsedForms((prev) => {
+      const next = new Set(prev)
+      next.has(form) ? next.delete(form) : next.add(form)
+      return next
+    })
+  }
 
   // Get all submissions across all projects
   const allSubmissions = useMemo(() => {
@@ -231,6 +241,29 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
 
     return result
   }, [allSubmissions, searchQuery, filterByForm, filterByGrade, sortBy, ageMin, ageMax, filterByGender, filterByLocation, filterByAvailability])
+
+  // Group the filtered submissions by form (casting call title), preserving the
+  // current sort order. Every view mode renders these groups as collapsible
+  // sections so users can quickly fold forms away for an overview.
+  const groupedByForm = useMemo(() => {
+    const groups = new Map<string, CastingSubmission[]>()
+    filteredSubmissions.forEach((s) => {
+      const key = s.castingCallTitle || "Untitled Form"
+      if (!groups.has(key)) groups.set(key, [])
+      groups.get(key)!.push(s)
+    })
+    return Array.from(groups.entries())
+  }, [filteredSubmissions])
+
+  const allCollapsed = groupedByForm.length > 0 && groupedByForm.every(([form]) => collapsedForms.has(form))
+
+  const toggleAllForms = () => {
+    if (allCollapsed) {
+      setCollapsedForms(new Set())
+    } else {
+      setCollapsedForms(new Set(groupedByForm.map(([form]) => form)))
+    }
+  }
 
   const handleUpdateSubmission = async (submissionId: string, updates: Partial<CastingSubmission>) => {
     // If marking as approved/shortlisted, alert backend to map it to the actor list
@@ -385,6 +418,16 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
                   <span className="font-sans text-sm">
                     {selectedIds.size === filteredSubmissions.length ? "Deselect All" : "Select All"}
                   </span>
+                </button>
+              )}
+              {groupedByForm.length > 0 && (
+                <button
+                  onClick={toggleAllForms}
+                  className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white transition-colors"
+                  title={allCollapsed ? "Expand all forms" : "Collapse all forms"}
+                >
+                  {allCollapsed ? <ChevronsUpDown className="w-4 h-4" /> : <ChevronsDownUp className="w-4 h-4" />}
+                  <span className="font-sans text-sm hidden sm:inline">{allCollapsed ? "Expand All" : "Collapse All"}</span>
                 </button>
               )}
               <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
@@ -600,109 +643,129 @@ export default function SubmissionsList({ onBack, initialFormFilter }: Submissio
                 : "No submissions yet"}
             </p>
           </div>
-        ) : viewMode === "full" ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-            {filteredSubmissions.map((submission) => (
-              <SubmissionCard
-                key={submission.id}
-                submission={submission}
-                onUpdate={(updates) => handleUpdateSubmission(submission.id, updates)}
-                onDelete={() => handleDeleteSubmission(submission.id)}
-                isSelected={selectedIds.has(submission.id)}
-                onToggleSelect={() => toggleSelect(submission.id)}
-                onNameClick={() => setDetailSubmissionId(submission.id)}
-              />
-            ))}
-          </div>
-        ) : viewMode === "minimal" ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
-            {filteredSubmissions.map((submission) => (
-              <div
-                key={submission.id}
-                className={`group relative p-3 rounded-lg border bg-[#1a2e23] transition-colors ${
-                  selectedIds.has(submission.id) ? "border-violet-500/50 ring-1 ring-violet-500/20" : "border-white/10 hover:border-white/20"
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <SubmissionCheckbox checked={selectedIds.has(submission.id)} onClick={() => toggleSelect(submission.id)} />
-                  <SubmissionAvatar submission={submission} />
-                  <div className="flex-1 min-w-0">
-                    <button
-                      onClick={() => setDetailSubmissionId(submission.id)}
-                      className="text-left max-w-full"
-                      title="View full actor details"
-                    >
-                      <h3 className="text-sm font-semibold text-white truncate hover:text-violet-300 transition-colors cursor-pointer">{submission.name}</h3>
-                    </button>
-                    <p className="text-xs text-white/50 truncate">{submission.castingCallTitle}</p>
-                  </div>
-                  {submission.grade && submission.grade > 0 ? (
-                    <span className="flex items-center gap-0.5 text-xs text-amber-400 flex-shrink-0">
-                      <Star className="w-3 h-3 fill-current" />
-                      {submission.grade}
-                    </span>
-                  ) : null}
-                </div>
-              </div>
-            ))}
-          </div>
         ) : (
-          /* List view - grouped by casting call */
-          <div className="space-y-6">
-            {Array.from(new Set(filteredSubmissions.map((s) => s.castingCallTitle))).map((form) => {
-              const group = filteredSubmissions.filter((s) => s.castingCallTitle === form)
-              if (group.length === 0) return null
+          /* Submissions grouped by form into collapsible sections (all view modes) */
+          <div className="space-y-4">
+            {groupedByForm.map(([form, group]) => {
+              const isCollapsed = collapsedForms.has(form)
               return (
                 <div key={form} className="border border-white/10 rounded-xl overflow-hidden">
-                  <div className="px-4 py-3 bg-white/5 border-b border-white/10">
-                    <h3 className="text-sm font-semibold text-white/80 uppercase tracking-wider">
-                      {form} ({group.length})
+                  {/* Collapsible form header */}
+                  <button
+                    onClick={() => toggleFormCollapse(form)}
+                    aria-expanded={!isCollapsed}
+                    className="w-full flex items-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 transition-colors text-left"
+                  >
+                    {isCollapsed ? (
+                      <ChevronRight className="w-4 h-4 text-white/50 flex-shrink-0" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-white/50 flex-shrink-0" />
+                    )}
+                    <h3 className="flex-1 min-w-0 truncate text-sm font-semibold text-white/80 uppercase tracking-wider">
+                      {form}
                     </h3>
-                  </div>
-                  <div className="divide-y divide-white/5">
-                    {group.map((submission) => (
-                      <div
-                        key={submission.id}
-                        className={`flex items-center gap-4 px-4 py-3 hover:bg-white/5 transition-colors ${
-                          selectedIds.has(submission.id) ? "bg-violet-500/10" : ""
-                        }`}
-                      >
-                        <SubmissionCheckbox checked={selectedIds.has(submission.id)} onClick={() => toggleSelect(submission.id)} />
-                        <SubmissionAvatar submission={submission} />
-                        <div className="w-40 sm:w-48 md:w-56 min-w-0 flex-shrink-0">
-                          <button
-                            onClick={() => setDetailSubmissionId(submission.id)}
-                            className="text-left max-w-full"
-                            title="View full actor details"
-                          >
-                            <h4 className="text-sm font-semibold text-white truncate hover:text-violet-300 transition-colors cursor-pointer">{submission.name}</h4>
-                          </button>
-                          <p className="text-xs text-white/50 truncate">
-                            {submission.age && `Age: ${submission.age}`}
-                            {(submission.data?.gender || submission.data?.Gender) && ` • ${submission.data?.gender || submission.data?.Gender}`}
-                          </p>
+                    <span className="flex-shrink-0 text-xs font-medium text-white/60 bg-white/10 px-2 py-0.5 rounded-full">
+                      {group.length}
+                    </span>
+                  </button>
+
+                  {/* Form body - hidden when collapsed */}
+                  {!isCollapsed && (
+                    <div className="border-t border-white/10">
+                      {viewMode === "full" ? (
+                        <div className="p-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+                          {group.map((submission) => (
+                            <SubmissionCard
+                              key={submission.id}
+                              submission={submission}
+                              onUpdate={(updates) => handleUpdateSubmission(submission.id, updates)}
+                              onDelete={() => handleDeleteSubmission(submission.id)}
+                              isSelected={selectedIds.has(submission.id)}
+                              onToggleSelect={() => toggleSelect(submission.id)}
+                              onNameClick={() => setDetailSubmissionId(submission.id)}
+                            />
+                          ))}
                         </div>
-                        <div className="hidden md:flex flex-1 items-center gap-6 text-xs text-white/60 justify-start">
-                          {submission.phone && (
-                            <span className="flex items-center gap-1.5">
-                              <Phone className="w-3 h-3" />
-                              {submission.phone}
-                            </span>
-                          )}
-                          <span className="flex items-center gap-1.5">
-                            <Mail className="w-3 h-3" />
-                            {submission.email}
-                          </span>
+                      ) : viewMode === "minimal" ? (
+                        <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
+                          {group.map((submission) => (
+                            <div
+                              key={submission.id}
+                              className={`group relative p-3 rounded-lg border bg-[#1a2e23] transition-colors ${
+                                selectedIds.has(submission.id) ? "border-violet-500/50 ring-1 ring-violet-500/20" : "border-white/10 hover:border-white/20"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2.5">
+                                <SubmissionCheckbox checked={selectedIds.has(submission.id)} onClick={() => toggleSelect(submission.id)} />
+                                <SubmissionAvatar submission={submission} />
+                                <div className="flex-1 min-w-0">
+                                  <button
+                                    onClick={() => setDetailSubmissionId(submission.id)}
+                                    className="text-left max-w-full"
+                                    title="View full actor details"
+                                  >
+                                    <h3 className="text-sm font-semibold text-white truncate hover:text-violet-300 transition-colors cursor-pointer">{submission.name}</h3>
+                                  </button>
+                                  <p className="text-xs text-white/50 truncate">{submission.castingCallTitle}</p>
+                                </div>
+                                {submission.grade && submission.grade > 0 ? (
+                                  <span className="flex items-center gap-0.5 text-xs text-amber-400 flex-shrink-0">
+                                    <Star className="w-3 h-3 fill-current" />
+                                    {submission.grade}
+                                  </span>
+                                ) : null}
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                        {submission.grade && submission.grade > 0 ? (
-                          <div className="flex items-center gap-1.5 px-3 py-1 rounded bg-amber-500/20 text-amber-400 text-xs flex-shrink-0">
-                            <Star className="w-3 h-3 fill-current" />
-                            {submission.grade}/10
-                          </div>
-                        ) : null}
-                      </div>
-                    ))}
-                  </div>
+                      ) : (
+                        <div className="divide-y divide-white/5">
+                          {group.map((submission) => (
+                            <div
+                              key={submission.id}
+                              className={`flex items-center gap-4 px-4 py-3 hover:bg-white/5 transition-colors ${
+                                selectedIds.has(submission.id) ? "bg-violet-500/10" : ""
+                              }`}
+                            >
+                              <SubmissionCheckbox checked={selectedIds.has(submission.id)} onClick={() => toggleSelect(submission.id)} />
+                              <SubmissionAvatar submission={submission} />
+                              <div className="w-40 sm:w-48 md:w-56 min-w-0 flex-shrink-0">
+                                <button
+                                  onClick={() => setDetailSubmissionId(submission.id)}
+                                  className="text-left max-w-full"
+                                  title="View full actor details"
+                                >
+                                  <h4 className="text-sm font-semibold text-white truncate hover:text-violet-300 transition-colors cursor-pointer">{submission.name}</h4>
+                                </button>
+                                <p className="text-xs text-white/50 truncate">
+                                  {submission.age && `Age: ${submission.age}`}
+                                  {(submission.data?.gender || submission.data?.Gender) && ` • ${submission.data?.gender || submission.data?.Gender}`}
+                                </p>
+                              </div>
+                              <div className="hidden md:flex flex-1 items-center gap-6 text-xs text-white/60 justify-start">
+                                {submission.phone && (
+                                  <span className="flex items-center gap-1.5">
+                                    <Phone className="w-3 h-3" />
+                                    {submission.phone}
+                                  </span>
+                                )}
+                                <span className="flex items-center gap-1.5">
+                                  <Mail className="w-3 h-3" />
+                                  {submission.email}
+                                </span>
+                              </div>
+                              {submission.grade && submission.grade > 0 ? (
+                                <div className="flex items-center gap-1.5 px-3 py-1 rounded bg-amber-500/20 text-amber-400 text-xs flex-shrink-0">
+                                  <Star className="w-3 h-3 fill-current" />
+                                  {submission.grade}/10
+                                </div>
+                              ) : null}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )
             })}

@@ -1,11 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { Pencil, Trash2, Phone, Mail, X, Save, Plus, Video, ExternalLink } from "lucide-react"
+import { Pencil, Trash2, Phone, Mail, X, Save, Plus, Video, ExternalLink, Images } from "lucide-react"
 import { Actor, CustomField } from "@/types/actor-list"
 import ImageModal from "@/components/ui/ImageModal"
 import MediaModal from "@/components/ui/MediaModal"
 import ProfilePictureField from "@/components/ui/ProfilePictureField"
+import ImageUploadField from "@/components/ui/ImageUploadField"
+import ImageCarouselModal from "@/components/ui/ImageCarouselModal"
 import { getVideoEmbed } from "@/utils/mediaEmbed"
 
 interface ActorCardProps {
@@ -51,6 +53,8 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
   const [showImageModal, setShowImageModal] = useState(false)
   const [activeImage, setActiveImage] = useState<string | undefined>(undefined)
   const [showMediaModal, setShowMediaModal] = useState(false)
+  const [carouselOpen, setCarouselOpen] = useState(false)
+  const [carouselStart, setCarouselStart] = useState(0)
 
   const handleSave = () => {
     const cleanedVideos = (editedActor.videos || []).map((v) => v.trim()).filter(Boolean)
@@ -117,20 +121,6 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
     setEditedActor({
       ...editedActor,
       videos: [...(editedActor.videos || []), ""],
-    })
-  }
-
-  const handleUpdatePhoto = (index: number, value: string) => {
-    setEditedActor({
-      ...editedActor,
-      photos: (editedActor.photos || []).map((p, i) => (i === index ? value : p)),
-    })
-  }
-
-  const handleRemovePhoto = (index: number) => {
-    setEditedActor({
-      ...editedActor,
-      photos: (editedActor.photos || []).filter((_, i) => i !== index),
     })
   }
 
@@ -312,28 +302,19 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
           </button>
         </div>
 
-        {/* Uploaded Photos */}
-        {(editedActor.photos || []).length > 0 && (
-          <div className="mb-4">
-            <label className="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-2">
-              Uploaded Photos
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              {(editedActor.photos || []).map((photo, index) => (
-                <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-white/10 group/photo">
-                  <img src={photo || "/placeholder.svg"} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
-                  <button
-                    onClick={() => handleRemovePhoto(index)}
-                    className="absolute top-1 right-1 p-1 bg-red-500/80 hover:bg-red-500 rounded-md text-white opacity-0 group-hover/photo:opacity-100 transition-opacity"
-                    title="Delete image"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Photos - multi-image uploader (click or drag, like Scene Inspirations) */}
+        <div className="mb-4">
+          <label className="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-2">
+            Photos
+          </label>
+          <ImageUploadField
+            value={editedActor.photos ?? []}
+            onChange={(imgs) => setEditedActor({ ...editedActor, photos: imgs })}
+            multiple
+            accent="emerald"
+            placeholder="Add image"
+          />
+        </div>
 
         {/* Notes */}
         <div className="mb-4">
@@ -639,18 +620,34 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
                   <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">
                     Photos
                   </p>
-                  <div className="grid grid-cols-3 gap-2">
-                    {actorPhotos.map((img, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => { setActiveImage(img); setShowImageModal(true) }}
-                        className="relative aspect-square rounded-lg overflow-hidden border border-white/10 hover:ring-2 hover:ring-emerald-500/50 transition-all"
-                        title="Click to view full image"
-                      >
-                        <img src={img || "/placeholder.svg"} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
-                      </button>
-                    ))}
+                  <div className="grid grid-cols-3 gap-2 mb-2">
+                    {(forceExpanded ? actorPhotos : actorPhotos.slice(0, 3)).map((img, idx) => {
+                      const isLastVisible = !forceExpanded && idx === 2 && actorPhotos.length > 3
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => { setCarouselStart(idx); setCarouselOpen(true) }}
+                          className="relative aspect-square rounded-lg overflow-hidden border border-white/10 bg-[#0f1f17] cursor-zoom-in"
+                          title="View images"
+                        >
+                          <img src={img || "/placeholder.svg"} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
+                          {isLastVisible && (
+                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-sans text-sm font-semibold">
+                              +{actorPhotos.length - 3}
+                            </div>
+                          )}
+                        </button>
+                      )
+                    })}
                   </div>
+                  <button
+                    onClick={() => { setCarouselStart(0); setCarouselOpen(true) }}
+                    className="inline-flex items-center gap-2 px-3 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-lg text-emerald-400 hover:text-emerald-300 text-sm transition-colors"
+                  >
+                    <Images className="w-4 h-4" />
+                    <span className="font-sans">View Images ({actorPhotos.length})</span>
+                  </button>
                 </div>
               )}
             </div>
@@ -672,6 +669,15 @@ export default function ActorCard({ actor, onUpdate, onDelete, forceExpanded = f
         onClose={() => setShowMediaModal(false)}
         url={actor.mediaMaterial || ""}
         title={`${actor.name} - Media Material`}
+      />
+
+      {/* Photos Carousel */}
+      <ImageCarouselModal
+        isOpen={carouselOpen}
+        onClose={() => setCarouselOpen(false)}
+        images={actorPhotos}
+        startIndex={carouselStart}
+        title={`${actor.name} — Photos`}
       />
     </div>
   )

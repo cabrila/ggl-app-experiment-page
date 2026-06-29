@@ -143,8 +143,9 @@ export default function CastingCallPreviewModal({ castingCall, project, onClose 
     // Simulate network delay for realism
     await new Promise(resolve => setTimeout(resolve, 800))
     
-    // Add submission to context (include talent pool consent when enabled)
-    const submissionData = castingCall.talentPoolConsentEnabled
+    // Add submission to context (include talent pool consent when enabled).
+    // Consent is on by default — only an explicit `false` disables it.
+    const submissionData = castingCall.talentPoolConsentEnabled !== false
       ? { ...formData, "Talent Pool Consent": talentPoolConsent ? "Yes" : "No" }
       : formData
     addSubmission(castingCall.id, submissionData)
@@ -257,16 +258,39 @@ export default function CastingCallPreviewModal({ castingCall, project, onClose 
           ) : (
             // Form State
             <form onSubmit={handleSubmit}>
-              {/* Header Image */}
-              {castingCall.headerImageUrl && (
-                <div className="w-full h-40 rounded-xl overflow-hidden mb-6">
-                  <img
-                    src={castingCall.headerImageUrl || "/placeholder.svg"}
-                    alt={`${castingCall.title} header`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
+              {/* Header Image(s) */}
+              {(() => {
+                const images = castingCall.headerImageUrls?.length
+                  ? castingCall.headerImageUrls
+                  : castingCall.headerImageUrl
+                    ? [castingCall.headerImageUrl]
+                    : []
+                if (images.length === 0) return null
+                if (images.length === 1) {
+                  return (
+                    <div className="w-full h-40 rounded-xl overflow-hidden mb-6">
+                      <img
+                        src={images[0] || "/placeholder.svg"}
+                        alt={`${castingCall.title} header`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )
+                }
+                return (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-6">
+                    {images.map((url, i) => (
+                      <div key={i} className="aspect-square rounded-xl overflow-hidden">
+                        <img
+                          src={url || "/placeholder.svg"}
+                          alt={`${castingCall.title} header ${i + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )
+              })()}
               {/* Form Header */}
               <div className="text-center mb-8">
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/20 rounded-full text-emerald-300 text-sm mb-4 font-sans font-medium">
@@ -445,8 +469,9 @@ export default function CastingCallPreviewModal({ castingCall, project, onClose 
                   </div>
                 ))}
 
-                {/* Talent Pool Consent - always rendered at the very end of the form */}
-                {castingCall.talentPoolConsentEnabled && (
+                {/* Talent Pool Consent - rendered at the very end of the form;
+                    enabled by default unless explicitly turned off */}
+                {castingCall.talentPoolConsentEnabled !== false && (
                   <label className="flex items-start gap-3 cursor-pointer pt-2">
                     <input
                       type="checkbox"

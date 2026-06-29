@@ -16,7 +16,10 @@ export interface CastingCall {
   createdAt: Date
   isActive: boolean
   shareableLink: string
+  /** Primary header image (kept for backward compatibility — mirrors headerImageUrls[0]). */
   headerImageUrl?: string
+  /** All header images for the form. Supports multiple uploads. */
+  headerImageUrls?: string[]
   isCompleted?: boolean
   // Talent pool consent (shown as a final checkbox on the generated form)
   talentPoolConsentEnabled?: boolean

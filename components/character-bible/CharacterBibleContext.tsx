@@ -11,6 +11,7 @@ import {
   deleteCharacterBible as deleteCharacterBibleFromFirestore,
 } from "@/lib/firestore"
 import { ensureDemoScript } from "@/lib/scriptFile"
+import { cacheScript, attachCachedScripts, removeCachedScript } from "@/lib/scriptCache"
 import type { PendingExtraction } from "@/types/pending-extraction"
 
 interface CharacterBibleContextType {
@@ -235,11 +236,14 @@ export function CharacterBibleProvider({ children }: { children: ReactNode }) {
     const unsubscribe = subscribeToCharacterBibles(
       user.uid,
       (firestoreBibles) => {
-        setBibles(firestoreBibles)
+        // Firestore doesn't store the uploaded script — re-attach it from the
+        // local cache so the "Script" preview button survives the refresh.
+        const withScripts = attachCachedScripts(firestoreBibles)
+        setBibles(withScripts)
         // Update currentBible if it exists in the new data (read latest via ref)
         const current = currentBibleRef.current
         if (current) {
-          const updated = firestoreBibles.find((b) => b.id === current.id)
+          const updated = withScripts.find((b) => b.id === current.id)
           if (updated) {
             setCurrentBible(updated)
           }
@@ -261,6 +265,9 @@ export function CharacterBibleProvider({ children }: { children: ReactNode }) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { id, isDemo, script, ...bibleData } = bible
         const newId = await addCharacterBible(user.uid, bibleData)
+        // Persist the script client-side under the new id so it's re-attached
+        // when the Firestore subscription (which omits it) refreshes.
+        if (script) cacheScript(newId, script)
         // Firestore subscription will update the state
         // Set the new bible as current with the Firestore ID
         setCurrentBible({ ...bible, id: newId, isDemo: false })
@@ -320,6 +327,7 @@ export function CharacterBibleProvider({ children }: { children: ReactNode }) {
       // Demo mode - update local state
       setBibles((prev) => prev.filter((b) => b.id !== id))
     }
+    removeCachedScript(id)
 
     if (currentBible?.id === id) {
       setCurrentBible(null)

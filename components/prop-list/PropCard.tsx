@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Package, Pencil, Trash2, X, Save, Plus, ExternalLink } from "lucide-react"
+import { Package, Pencil, Trash2, X, Save, Plus, ExternalLink, Images } from "lucide-react"
 import { Prop, PropCategory } from "@/types/prop-list"
 import CardMore from "@/components/ui/CardMore"
 import ImageUploadField from "@/components/ui/ImageUploadField"
@@ -63,6 +63,7 @@ export default function PropCard({
   const [isEditing, setIsEditing] = useState(startInEdit)
   const [editData, setEditData] = useState<Prop>(prop)
   const [carouselOpen, setCarouselOpen] = useState(false)
+  const [carouselStart, setCarouselStart] = useState(0)
 
   const referenceImages = prop.referenceImages ?? []
 
@@ -155,12 +156,13 @@ export default function PropCard({
             Prop Image and Sources
           </p>
 
-          <label className="block text-xs text-white/60 mb-2 font-sans">Prop Image</label>
+          <label className="block text-xs text-white/60 mb-2 font-sans">Prop Images</label>
           <ImageUploadField
             value={editData.referenceImages ?? []}
             onChange={(imgs) => setEditData({ ...editData, referenceImages: imgs })}
+            multiple
             accent="rose"
-            placeholder="Click or drag an image to upload"
+            placeholder="Add image"
           />
 
           <label className="block text-xs text-white/60 mt-3 mb-2 font-sans">
@@ -319,28 +321,47 @@ export default function PropCard({
             Prop Image and Sources
           </p>
           {referenceImages.length > 0 && (
-            <div className={`grid gap-2 mb-2 ${referenceImages.length === 1 ? "grid-cols-1" : "grid-cols-3"}`}>
-              {(forceExpanded ? referenceImages : referenceImages.slice(0, 3)).map((img, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => {
-                    setCarouselOpen(true)
-                  }}
-                  className={`relative overflow-hidden rounded-lg border border-white/10 bg-[#0f1f17] cursor-zoom-in ${
-                    referenceImages.length === 1 ? "h-40" : "aspect-square"
-                  }`}
-                  title="View image"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={img || "/placeholder.svg"}
-                    alt={`${prop.name} reference ${idx + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-3 gap-2 mb-2">
+                {(forceExpanded ? referenceImages : referenceImages.slice(0, 3)).map((img, idx) => {
+                  const isLastVisible = !forceExpanded && idx === 2 && referenceImages.length > 3
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        setCarouselStart(idx)
+                        setCarouselOpen(true)
+                      }}
+                      className="relative aspect-square overflow-hidden rounded-lg border border-white/10 bg-[#0f1f17] cursor-zoom-in"
+                      title="View images"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={img || "/placeholder.svg"}
+                        alt={`${prop.name} reference ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      {isLastVisible && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-sans text-sm font-semibold">
+                          +{referenceImages.length - 3}
+                        </div>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+              <button
+                onClick={() => {
+                  setCarouselStart(0)
+                  setCarouselOpen(true)
+                }}
+                className="inline-flex items-center gap-2 px-3 py-2 mb-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-lg text-rose-400 hover:text-rose-300 text-sm transition-colors"
+              >
+                <Images className="w-4 h-4" />
+                <span className="font-sans">View Images ({referenceImages.length})</span>
+              </button>
+            </>
           )}
           {prop.referenceLink && (
             <a
@@ -358,6 +379,7 @@ export default function PropCard({
             isOpen={carouselOpen}
             onClose={() => setCarouselOpen(false)}
             images={referenceImages}
+            startIndex={carouselStart}
             title={`${prop.name} — Images`}
           />
         </div>

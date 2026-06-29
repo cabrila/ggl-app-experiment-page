@@ -49,7 +49,13 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
   const [title, setTitle] = useState(editingCastingCall?.title || "")
   const [description, setDescription] = useState(editingCastingCall?.description || "")
   const [projectName, setProjectName] = useState(editingCastingCall?.projectName || editingProject?.name || "")
-  const [headerImageUrl, setHeaderImageUrl] = useState(editingCastingCall?.headerImageUrl || "")
+  const [headerImageUrls, setHeaderImageUrls] = useState<string[]>(
+    editingCastingCall?.headerImageUrls?.length
+      ? editingCastingCall.headerImageUrls
+      : editingCastingCall?.headerImageUrl
+        ? [editingCastingCall.headerImageUrl]
+        : []
+  )
   const [isCompleted, setIsCompleted] = useState(editingCastingCall?.isCompleted || false)
   const [talentPoolConsentEnabled, setTalentPoolConsentEnabled] = useState(
     editingCastingCall?.talentPoolConsentEnabled ?? true
@@ -76,15 +82,23 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
   const titleMissing = !title.trim()
   const projectNameMissing = !projectName.trim()
 
-  const setHeaderImageFromFile = async (file: File | undefined) => {
-    if (!file || !file.type.startsWith("image/")) return
+  const addHeaderImagesFromFiles = async (files: FileList | File[] | null | undefined) => {
+    if (!files) return
+    const imageFiles = Array.from(files).filter((f) => f.type.startsWith("image/"))
+    if (imageFiles.length === 0) return
     // AI: Downscale before embedding as a data URL. The casting call is stored
     // in a Firestore doc whose per-property limit is ~1 MiB; a raw header photo
     // blows past it and the create/update write 500s. Prefer PNG so transparent
     // logos/graphics survive, falling back to JPEG when a photo would exceed the
     // limit. Banner bounds (1600x900) preserve aspect ratio, never stretch.
-    const dataUrl = await fileToInlineImagePreferPng(file, { maxWidth: 1600, maxHeight: 900 })
-    setHeaderImageUrl(dataUrl)
+    const dataUrls = await Promise.all(
+      imageFiles.map((f) => fileToInlineImagePreferPng(f, { maxWidth: 1600, maxHeight: 900 }))
+    )
+    setHeaderImageUrls((prev) => [...prev, ...dataUrls])
+  }
+
+  const removeHeaderImage = (index: number) => {
+    setHeaderImageUrls((prev) => prev.filter((_, i) => i !== index))
   }
 
   // Create a preview casting call object for the modal
@@ -97,7 +111,8 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
     createdAt: editingCastingCall?.createdAt || new Date(),
     isActive: true,
     shareableLink: createdLink || `${window.location.origin}/actor-submission/${editingCastingCall?.id || "preview"}`,
-    headerImageUrl: headerImageUrl || undefined,
+    headerImageUrls: headerImageUrls.length ? headerImageUrls : undefined,
+    headerImageUrl: headerImageUrls[0] || undefined,
     isCompleted,
     talentPoolConsentEnabled,
     talentPoolConsentText,
@@ -216,7 +231,8 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
               description,
               projectName,
               fields,
-              headerImageUrl: headerImageUrl || undefined,
+              headerImageUrls: headerImageUrls.length ? headerImageUrls : undefined,
+      headerImageUrl: headerImageUrls[0] || undefined,
               isCompleted,
               talentPoolConsentEnabled,
               talentPoolConsentText,
@@ -231,7 +247,8 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
           description,
           projectName,
           fields,
-          headerImageUrl: headerImageUrl || undefined,
+          headerImageUrls: headerImageUrls.length ? headerImageUrls : undefined,
+      headerImageUrl: headerImageUrls[0] || undefined,
           isCompleted,
           talentPoolConsentEnabled,
           talentPoolConsentText,
@@ -259,7 +276,8 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
               description,
               projectName,
               fields,
-              headerImageUrl: headerImageUrl || undefined,
+              headerImageUrls: headerImageUrls.length ? headerImageUrls : undefined,
+      headerImageUrl: headerImageUrls[0] || undefined,
               talentPoolConsentEnabled,
               talentPoolConsentText,
             })
@@ -277,7 +295,7 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
           description,
           projectName,
           fields,
-          headerImageUrl || undefined,
+          headerImageUrls.length ? headerImageUrls : undefined,
           { talentPoolConsentEnabled, talentPoolConsentText },
           backendId,
         )
@@ -428,14 +446,21 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
           </button>
         </div>
 
-        {/* Header Image Banner - reflects uploaded header image */}
-        {headerImageUrl && (
-          <div className="w-full h-48 rounded-xl overflow-hidden mb-8 border border-white/10">
-            <img
-              src={headerImageUrl || "/placeholder.svg"}
-              alt="Casting call header"
-              className="w-full h-full object-cover"
-            />
+        {/* Header Image Banner - reflects uploaded header images */}
+        {headerImageUrls.length > 0 && (
+          <div className="flex flex-wrap gap-3 mb-8">
+            {headerImageUrls.map((url, i) => (
+              <div
+                key={i}
+                className="w-32 aspect-square rounded-xl overflow-hidden border border-white/10"
+              >
+                <img
+                  src={url || "/placeholder.svg"}
+                  alt={`Casting call header ${i + 1}`}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ))}
           </div>
         )}
 
@@ -446,13 +471,12 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
             <h2 className="text-lg font-semibold text-white mb-4 font-sans">Basic Information</h2>
             
             <div className="space-y-4">
-              {/* Header Image Upload */}
+              {/* Header Images Upload (supports multiple, square thumbnails) */}
               <div>
                 <label className="block text-xs font-semibold text-violet-400 uppercase tracking-wider mb-2">
-                  Header Image (Optional)
+                  Header Images (Optional)
                 </label>
                 <div
-                  onClick={() => headerImageInputRef.current?.click()}
                   onDragOver={(e) => {
                     e.preventDefault()
                     setIsHeaderDragOver(true)
@@ -461,53 +485,60 @@ export default function CastingCallSetup({ onBack, onSuccess, editingCastingCall
                   onDrop={(e) => {
                     e.preventDefault()
                     setIsHeaderDragOver(false)
-                    setHeaderImageFromFile(e.dataTransfer.files?.[0])
+                    addHeaderImagesFromFiles(e.dataTransfer.files)
                   }}
-                  className={`relative h-40 w-full rounded-lg overflow-hidden cursor-pointer border-2 border-dashed transition-colors group ${
+                  className={`grid grid-cols-3 sm:grid-cols-4 gap-3 p-3 rounded-lg border transition-colors ${
                     isHeaderDragOver
                       ? "border-violet-500 bg-violet-500/10"
-                      : "border-white/15 hover:border-violet-500/50 bg-[#0f1f17]"
+                      : "border-white/10 bg-[#0f1f17]"
                   }`}
-                  title="Click or drag an image to set the casting call header"
                 >
-                  {headerImageUrl ? (
-                    <>
+                  {headerImageUrls.map((url, index) => (
+                    <div
+                      key={index}
+                      className="relative aspect-square rounded-lg overflow-hidden border border-white/10 group"
+                    >
                       <img
-                        src={headerImageUrl || "/placeholder.svg"}
-                        alt="Casting call header"
+                        src={url || "/placeholder.svg"}
+                        alt={`Header image ${index + 1}`}
                         className="w-full h-full object-cover"
                       />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                        <span className="opacity-0 group-hover:opacity-100 text-white text-sm font-sans transition-opacity">
-                          Click or drag to replace
-                        </span>
-                      </div>
                       <button
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation()
-                          setHeaderImageUrl("")
+                          removeHeaderImage(index)
                         }}
-                        className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 rounded-lg text-white transition-colors"
+                        className="absolute top-1.5 right-1.5 p-1 bg-black/50 hover:bg-black/70 rounded-lg text-white transition-colors"
                         title="Remove image"
                       >
-                        <X className="w-4 h-4" />
+                        <X className="w-3.5 h-3.5" />
                       </button>
-                    </>
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-white/40">
-                      <ImageIcon className="w-7 h-7" />
-                      <span className="text-sm font-sans">Click or drag an image to upload header</span>
                     </div>
-                  )}
+                  ))}
+                  {/* Add tile */}
+                  <button
+                    type="button"
+                    onClick={() => headerImageInputRef.current?.click()}
+                    className="aspect-square rounded-lg border-2 border-dashed border-white/15 hover:border-violet-500/50 bg-[#0f1f17] hover:bg-violet-500/5 transition-colors flex flex-col items-center justify-center gap-1.5 text-white/40 hover:text-violet-400"
+                    title="Click or drag images to add header images"
+                  >
+                    <ImageIcon className="w-6 h-6" />
+                    <span className="text-xs font-sans text-center px-1">Add image</span>
+                  </button>
                   <input
                     ref={headerImageInputRef}
                     type="file"
                     accept="image/*"
+                    multiple
                     className="hidden"
-                    onChange={(e) => setHeaderImageFromFile(e.target.files?.[0])}
+                    onChange={(e) => addHeaderImagesFromFiles(e.target.files)}
                     autoComplete="off"
                   />
                 </div>
+                <p className="text-xs text-white/40 mt-2 font-sans">
+                  Upload one or more images. The first image is used as the form&apos;s banner.
+                </p>
               </div>
 
               <div>

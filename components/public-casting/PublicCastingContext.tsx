@@ -20,7 +20,7 @@ interface PublicCastingContextType {
   selectProject: (id: string) => void
   updateProject: (id: string, updates: Partial<PublicCastingProject>) => void
   deleteProject: (id: string) => void
-  createCastingCall: (projectId: string, title: string, description: string, projectName: string, fields: CastingCallField[], headerImageUrl?: string, consent?: { talentPoolConsentEnabled?: boolean; talentPoolConsentText?: string }, id?: string) => CastingCall
+  createCastingCall: (projectId: string, title: string, description: string, projectName: string, fields: CastingCallField[], headerImageUrls?: string[], consent?: { talentPoolConsentEnabled?: boolean; talentPoolConsentText?: string }, id?: string) => CastingCall
   updateCastingCall: (projectId: string, castingCallId: string, updates: Partial<CastingCall>) => void
   deleteCastingCall: (projectId: string, castingCallId: string) => void
   selectCastingCall: (id: string) => void
@@ -564,11 +564,16 @@ export function PublicCastingProvider({ children }: { children: ReactNode }) {
       DEMO_STORAGE_KEYS.publicCasting,
       null
     )
+    // Fall back to demo data when nothing has been persisted yet OR when the
+    // persisted projects array is empty. A stale empty array (e.g. left behind
+    // by a prior signed-in session that cleared projects) must not permanently
+    // suppress the demo casting calls in demo mode.
+    const hasPersistedProjects = !!persisted?.projects && persisted.projects.length > 0
     return {
-      projects: persisted?.projects ?? demo,
+      projects: hasPersistedProjects ? persisted!.projects : demo,
       currentProject: null,
       currentCastingCall: null,
-      newSubmissionsCount: persisted?.newSubmissionsCount ?? 16,
+      newSubmissionsCount: hasPersistedProjects ? persisted!.newSubmissionsCount : 16,
     }
   })
 
@@ -624,9 +629,17 @@ export function PublicCastingProvider({ children }: { children: ReactNode }) {
             createdAt: new Date(call.createdAt),
             isActive: call.status === 'active',
             shareableLink: `${window.location.origin}/actor-submission/${call.id}`,
-            headerImageUrl: call.headerImageUrl,
+            // Prefer the multi-image array; fall back to the legacy single image
+            // so older casting calls still show their header.
+            headerImageUrls:
+              call.headerImageUrls ?? (call.headerImageUrl ? [call.headerImageUrl] : undefined),
+            headerImageUrl: call.headerImageUrl ?? call.headerImageUrls?.[0],
             isCompleted: call.isCompleted,
-            talentPoolConsentEnabled: call.talentPoolConsentEnabled,
+            // Consent is enabled by default. Only an explicit `false` from the
+            // backend disables it, so a missing/undefined value (e.g. legacy
+            // records or a backend that doesn't echo the flag) won't wrongly
+            // strip the consent checkbox from the form.
+            talentPoolConsentEnabled: call.talentPoolConsentEnabled ?? true,
             talentPoolConsentText: call.talentPoolConsentText,
           });
         });
@@ -726,7 +739,7 @@ export function PublicCastingProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const createCastingCall = useCallback(
-    (projectId: string, title: string, description: string, projectName: string, fields: CastingCallField[], headerImageUrl?: string, consent?: { talentPoolConsentEnabled?: boolean; talentPoolConsentText?: string }, id?: string): CastingCall => {
+    (projectId: string, title: string, description: string, projectName: string, fields: CastingCallField[], headerImageUrls?: string[], consent?: { talentPoolConsentEnabled?: boolean; talentPoolConsentText?: string }, id?: string): CastingCall => {
       // AI: Use the backend-assigned id when supplied so the local entry, its
       // shareable link, and the persisted casting call all agree. Without this
       // the local `cc-<timestamp>` id diverged from the backend's auto-id, so
@@ -741,7 +754,8 @@ export function PublicCastingProvider({ children }: { children: ReactNode }) {
         createdAt: new Date(),
         isActive: true,
         shareableLink: `${window.location.origin}/actor-submission/${resolvedId}`,
-        headerImageUrl,
+        headerImageUrls,
+        headerImageUrl: headerImageUrls?.[0],
         talentPoolConsentEnabled: consent?.talentPoolConsentEnabled,
         talentPoolConsentText: consent?.talentPoolConsentText,
       }

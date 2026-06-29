@@ -12,6 +12,7 @@ import {
 } from "@/lib/firestore"
 import { loadDemoData, saveDemoData, DEMO_STORAGE_KEYS } from "@/utils/demoPersistence"
 import { ensureDemoScript } from "@/lib/scriptFile"
+import { cacheScript, attachCachedScripts, removeCachedScript } from "@/lib/scriptCache"
 import type { PendingExtraction } from "@/types/pending-extraction"
 
 type ViewState = "projects" | "upload" | "results"
@@ -443,10 +444,13 @@ export function PropListProvider({ children }: { children: ReactNode }) {
     const unsubscribe = subscribeToPropProjects(
       user.uid,
       (firestoreProjects) => {
-        setProjects(firestoreProjects)
+        // Firestore doesn't store the uploaded script — re-attach it from the
+        // local cache so the "Script" preview button survives the refresh.
+        const withScripts = attachCachedScripts(firestoreProjects)
+        setProjects(withScripts)
         const current = currentProjectRef.current
         if (current) {
-          const updated = firestoreProjects.find((p) => p.id === current.id)
+          const updated = withScripts.find((p) => p.id === current.id)
           if (updated) setCurrentProject(updated)
         }
         setIsLoading(false)
@@ -466,6 +470,9 @@ export function PropListProvider({ children }: { children: ReactNode }) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { id, isDemo, script, ...projectData } = project
         const newId = await addPropProject(user.uid, projectData)
+        // Persist the script client-side under the new id so it's re-attached
+        // when the Firestore subscription (which omits it) refreshes.
+        if (script) cacheScript(newId, script)
         setCurrentProject({ ...project, id: newId, isDemo: false })
       } catch (error) {
         console.error("[v0] Error adding prop project:", error)
@@ -506,6 +513,7 @@ export function PropListProvider({ children }: { children: ReactNode }) {
     } else {
       setProjects((prev) => prev.filter((p) => p.id !== projectId))
     }
+    removeCachedScript(projectId)
 
     if (currentProject?.id === projectId) {
       setCurrentProject(null)
